@@ -1,0 +1,11 @@
+__author__ = 'Mohammadreza Khoshbin'
+__copyright__ = 'Copyright 2013-2021, Mohammadreza Khoshbin'
+__credits__ = ['Mohammadreza Khoshbin']
+__license__ = 'AGPLv3'
+__version__ = "3.0.0"
+__maintainer__ = 'Mohammadreza Khoshbin'
+__email__ = 'm.khoshbin@live.com'
+__status__ = 'Production'
+__website__ = 'https://github.com/mkhoshbin1/vcams'
+# __docs__ = ''
+# __description__ = ''
