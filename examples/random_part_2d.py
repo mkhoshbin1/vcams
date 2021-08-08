@@ -3,7 +3,7 @@ Then, a random distribution of materials is assigned to it.
 Finally, the part is output to abaqus with a uniform scale of 0.02 in all directions."""
 
 import numpy as np
-import vcams.voxelpart
+import vcams
 
 results_path = 'path\\to\\results\\directory'
 

@@ -9,3 +9,8 @@ __status__ = 'Production'
 __website__ = 'https://github.com/mkhoshbin1/vcams'
 # __docs__ = ''
 # __description__ = ''
+
+
+# Import the modules. Although general guidelines are against polluting the namespace,
+# it's done to improve usability for less experienced users.
+from . import voxelpart

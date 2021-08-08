@@ -178,3 +178,40 @@ class VoxelPart:
         self.elem_sets[name] = np.unique(elem_ids).astype('uint32')
         logger.debug("Added custom element set '%s' with %u elements.",
                      name, len(self.elem_sets[name]))
+
+    def apply_mask(self, mask, value):
+        """Use a boolean mask to change values of the :py:attr:`~data` attribute.
+
+        This function does some validations and then uses numpy.putmask().
+
+        Args:
+            mask (numpy.ndarray): Boolean mask to be used.
+
+            value (int): Integer value to be assigned to the elements
+                         of the :py:attr:`~data` attribute where
+                         the boolean mask is :py:obj:`True`.
+            """
+
+        # Make sure mask is a boolean mask.
+        if not mask.dtype == bool:
+            raise ValueError("mask.dtype is not 'bool'.")
+
+        # Make sure mask and self.data have the same shape.
+        if mask.shape != self.data.shape:
+            raise ValueError('mask is not of the same shape as VoxelPart.data.')
+        
+        # Make sure mask and self.data have the same order (Fortran or C contiguity).
+        if mask.flags.f_contiguous != self.data.flags.f_contiguous:
+            raise ValueError('mask is not of the same order (Fortran or C contiguity) as VoxelPart.data.')
+
+        # Make sure value is a nonzero integer within the bounds of self.data.dtype.
+        if not float(value).is_integer():
+            raise ValueError('value is not an integer.')
+        if value < 0:
+            raise ValueError('value is less than zero.')
+        if value > np.iinfo(self.data.dtype).max:
+            raise ValueError('value is larger than the maximum supported by self.data.dtype,' +
+                             ' which is %d.' % np.iinfo(self.data.dtype).max)
+
+        # Apply the mask to self.data.
+        np.putmask(self.data, mask, value)
