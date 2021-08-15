@@ -485,7 +485,7 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
         ('Output Dimensions', dim.upper()),
         ('Element Type', elem_type),
         ('Number of Elements', num_elems),
-        ('Number of Elements', num_nodes),
+        ('Number of Nodes', num_nodes),
         ('Total Output Time', time.strftime('%H:%M:%S', time.gmtime(elapsed_time)))
     )
 
