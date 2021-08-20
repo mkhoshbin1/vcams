@@ -24,7 +24,7 @@ from warnings import warn
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-from numpy import moveaxis
+from numpy import moveaxis, unique
 from skimage.filters import threshold_otsu
 from skimage.io import imread, ImageCollection
 from skimage.restoration import denoise_bilateral
@@ -133,7 +133,25 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
 
     # Apply the scale.
     if scale != 1.0:
-        full_image = rescale(full_image, scale, anti_aliasing=True)
+        # For boolean images, order has to be 0, which means that
+        # the nearest-neighbor interpolation method will be used.
+        # Also, anti aliasing has to be turned off.
+        # See https://github.com/scikit-image/scikit-image/issues/4292
+        # and https://github.com/scikit-image/scikit-image/issues/4998.
+        full_image = rescale(full_image, scale, order=0, anti_aliasing=False)
+
+        # Rescale returns a float array which needs to be converted to bool.
+        if full_image.dtype == float:
+            if all(unique(full_image) == [0.0, 1.0]):
+                full_image = full_image.astype(bool)
+            else:
+                raise RuntimeError('It is expected that skimage.transform.rescale '
+                                   'returns a float array with only 0.0 and 1.0 values, '
+                                   'which was not the case.')
+
         logger.debug('Applied a scale of %.2f.', scale)
 
     return full_image
+
+def resize_image(image):
+    #TODO: put all resize code here.
