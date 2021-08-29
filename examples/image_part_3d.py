@@ -4,10 +4,10 @@ Finally, the part is output to abaqus with a uniform scale of 0.02 in all direct
 
 import vcams
 
-results_path = r'C:\Users\MKhos\Desktop\Hylobates\New folder (2)'
+results_path = 'path\\to\\results\\directory'
 
-load_pattern = r'C:\Users\MKhos\Desktop\morphosource-2021-08-08-091517\New folder\Fused_AMNH_82096_Papio_*.tif'
-image_mask = mask_from_image_sequence(load_pattern=load_pattern, scale=0.5, denoise=False)
+load_pattern = '*.tif'
+image_mask = vcams.mask.image.mask_from_image_sequence(load_pattern=load_pattern, scale=0.5, denoise=False)
 image_mask = image_mask.astype(bool)
 
 # Create a part.

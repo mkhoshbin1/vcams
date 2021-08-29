@@ -13,7 +13,7 @@ The author's experience with 2D microscopy images suggests a combination of the 
   + Manually retouching the image to make features more distinguishable.
     This may be unavoidable for microscopy images of very poor quality,
     but the retouching must be limited to fixing glares and obvious noises.
-    Utmost care must be taken to preserve the images's integrity,
+    Utmost care must be taken to preserve the image's integrity,
     especially for edges of objects or phases.
     Furthermore, some simulations are more sensitive to these kinds of changes.
     If you think you shouldn't do this for your simulation, you probably shouldn't.
@@ -73,9 +73,7 @@ def mask_from_image(image_path, scale=1.0, denoise=True, show_image=True):
     logger.debug("Opened image '%s'.", image_path)
 
     # Apply the scale.
-    if scale != 1.0:
-        gray_image = rescale(gray_image, scale, anti_aliasing=True)
-        logger.debug('Applied a scale of %.2f.', scale)
+    gray_image = resize_image(gray_image, scale)
 
     # Denoise the image using a Bilateral filer.
     if denoise:
@@ -132,26 +130,51 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
     # TODO: test input with and without move axis.
 
     # Apply the scale.
-    if scale != 1.0:
-        # For boolean images, order has to be 0, which means that
+    full_image = resize_image(full_image, scale)
+    return full_image
+
+
+def resize_image(image, scale):
+    """Resize an image.
+
+    Args:
+        image (numpy.ndarray): The image to be resized.
+                               If the input image is a boolean mask, nearest-neighbor
+                               interpolation will be used without anti-aliasing and
+                               the output will be will be cast to a boolean mask.
+                               Otherwise, a simple resizing operation with default
+                               parameters will be attempted.
+
+        scale (float): The scale to be applied. If equal to 1.0, no scaling will be performed.
+
+    Returns:
+        numpy.ndarray: The resized image.
+    """
+
+    if scale == 1.0:
+        logger.debug('Scale was equal to 1.0. No resizing was performed.')
+        return image
+
+    if image.dtype == bool:
+        # For boolean images, interpolation order has to be 0, which means that
         # the nearest-neighbor interpolation method will be used.
         # Also, anti aliasing has to be turned off.
         # See https://github.com/scikit-image/scikit-image/issues/4292
         # and https://github.com/scikit-image/scikit-image/issues/4998.
-        full_image = rescale(full_image, scale, order=0, anti_aliasing=False)
+        image = rescale(image, scale, order=0, anti_aliasing=False)
 
         # Rescale returns a float array which needs to be converted to bool.
-        if full_image.dtype == float:
-            if all(unique(full_image) == [0.0, 1.0]):
-                full_image = full_image.astype(bool)
+        if image.dtype == float:
+            if all(unique(image) == [0.0, 1.0]):
+                image = image.astype(bool)
             else:
                 raise RuntimeError('It is expected that skimage.transform.rescale '
                                    'returns a float array with only 0.0 and 1.0 values, '
                                    'which was not the case.')
+    else:
+        # Image is not a boolean.
+        # TODO: test data type.
+        image = rescale(image, scale, anti_aliasing=True)
 
-        logger.debug('Applied a scale of %.2f.', scale)
-
-    return full_image
-
-def resize_image(image):
-    #TODO: put all resize code here.
+    logger.debug('Applied a scale of %.2f.', scale)
+    return image
