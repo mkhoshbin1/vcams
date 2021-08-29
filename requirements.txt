@@ -1,2 +1,5 @@
-numpy
-tabulate
+numpy~=1.21.2
+tabulate~=0.8.9
+scikit-image~=0.18.3
+imagecodecs
+matplotlib~=3.4.3
