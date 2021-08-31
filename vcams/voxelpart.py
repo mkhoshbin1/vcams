@@ -1,5 +1,5 @@
 """The voxelpart package contains the main VoxelPart class and its methods."""
-import logging
+import logging  # TODO: add function to close logger.
 import os
 import textwrap
 
@@ -11,6 +11,7 @@ from .output import write_abaqus_inp
 
 logger = logging.getLogger(__name__)
 
+# TODO: add voxel_size to VoxelPart and remove scale from output.
 
 class VoxelPart:
     def __init__(self, size, fill_value=0, dtype='uint8', name='unnamed',
