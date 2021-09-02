@@ -1,5 +1,5 @@
 """The voxelpart package contains the main VoxelPart class and its methods."""
-import logging
+import logging  # TODO: add function to close logger.
 import os
 import textwrap
 
@@ -12,9 +12,13 @@ from .output import write_abaqus_inp
 logger = logging.getLogger(__name__)
 
 
+# TODO: change size to shape.
+# TODO: add shape as a variable with a getter.
+
 class VoxelPart:
-    def __init__(self, size, fill_value=0, dtype='uint8', name='unnamed',
-                 description='', logger_path=os.path.expanduser('~'),
+    def __init__(self, size, fill_value=0, voxel_size=(1, 1, 1),
+                 dtype='uint8', name='unnamed', description='',
+                 logger_path=os.path.expanduser('~'),
                  overwrite_logs=True, log_debug=False):
         """
         Args:
@@ -28,6 +32,13 @@ class VoxelPart:
                               It is passed to numpy.full.
                               Make sure it is within the range specified by *dtype* #TODO: link
                               Defaults to 0 which represents empty space.
+
+            voxel_size (tuple): A tuple containing two or three floats which determine
+                                the size of a voxel in the x, y, and z directions.
+                                For example, if the tuple (0.02, 0.1, 1.5) is specified,
+                                each voxel will have those dimensions in the x, y, and z directions.
+                                If a part is 2D, the third value must be present but is not used.
+                                If it's not present, a value of 1.0 is assigned.
 
             dtype (str): Data type used for creation of :py:attr:`~data`.
                          Because each number represents a material, data
@@ -85,13 +96,23 @@ class VoxelPart:
         else:
             self.data = np.full(shape=size, fill_value=fill_value, dtype=dtype.lower())
 
+        # Validate and set voxel_size. Make sure that it has three elements.
+        voxel_size = np.array(voxel_size, dtype='float')  # This catches strings and such.
+        if voxel_size.shape != (3,):
+            if voxel_size.shape == (2,):  # Add 1.0 as the third element.
+                voxel_size = np.append(voxel_size, 1.0)
+            else:
+                raise ValueError('Invalid value for voxel_size.')
+        self.voxel_size = voxel_size
+
         # Validate name.
         if not helper.is_name_valid(name):
             raise ValueError('Invalid name. Check the documentation for validity criteria.')
         self.name = name
 
         # Validate description.
-        if not (isinstance(description, str) and description.isascii() and description.isprintable()):
+        if not (isinstance(description,
+                           str) and description.isascii() and description.isprintable()):
             raise ValueError('Invalid description.')
         self.description = textwrap.fill(description, width=80)
 
@@ -120,14 +141,18 @@ class VoxelPart:
                     name, '*'.join(str(s) for s in size), fill_value)
 
     def output_abaqus_inp(self, file_name, folder_path, elem_type, dim,
-                          scale, material_elem_sets, custom_elem_sets):
+                          material_elem_sets, custom_elem_sets):
         """Output the part to an Abaqus (TM) input file.
         For a full list of parameters, see :py:meth:`output.write_abaqus_inp`.
+        Note that the parameter *scale* is not used in this function and
+        is equal to VoxelPart.voxel_size.
         """
 
         # Logging is done by the called function.
         write_abaqus_inp(self, file_name, folder_path, elem_type, dim,
-                         scale, material_elem_sets, custom_elem_sets)
+                         scale=tuple(self.voxel_size),
+                         material_elem_sets=material_elem_sets,
+                         custom_elem_sets=custom_elem_sets)
 
     def return_material_elem_set(self, mat_code, num_padding=0):
         """Return the IDs of the elements in the part that correspond to the given material code
@@ -148,7 +173,8 @@ class VoxelPart:
         name = 'MAT-{mat_code:0{num_padding}d}'.format(mat_code=mat_code, num_padding=num_padding)
         # Source: https://stackoverflow.com/a/32413139/7180705
         elem_ids = np.ravel_multi_index(multi_index=np.nonzero(self.data == mat_code),
-                                        dims=self.data.shape, mode='raise', order='C').astype('uint32')
+                                        dims=self.data.shape, mode='raise', order='C').astype(
+            'uint32')
         return name, elem_ids
 
     def add_custom_elem_set(self, name, elem_ids, replace=True):
@@ -198,11 +224,15 @@ class VoxelPart:
 
         # Make sure mask and self.data have the same shape.
         if mask.shape != self.data.shape:
-            raise ValueError('mask is not of the same shape as VoxelPart.data.')
-        
+            if self.data.ndim == 2 and mask.shape[2] == 1:
+                pass
+            else:
+                raise ValueError('mask is not of the same shape as VoxelPart.data.')
+
         # Make sure mask and self.data have the same order (Fortran or C contiguity).
         if mask.flags.f_contiguous != self.data.flags.f_contiguous:
-            raise ValueError('mask is not of the same order (Fortran or C contiguity) as VoxelPart.data.')
+            raise ValueError('mask is not of the same order (Fortran or C contiguity) as '
+                             'VoxelPart.data.')
 
         # Make sure value is a nonzero integer within the bounds of self.data.dtype.
         if not float(value).is_integer():

@@ -147,8 +147,8 @@ def resize_image(image, scale):
 
         scale (float): The scale to be applied. If equal to 1.0, no scaling will be performed.
 
-    Returns:
-        numpy.ndarray: The resized image.
+    Returns: numpy.ndarray
+        The resized image.
     """
 
     if scale == 1.0:

@@ -457,7 +457,7 @@ def write_elem_set_def(part, material_elem_sets, folder_path, custom_elem_sets=T
 
 def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
                          elem_set_stats, elapsed_time):
-    """ Write a summary of the output to the main log.
+    """Write a summary of the output to the main log.
 
     The log file is extracted from the root logger.
 
@@ -482,6 +482,7 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
     # Prepare part summary.
     part_summary = (
         ('Part Name', part.name),
+        ('Part   Dimensions', '*'.join(str(i) for i in part.data.shape)),
         ('Output Dimensions', dim.upper()),
         ('Element Type', elem_type),
         ('Number of Elements', num_elems),
@@ -495,17 +496,19 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
     elem_set_stats_list = sorted(elem_set_stats.items(), key=lambda x: x[1], reverse=True)
     for item in elem_set_stats_list:
         if item[0].upper().startswith('MAT-'):
-            mat_elem_sets.append((item[0], item[1], '{:.2f}'.format((item[1] / num_elems) * 100)))
+            mat_elem_sets.append((item[0], item[1],
+                                  '{:.2f}'.format((item[1] / num_elems) * 100),
+                                  '{:.2f}'.format((item[1] / part.data.size) * 100)))
         else:
             custom_elem_sets.append((item[0], item[1], '{:.2f}'.format((item[1] / num_elems) * 100)))
-
     logger_stream = logger.root.handlers[0].stream
     logger_stream.writelines((
         '\nModel Details\n',
         tabulate.tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n',
         '\nMaterial Element Sets\n',
         tabulate.tabulate(mat_elem_sets,
-                          headers=('Set Name', 'Number of Elements', 'Percent of All Elements'),
+                          headers=('Set Name', 'Number of Elements',
+                                   'Percent of All Elements', 'Percent of Model'),
                           tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n',
     ))
 
