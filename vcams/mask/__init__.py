@@ -1,3 +1,3 @@
 """Various masks to be used for manipulating VoxelPart objects."""
 
-from . import function, image, shape
+from . import function, image, shape, tpms

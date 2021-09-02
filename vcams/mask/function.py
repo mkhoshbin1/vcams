@@ -16,7 +16,7 @@ def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
                             the shape of the returned boolean mask.
         func (function): A function object which evaluates a point and returns a value.
                          This function must accept x, y, and z parameters (if not use them)
-                         and can receive other key-word arguments. See **kwargs.
+                         and can receive other keyword arguments. See **kwargs.
                          This function can represent anything, for example:
                            + A level-set function such as the Schwarz P
                            triply periodic minimal surface (TPMS).
@@ -99,7 +99,7 @@ def is_voxel_inside(x, y, z, voxel_size, func, **kwargs):
 
         func (function): A function object which evaluates a point and returns a value.
                          This function must accept x, y, and z parameters (if not use them)
-                         and can receive other key-word arguments. See **kwargs.
+                         and can receive other keyword arguments. See **kwargs.
                          This function can represent anything, for example:
                            + A level-set function such as the Schwarz P
                            triply periodic minimal surface (TPMS).

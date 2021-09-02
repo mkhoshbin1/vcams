@@ -17,12 +17,6 @@ part = vcams.voxelpart.VoxelPart(size=(50, 50), fill_value=1,
                                  description='A square 50*50 part created using a circle mask.',
                                  logger_path=results_path)
 
-
-# Define a function describing the surface of a sphere.
-def circle_curve(x, y, z, a, b, r):
-    return (x - a) ** 2 + (y - b) ** 2 - r ** 2
-
-
 # Create a mask with the same shape and voxel_size as as the part.
 t = part.data.shape[0] * part.voxel_size[0] / 2
 circle_mask = vcams.mask.function.mask_from_function(mask_shape=part.data.shape,
