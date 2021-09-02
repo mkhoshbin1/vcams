@@ -26,7 +26,7 @@ def sphere_surface(x, y, z, a, b, c, r):
 # Create a mask with the same shape and voxel_size as as the part.
 t = part.data.shape[0] * part.voxel_size[0]/2
 sphere_mask = vcams.mask.function.mask_from_function(mask_shape=part.data.shape,
-                                                     func=sphere_surface,
+                                                     func=vcams.mask.shape.sphere,
                                                      voxel_size=part.voxel_size,
                                                      a=t, b=t, c=t, r=t)
 

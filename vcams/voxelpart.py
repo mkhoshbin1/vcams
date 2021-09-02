@@ -12,7 +12,8 @@ from .output import write_abaqus_inp
 logger = logging.getLogger(__name__)
 
 
-# TODO: add voxel_size to VoxelPart and remove scale from output.
+# TODO: change size to shape.
+# TODO: add shape as a variable with a getter.
 
 class VoxelPart:
     def __init__(self, size, fill_value=0, voxel_size=(1, 1, 1),

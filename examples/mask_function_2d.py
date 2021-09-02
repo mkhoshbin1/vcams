@@ -26,7 +26,7 @@ def circle_curve(x, y, z, a, b, r):
 # Create a mask with the same shape and voxel_size as as the part.
 t = part.data.shape[0] * part.voxel_size[0] / 2
 circle_mask = vcams.mask.function.mask_from_function(mask_shape=part.data.shape,
-                                                     func=circle_curve,
+                                                     func=vcams.mask.shape.circle,
                                                      voxel_size=part.voxel_size,
                                                      a=t, b=t, r=t)
 
