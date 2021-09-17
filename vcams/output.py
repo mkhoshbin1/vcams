@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
                      scale, material_elem_sets,
-                     custom_elem_sets=True, keep_temp_files=False):
+                     custom_elem_sets=True, write_assembly=True,
+                     keep_temp_files=False):
     """Write a VoxelPart object to an Abaqus (TM) input file.
 
     Args:
@@ -44,6 +45,11 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
 
         custom_elem_sets (bool): If set to :py:obj:`True`, custom sets will be written to the output.
                                  Defaults to :py:obj:`True`.
+
+        write_assembly (bool): If set to :py:obj:`True`, an instance of the part will be
+                               written to the assembly without any translation or rotation.
+                               Some features such as constraints require this to be :py:obj:`True`.
+                               Defaults to :py:obj:`True`.
 
         keep_temp_files (bool): If set to :py:obj:`True`, temporary files will not be deleted.
                                 Defaults to :py:obj:`False`.
@@ -107,7 +113,25 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
             shutil.copyfileobj(elem_set_file, main_file)
 
         # Declare the end of this part.
-        main_file.write('*END PART\n\n')
+        main_file.write('*END PART\n**\n\n')
+
+        # Write an instance of the part to the assembly.
+        if write_assembly:
+            # Declare the assembly portion of the input file as a comment
+            # and create an assembly.
+            main_file.write('**\n** Assembly\n**\n\n')
+
+            # Declare the assembly.
+            main_file.write('*ASSEMBLY, NAME=Assembly\n\n')
+
+            # Declare the instance.
+            main_file.write('*INSTANCE, NAME="%s", PART="%s"\n' % (part.name+'-Ins', part.name))
+            main_file.write('*END INSTANCE\n**\n\n')
+
+            # TODO add constraints here.
+
+            # Declare the end of the assembly portion of the input file.
+            main_file.write('*END ASSEMBLY\n**\n\n')
 
     # Delete temporary file.
     if not keep_temp_files:
