@@ -1,5 +1,7 @@
 """Various helper functions."""
 
+from pathlib import Path
+
 
 def is_name_valid(name):
     """ Check whether a string represents a valid name.
@@ -46,8 +48,34 @@ def is_name_valid(name):
         return False
     elif any((n in special_chars) for n in name):
         return False
-    elif not(name.isascii() and name.isprintable()):
+    elif not (name.isascii() and name.isprintable()):
         # Source: https://stackoverflow.com/a/51141941/7180705.
         return False
     else:
         return True
+
+
+def return_default_results_path(part_name=None):
+    """Return a suitable path in the user's Desktop
+       for storing the intermediate and final results of the program.
+
+    Args:
+        part_name (str): Name of the part which is to be output
+                         which must be valid according to #TODO.
+                         If set to :py:obj:`None`, the folder will simply be named 'results'.
+                         Defaults to :py:obj:`None`.
+
+    Returns:
+        A path object containing the full path of a suitable folder in the users Desktop.
+    """
+
+    parts = ['Desktop', 'VCAMS Results']
+    # Validate part_name.
+    if part_name is None:
+        pass  # No subfolder.
+    elif is_name_valid(part_name):
+        parts.append(part_name)
+    else:
+        raise ValueError('part_name is not valid.')
+
+    return Path.home().joinpath(*parts)

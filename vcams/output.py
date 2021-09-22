@@ -80,7 +80,7 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
                                                  scale=scale, dim=dim,
                                                  folder_path=folder_path)
 
-    # Write the final input file.
+    # Write the final input file.  #TODO: better logging.
     main_file_path = os.path.join(folder_path, file_name)
     logger.debug("Assembling temporary files to the main input file at '%s'.", main_file_path)
     with open(main_file_path, 'w', encoding='latin1') as main_file:
@@ -459,15 +459,20 @@ def write_elem_set_def(part, material_elem_sets, folder_path, custom_elem_sets=T
 
     with open(elem_set_file_path, 'w', encoding='latin1') as file_obj:
 
+        # Write node sets.
+        for (name, node_ids) in part.node_sets.items():
+            write_set_ids(file_obj=file_obj, kind='NSET', name=name, ids=node_ids)
+
         # Write custom element sets. The element IDs are unique and sorted.
         if custom_elem_sets and bool(part.elem_sets):
-            for (name, elem_ids) in part.data.elem_sets.items():
+            for (name, elem_ids) in part.elem_sets.items():
                 (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
                                                     name=name, ids=elem_ids)
                 elem_id_list = np.union1d(elem_id_list, elem_ids)
                 elem_set_stats[set_name] = num_ids
 
         # Write the the materials that should be output.
+        # TODO: make sure all materials have at least one element.
         for mat_code in material_elem_sets:
             (name, elem_ids) = part.return_material_elem_set(mat_code)
             (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
