@@ -9,8 +9,6 @@ part = vcams.voxelpart.VoxelPart(size=(50, 100), fill_value=1,
                                  name='Filled 2D Part',
                                  description='A square 50*50 part filled with elements.')
 
-vcams.bc.create_node_set_2d_edges(part)
-
 # Output the part.
 part.output_abaqus_inp(file_name='complete_part_2d',
                        elem_type='CPE4R', dim='2D',

@@ -451,7 +451,7 @@ def write_elem_set_def(part, material_elem_sets, folder_path, custom_elem_sets=T
                and the third element is a dictionary where the keys are names
                of the element sets and the values are the number of elements in that set.
     """
-
+    #TODO: rename to include not sets.
     logger.debug("Attempting to write element sets to the temporary file 'elset.tmp'.")
     elem_set_stats = dict()
     elem_id_list = np.array([], order='C', dtype='uint32')
