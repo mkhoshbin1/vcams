@@ -167,7 +167,9 @@ class VoxelPart:
                          scale=tuple(self.voxel_size),
                          material_elem_sets=material_elem_sets,
                          custom_elem_sets=custom_elem_sets,
-                         write_assembly=True, keep_temp_files=False)
+                         write_assembly=True,
+                         add_dummy_node=True,
+                         keep_temp_files=False)
 
     def return_material_elem_set(self, mat_code, num_padding=0):
         """Return the IDs of the elements in the part that correspond to the given material code

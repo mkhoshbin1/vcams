@@ -12,6 +12,7 @@ def create_node_sets(part, dim):
 
     if dim not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
+
     # TODO: Consider checking part.data for missing elements.
 
     # Define a ravel function based on numpy.ravel_multi_index.
