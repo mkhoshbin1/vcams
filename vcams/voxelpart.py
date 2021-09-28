@@ -163,7 +163,7 @@ class VoxelPart:
         # Logging is done by the called function.
         write_abaqus_inp(self, file_name=file_name,
                          folder_path=self.results_path,
-                         elem_type=elem_type, dim=dim,
+                         elem_code=elem_type, dim=dim,
                          scale=tuple(self.voxel_size),
                          material_elem_sets=material_elem_sets,
                          custom_elem_sets=custom_elem_sets,

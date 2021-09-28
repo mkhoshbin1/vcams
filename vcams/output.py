@@ -15,7 +15,7 @@ from . import helper
 logger = logging.getLogger(__name__)
 
 
-def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
+def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
                      scale, material_elem_sets,
                      custom_elem_sets=True, add_dummy_node=True,
                      write_assembly=True, keep_temp_files=False):
@@ -31,7 +31,7 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
         folder_path (str): Path to the folder where the temporary element definition file
                            will be placed.
 
-        elem_type (str): An uppercase string denoting the element code assigned to *all* elements.
+        elem_code (str): An uppercase string denoting the element code assigned to *all* elements.
                          It must be a valid Abaqus element code such as 'CPE4R' or 'C3D8R'.
                          No validation is performed by the function.
 
@@ -84,7 +84,7 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
     # Write temporary element definition file.
     (elem_file_path, num_elems, node_id_list) = write_elem_def(part_data_shape=part.data.shape,
                                                                elem_id_list=elem_id_list,
-                                                               elem_type=elem_type, dim=dim,
+                                                               elem_type=elem_code, dim=dim,
                                                                folder_path=folder_path)
 
     # Write temporary node definition file.
@@ -159,7 +159,7 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
     logger.info("Finished exporting part '%s' to the Abaqus input file at '%s'.",
                 part.name, main_file_path)
 
-    write_output_summary(part, dim, elem_type, num_nodes, num_elems, elem_set_stats, elapsed_time)
+    write_output_summary(part, dim, elem_code, num_nodes, num_elems, elem_set_stats, elapsed_time)
 
 
 def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
