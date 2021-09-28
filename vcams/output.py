@@ -5,8 +5,9 @@ import os
 import time
 import shutil
 
-import numpy as np
-import tabulate
+from numpy import savetxt, unravel_index, ravel_multi_index, array, unique, uint32, float64, \
+    union1d, any, zeros, append
+from tabulate import tabulate
 
 from . import __version__, __website__
 from . import helper
@@ -14,9 +15,10 @@ from . import helper
 logger = logging.getLogger(__name__)
 
 
-def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
+def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
                      scale, material_elem_sets,
-                     custom_elem_sets=True, keep_temp_files=False):
+                     custom_elem_sets=True, add_dummy_node=True,
+                     write_assembly=True, keep_temp_files=False):
     """Write a VoxelPart object to an Abaqus (TM) input file.
 
     Args:
@@ -26,17 +28,20 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
                          for :py:meth:`helper.is_name_valid`.
                          Also, it should not contain any file extensions.
 
-        folder_path (str): Path to the folder where the temporary element definition file will be placed.
+        folder_path (str): Path to the folder where the temporary element definition file
+                           will be placed.
 
-        elem_type (str): An uppercase string denoting the element code assigned to *all* elements.
+        elem_code (str): An uppercase string denoting the element code assigned to *all* elements.
                          It must be a valid Abaqus element code such as 'CPE4R' or 'C3D8R'.
                          No validation is performed by the function.
 
         dim (str): Dimensionality of the output part. Valid values are '2D' and '3D'.
-                   If a 3D part is set to be output as a 2D plate, only the first row will be printed.
+                   If a 3D part is set to be output as a 2D plate,
+                   only the first row will be printed.
 
-        scale (tuple): A tuple containing two or three floats which are used to scale the pixels or voxels
-                       in the x, y, and z direction. For example, if the tuple (0.02, 0.1, 1.5) is specified,
+        scale (tuple): A tuple containing two or three floats which are used to scale
+                       the pixels or voxels in the x, y, and z direction.
+                       For example, if the tuple (0.02, 0.1, 1.5) is specified,
                        each voxel will have those dimensions in the x, y, and z directions.
 
         material_elem_sets (tuple): A tuple of integer material codes corresponding
@@ -44,6 +49,16 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
 
         custom_elem_sets (bool): If set to :py:obj:`True`, custom sets will be written to the output.
                                  Defaults to :py:obj:`True`.
+
+        write_assembly (bool): If set to :py:obj:`True`, an instance of the part will be
+                               written to the assembly without any translation or rotation.
+                               Some features such as constraints require this to be :py:obj:`True`.
+                               Defaults to :py:obj:`True`.
+
+        add_dummy_node (bool): If set to :py:obj:`True`, a dummy node is added which can be used
+                               as a reference point for loading. The dummy node will be located
+                               at 10% distance to the furthest node of the part.
+                               Defaults to :py:obj:`True`.
 
         keep_temp_files (bool): If set to :py:obj:`True`, temporary files will not be deleted.
                                 Defaults to :py:obj:`False`.
@@ -58,23 +73,29 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
         raise ValueError('Invalid file_name. Check the documentation for validity criteria.')
     file_name = file_name + '.inp'
 
+    dummy_node_id = 999999999  # Will only be used if add_dummy_node is True.
+    if add_dummy_node:
+        part.add_node_set(name='RP-NodeSet', ids=(dummy_node_id-1,))  # ids is zero-based.
+
     # Write element sets.
-    (elem_set_file_path, elem_id_list, elem_set_stats) = \
-        write_elem_set_def(part, material_elem_sets, folder_path, custom_elem_sets)
+    (set_file_path, elem_id_list, elem_set_stats) = \
+        write_set_def(part, material_elem_sets, folder_path, custom_elem_sets)
 
     # Write temporary element definition file.
     (elem_file_path, num_elems, node_id_list) = write_elem_def(part_data_shape=part.data.shape,
                                                                elem_id_list=elem_id_list,
-                                                               elem_type=elem_type, dim=dim,
+                                                               elem_type=elem_code, dim=dim,
                                                                folder_path=folder_path)
 
     # Write temporary node definition file.
-    (node_file_path, num_nodes) = write_node_def(part_data_shape=part.data.shape,
-                                                 node_id_list=node_id_list,
-                                                 scale=scale, dim=dim,
-                                                 folder_path=folder_path)
+    (node_file_path, num_nodes, dummy_node_id) = write_node_def(part_data_shape=part.data.shape,
+                                                                node_id_list=node_id_list,
+                                                                scale=scale, dim=dim,
+                                                                folder_path=folder_path,
+                                                                add_dummy_node=add_dummy_node,
+                                                                dummy_node_id=dummy_node_id)
 
-    # Write the final input file.
+    # Write the final input file.  #TODO: better logging.
     main_file_path = os.path.join(folder_path, file_name)
     logger.debug("Assembling temporary files to the main input file at '%s'.", main_file_path)
     with open(main_file_path, 'w', encoding='latin1') as main_file:
@@ -103,24 +124,42 @@ def write_abaqus_inp(part, file_name, folder_path, elem_type, dim,
             shutil.copyfileobj(elem_file, main_file)
 
         # Write element sets.
-        with open(elem_set_file_path, 'r') as elem_set_file:
+        with open(set_file_path, 'r') as elem_set_file:
             shutil.copyfileobj(elem_set_file, main_file)
 
         # Declare the end of this part.
-        main_file.write('*END PART\n\n')
+        main_file.write('*END PART\n**\n\n')
+
+        # Write an instance of the part to the assembly.
+        if write_assembly:
+            # Declare the assembly portion of the input file as a comment
+            # and create an assembly.
+            main_file.write('**\n** Assembly\n**\n\n')
+
+            # Declare the assembly.
+            main_file.write('*ASSEMBLY, NAME=Assembly\n\n')
+
+            # Declare the instance.
+            main_file.write('*INSTANCE, NAME="%s", PART="%s"\n' % (part.name + '-Ins', part.name))
+            main_file.write('*END INSTANCE\n**\n\n')
+
+            # TODO add constraints here.
+
+            # Declare the end of the assembly portion of the input file.
+            main_file.write('*END ASSEMBLY\n**\n\n')
 
     # Delete temporary file.
     if not keep_temp_files:
         logger.debug('Deleting temporary files.')
         os.remove(node_file_path)
         os.remove(elem_file_path)
-        os.remove(elem_set_file_path)
+        os.remove(set_file_path)
 
     elapsed_time = time.perf_counter() - begin_time
     logger.info("Finished exporting part '%s' to the Abaqus input file at '%s'.",
                 part.name, main_file_path)
 
-    write_output_summary(part, dim, elem_type, num_nodes, num_elems, elem_set_stats, elapsed_time)
+    write_output_summary(part, dim, elem_code, num_nodes, num_elems, elem_set_stats, elapsed_time)
 
 
 def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
@@ -137,14 +176,17 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
     To get around this, you can convert to quadratic elements after importing the model to Abaqus.
 
     Args:
-        part_data_shape (tuple): Shape of :py:attr:`VoxelPart.~data` which can be obtained using its *shape()* method.
+        part_data_shape (tuple): Shape of :py:attr:`VoxelPart.~data`
+                                 which can be obtained using its *shape()* method.
 
-        elem_id_list (numpy.ndarray): A 1-D Numpy ndarray containing IDs of elements which must be output.
+        elem_id_list (numpy.ndarray): A 1-D Numpy ndarray containing IDs of elements
+                                      which must be output.
                                       The function makes sure that it is unique and sorted.
                                       Note that Abaqus only accepts element IDs that are positive
                                       and less than 999999999.
-                                      Elements IDs must also be integers, but this is not directly checked.
-                                      However, they will raise an error once they are passed as indices to numpy.
+                                      Elements IDs must also be integers, but this is not
+                                      directly checked. However, they will raise an error
+                                      once they are passed as indices to numpy.
 
         elem_type (str): An uppercase string denoting the element code assigned to *all* elements.
                          It must be a valid Abaqus element code such as 'CPE4R' or 'C3D8R'.
@@ -153,7 +195,8 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
         dim (str): Dimensionality of the output part. Valid values are '2D' and '3D'.
                    If a 3D part is set to be output as a 2D plate,
 
-        folder_path (str): Path to the folder where the temporary element definition file will be placed.
+        folder_path (str): Path to the folder where the temporary element definition file
+                           will be placed.
 
     Returns:
         tuple: The tuple *(file_path, num_elems, node_id_list)* containing
@@ -166,7 +209,7 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
     # Validate elem_id_list. Note that values are not checked.
     if len(elem_id_list) == 0:
         raise ValueError('elem_id_list is empty. At least one element must be selected for output.')
-    if np.any(elem_id_list < 0):
+    if any(elem_id_list < 0):
         raise ValueError('At least on element in elem_id_list is negative' +
                          ' which will result in a non-positive ID in the input file.')
     if max(elem_id_list) >= 999999999:
@@ -178,7 +221,7 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
         raise ValueError("dim can only be one of '2D' or '3D'.")
 
     # Make sure elem_id_list is unique and sorted.
-    elem_id_list = np.unique(elem_id_list)
+    elem_id_list = unique(elem_id_list)
 
     # Preallocate memory for the connectivity table.
     if dim.upper() == '2D':
@@ -189,57 +232,69 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
         num_cols = 9
     else:
         raise RuntimeError('Unexpected value for dim. This should have been caught earlier.')
-    connectivity_table = np.zeros((elem_id_list.size, num_cols), dtype=np.uint32, order='C')
+    connectivity_table = zeros((elem_id_list.size, num_cols), dtype=uint32, order='C')
 
     # In each direction, node array is larger by one.
     node_array_shape = tuple(i + 1 for i in elem_array_shape)
 
     # Find the coordinates for the elements in elem_id_list.
-    elem_inds = np.unravel_index(elem_id_list, elem_array_shape, order='C')
+    elem_inds = unravel_index(elem_id_list, elem_array_shape, order='C')
 
     # Add elem_id_list as the first column.
     connectivity_table[:, 0] = elem_id_list + 1
 
     # For each element in elem_id_list, find its nodes.
     if dim.upper() == '2D':
-        connectivity_table[:, 1] = np.ravel_multi_index(multi_index=(elem_inds[0], elem_inds[1]),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 2] = np.ravel_multi_index(multi_index=(elem_inds[0] + 1, elem_inds[1]),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 3] = np.ravel_multi_index(multi_index=(elem_inds[0] + 1, elem_inds[1] + 1),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 4] = np.ravel_multi_index(multi_index=(elem_inds[0], elem_inds[1] + 1),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 1] = ravel_multi_index(multi_index=(elem_inds[0], elem_inds[1]),
+                                                     dims=node_array_shape, mode='raise',
+                                                     order='C') + 1
+        connectivity_table[:, 2] = ravel_multi_index(multi_index=(elem_inds[0] + 1, elem_inds[1]),
+                                                     dims=node_array_shape, mode='raise',
+                                                     order='C') + 1
+        connectivity_table[:, 3] = ravel_multi_index(
+            multi_index=(elem_inds[0] + 1, elem_inds[1] + 1),
+            dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 4] = ravel_multi_index(multi_index=(elem_inds[0], elem_inds[1] + 1),
+                                                     dims=node_array_shape, mode='raise',
+                                                     order='C') + 1
     elif dim.upper() == '3D':
-        connectivity_table[:, 1] = np.ravel_multi_index(multi_index=(elem_inds[0], elem_inds[1], elem_inds[2]),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 2] = np.ravel_multi_index(multi_index=(elem_inds[0] + 1, elem_inds[1], elem_inds[2]),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 3] = np.ravel_multi_index(multi_index=(elem_inds[0] + 1, elem_inds[1] + 1, elem_inds[2]),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 4] = np.ravel_multi_index(multi_index=(elem_inds[0], elem_inds[1] + 1, elem_inds[2]),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 5] = np.ravel_multi_index(multi_index=(elem_inds[0], elem_inds[1], elem_inds[2] + 1),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 6] = np.ravel_multi_index(multi_index=(elem_inds[0] + 1, elem_inds[1], elem_inds[2] + 1),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 7] = np.ravel_multi_index(
+        connectivity_table[:, 1] = ravel_multi_index(
+            multi_index=(elem_inds[0], elem_inds[1], elem_inds[2]),
+            dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 2] = ravel_multi_index(
+            multi_index=(elem_inds[0] + 1, elem_inds[1], elem_inds[2]),
+            dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 3] = ravel_multi_index(
+            multi_index=(elem_inds[0] + 1, elem_inds[1] + 1, elem_inds[2]),
+            dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 4] = ravel_multi_index(
+            multi_index=(elem_inds[0], elem_inds[1] + 1, elem_inds[2]),
+            dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 5] = ravel_multi_index(
+            multi_index=(elem_inds[0], elem_inds[1], elem_inds[2] + 1),
+            dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 6] = ravel_multi_index(
+            multi_index=(elem_inds[0] + 1, elem_inds[1], elem_inds[2] + 1),
+            dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 7] = ravel_multi_index(
             multi_index=(elem_inds[0] + 1, elem_inds[1] + 1, elem_inds[2] + 1),
             dims=node_array_shape, mode='raise', order='C') + 1
-        connectivity_table[:, 8] = np.ravel_multi_index(multi_index=(elem_inds[0], elem_inds[1] + 1, elem_inds[2] + 1),
-                                                        dims=node_array_shape, mode='raise', order='C') + 1
+        connectivity_table[:, 8] = ravel_multi_index(
+            multi_index=(elem_inds[0], elem_inds[1] + 1, elem_inds[2] + 1),
+            dims=node_array_shape, mode='raise', order='C') + 1
     else:
         raise RuntimeError('Unexpected value for dim. This should have been caught earlier.')
 
     # Write the element connectivity table to a temporary text file.
     file_path = os.path.join(folder_path, 'elem_def.tmp')
-    np.savetxt(fname=file_path, X=connectivity_table,
-               fmt='%u', delimiter=',', comments='', encoding='latin1',
-               header=('*ELEMENT, TYPE=%s' % elem_type), footer='\n')
+    # noinspection PyTypeChecker
+    savetxt(fname=file_path, X=connectivity_table,
+            fmt='%u', delimiter=',', comments='', encoding='latin1',
+            header=('*ELEMENT, TYPE=%s' % elem_type), footer='\n')
 
     # Create a sorted array of unique node IDs in the connectivity matrix
     # and revert node IDs to zero-based indexing.
-    node_id_list = np.unique(connectivity_table[:, 1:]) - 1
+    node_id_list = unique(connectivity_table[:, 1:]) - 1
     num_elems = len(elem_id_list)
 
     logger.debug("Wrote %u %s elements of type '%s' to the temporary file 'elem_def.tmp'.",
@@ -247,7 +302,8 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
     return file_path, num_elems, node_id_list
 
 
-def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path):
+def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
+                   add_dummy_node=True, dummy_node_id=999999999):
     """Write the node definition portion of an Abaqus input file to a temporary file,
     which will be concatenated with other portions to form an input file.
 
@@ -257,7 +313,8 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path):
     Currently, only cartesian global coordinates are supported.
 
     Args:
-        part_data_shape (tuple): Shape of :py:attr:`VoxelPart.~data` which can be obtained using its *shape()* method.
+        part_data_shape (tuple): Shape of :py:attr:`VoxelPart.~data`
+                                 which can be obtained using its *shape()* method.
 
         node_id_list (numpy.ndarray): A 1-D Numpy ndarray containing IDs of nodes which must be output.
                                       The function makes sure that it is unique and sorted.
@@ -274,22 +331,33 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path):
 
         folder_path (str): Path to the folder where the temporary node definition file will be placed.
 
+        add_dummy_node (bool): If set to :py:obj:`True`, a dummy node is added which can be used
+                               as a reference point for loading. The dummy node will be located
+                               at 10% distance to the furthest node of the part.
+                               Defaults to :py:obj:`True`.
+
+        dummy_node_id (int): ID of the dummy node. It's written as-is (no changes)
+                             and will only be used if *add_dummy_node* is set to :py:obj:`True`.
+                             Defaults to 999999999.
+
     Returns:
-        tuple: The tuple *(file_path, num_nodes)* containing
+        tuple: The tuple *(file_path, num_nodes, dummy_node_id)* containing
         the path to the temporary element definition file,
-        and the number of nodes which have been written to the file.
+        the number of nodes which have been written to the file,
+        and the id of the dummy node which is either an integer or :py:obj:`None`.
     """
 
     logger.debug("Attempting to write node definitions to the temporary file 'node_def.tmp'.")
     # Validate node_id_list.
     if len(node_id_list) == 0:
         raise ValueError('node_id_list is empty. At least one node must be selected for output.')
-    if np.any(node_id_list < 0):
+    if any(node_id_list < 0):
         raise ValueError('At least on element in node_id_list is negative' +
                          ' which will result in a non-positive ID in the input file.')
-    if max(node_id_list) >= 999999999:
+    if max(node_id_list) >= 999999998:
         raise RuntimeError(('At least one node has an ID greater than 999999999,' +
                             ' which is not supported by Abaqus (TM).'))
+    num_real_nodes = node_id_list.size
 
     # Validate dim.
     if dim not in ['2D', '3D']:
@@ -306,31 +374,40 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path):
         raise RuntimeError('Unexpected value for dim. This should have been caught earlier.')
 
     # Preallocate memory for node_coordinates.
-    node_table = np.zeros((node_id_list.size, num_cols), dtype=np.float64, order='C')
+    # The dummy node is added at the end, so allocate accordingly.
+    if add_dummy_node:
+        node_table = zeros((num_real_nodes + 1, num_cols), dtype=float64, order='C')
+    else:
+        node_table = zeros((num_real_nodes, num_cols), dtype=float64, order='C')
 
     # Add node_id_list as the first column of node_table.
-    node_table[:, 0] = node_id_list + 1
+    node_table[:num_real_nodes, 0] = node_id_list + 1
 
     # Obtain Cartesian coordinates of each node by unraveling its index and multiplying it by scale.
     node_array_shape = tuple(i + 1 for i in part_data_shape)
-    raw_indices = np.unravel_index(node_id_list, node_array_shape, order='C')
+    raw_indices = unravel_index(node_id_list, node_array_shape, order='C')
 
     # Add node coordinates to node_table.
-    node_table[:, 1] = (raw_indices[0]) * scale[0]
-    node_table[:, 2] = (raw_indices[1]) * scale[1]
+    node_table[:num_real_nodes, 1] = raw_indices[0] * scale[0]
+    node_table[:num_real_nodes, 2] = raw_indices[1] * scale[1]
     if dim.upper() == '3D':
-        node_table[:, 3] = (raw_indices[2]) * scale[2]
+        node_table[:num_real_nodes, 3] = raw_indices[2] * scale[2]
+
+    # Add the dummy node to the end of the table.
+    if add_dummy_node:
+        node_table[-1, :] = append(
+            array([dummy_node_id]), (node_table.max(axis=0, initial=-1) * 1.10)[1:])
 
     # Write node_table to a temporary text file.
     file_path = os.path.join(folder_path, 'node_def.tmp')
-    np.savetxt(fname=file_path, X=node_table,
-               fmt=fmt, delimiter=',', comments='', encoding='latin1',
-               header='*NODE', footer='\n')
+    # noinspection PyTypeChecker
+    savetxt(fname=file_path, X=node_table,
+            fmt=fmt, delimiter=',', comments='', encoding='latin1',
+            header='*NODE', footer='\n')
 
-    num_nodes = len(node_id_list)
-
-    logger.debug("Wrote %u %s nodes to the temporary file 'node_def.tmp'.", num_nodes, dim.upper())
-    return file_path, num_nodes
+    logger.debug("Wrote %u %s nodes to the temporary file 'node_def.tmp'.",
+                 num_real_nodes, dim.upper())
+    return file_path, num_real_nodes, dummy_node_id
 
 
 def write_set_ids(file_obj, kind, name, ids):
@@ -344,7 +421,7 @@ def write_set_ids(file_obj, kind, name, ids):
         name (str): Name of the set. Must be valid according to the documentation
                     for :py:meth:`helper.is_name_valid`.
 
-        ids (numpy.ndarray): A 1-D Numpy ndarray containing IDs of nodes or elements
+        ids (numpy.ndarray): A 1-D Numpy ndarray containing zero-based IDs of nodes or elements
                              which form the set.
                              The function makes sure that it is unique and sorted.
                              Note that Abaqus only accepts node IDs that are positive
@@ -363,14 +440,14 @@ def write_set_ids(file_obj, kind, name, ids):
     # Validate ids. Note that values are not checked.
     if len(ids) == 0:
         raise ValueError('ids is empty. At least one ID must be selected for output.')
-    if np.any(ids < 0):
+    if any(ids < 0):
         raise ValueError('At least on element in ids is negative' +
                          ' which will result in a non-positive ID in the input file.')
     if max(ids) >= 999999999:
         raise RuntimeError(('At least one ID is greater than 999999999,' +
                             ' which is not supported by Abaqus (TM).'))
     # Make sure ids is unique and sorted.
-    ids = np.unique(ids)
+    ids = unique(ids)
 
     # IDs start at zero (zero-based indexing).
     # Add the number 1 to all of them to account for that.
@@ -393,9 +470,9 @@ def write_set_ids(file_obj, kind, name, ids):
         main_chunk = ids[:-num_extra].reshape((-1, 9))
         extra_chunk = ids[-num_extra:]
         # Write the main chunk using numpy.
-        np.savetxt(fname=file_obj, X=main_chunk,
-                   fmt='%u', delimiter=',', newline=',\n', comments='', encoding='latin1',
-                   header='', footer='')
+        savetxt(fname=file_obj, X=main_chunk,
+                fmt='%u', delimiter=',', newline=',\n', comments='', encoding='latin1',
+                header='', footer='')
 
     # Write the extra chunk manually.
     file_obj.write(','.join(['%u'] * len(extra_chunk)) % tuple(extra_chunk))
@@ -404,8 +481,8 @@ def write_set_ids(file_obj, kind, name, ids):
     return name, len(ids)
 
 
-def write_elem_set_def(part, material_elem_sets, folder_path, custom_elem_sets=True):
-    """Write the element set portion of an Abaqus input file to a temporary file.
+def write_set_def(part, material_elem_sets, folder_path, custom_elem_sets=True):
+    """Write the node and element set portion of an Abaqus input file to a temporary file.
     This function also returns which elements must be output.
 
     Args:
@@ -418,41 +495,48 @@ def write_elem_set_def(part, material_elem_sets, folder_path, custom_elem_sets=T
         custom_elem_sets (bool): If set to :py:obj:`True`, custom sets are defined and output.
                                  Defaults to :py:obj:`True`.
 
-        folder_path (str): Path to the folder where the temporary node definition file will be placed.
+        folder_path (str): Path to the folder where the temporary node definition file
+                           will be placed.
 
     Returns:
-        tuple: The tuple (elem_set_file_path, elem_id_list, elem_set_stats) where
-               The first element is the path to the temporary element set definition file,
+        tuple: The tuple (set_file_path, elem_id_list, elem_set_stats) where
+               The first element is the path to the temporary set definition file,
                the second element is a unique sorted list of all element IDs in the sets,
                and the third element is a dictionary where the keys are names
                of the element sets and the values are the number of elements in that set.
     """
 
-    logger.debug("Attempting to write element sets to the temporary file 'elset.tmp'.")
+    logger.debug("Attempting to write node and element sets to the temporary file 'set.tmp'.")
     elem_set_stats = dict()
-    elem_id_list = np.array([], order='C', dtype='uint32')
-    elem_set_file_path = os.path.join(folder_path, 'elset.tmp')
+    elem_id_list = array([], order='C', dtype='uint32')
+    set_file_path = os.path.join(folder_path, 'set.tmp')
 
-    with open(elem_set_file_path, 'w', encoding='latin1') as file_obj:
+    with open(set_file_path, 'w', encoding='latin1') as file_obj:
+
+        # Write node sets.
+        for (name, node_ids) in part.node_sets.items():
+            write_set_ids(file_obj=file_obj, kind='NSET', name=name, ids=node_ids)
 
         # Write custom element sets. The element IDs are unique and sorted.
         if custom_elem_sets and bool(part.elem_sets):
-            for (name, elem_ids) in part.data.elem_sets.items():
+            for (name, elem_ids) in part.elem_sets.items():
                 (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
                                                     name=name, ids=elem_ids)
-                elem_id_list = np.union1d(elem_id_list, elem_ids)
+                elem_id_list = union1d(elem_id_list, elem_ids)
                 elem_set_stats[set_name] = num_ids
 
         # Write the the materials that should be output.
+        # TODO: make sure all materials have at least one element.
         for mat_code in material_elem_sets:
             (name, elem_ids) = part.return_material_elem_set(mat_code)
             (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
                                                 name=name, ids=elem_ids)
-            elem_id_list = np.union1d(elem_id_list, elem_ids)
+            elem_id_list = union1d(elem_id_list, elem_ids)
             elem_set_stats[set_name] = num_ids
 
-    logger.debug("Wrote %u element sets to the temporary file 'elset.tmp'.", len(elem_set_stats))
-    return elem_set_file_path, elem_id_list, elem_set_stats
+    logger.debug("Wrote %u node sets and %u element sets to the temporary file 'set.tmp'.",
+                 len(part.node_sets), len(elem_set_stats))
+    return set_file_path, elem_id_list, elem_set_stats
 
 
 def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
@@ -500,16 +584,17 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
                                   '{:.2f}'.format((item[1] / num_elems) * 100),
                                   '{:.2f}'.format((item[1] / part.data.size) * 100)))
         else:
-            custom_elem_sets.append((item[0], item[1], '{:.2f}'.format((item[1] / num_elems) * 100)))
+            custom_elem_sets.append(
+                (item[0], item[1], '{:.2f}'.format((item[1] / num_elems) * 100)))
     logger_stream = logger.root.handlers[0].stream
     logger_stream.writelines((
         '\nModel Details\n',
-        tabulate.tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n',
+        tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n',
         '\nMaterial Element Sets\n',
-        tabulate.tabulate(mat_elem_sets,
-                          headers=('Set Name', 'Number of Elements',
+        tabulate(mat_elem_sets,
+                 headers=('Set Name', 'Number of Elements',
                                    'Percent of All Elements', 'Percent of Model'),
-                          tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n',
+                 tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n',
     ))
 
     if len(custom_elem_sets) == 0:
@@ -520,9 +605,9 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
     else:
         logger_stream.writelines((
             '\nCustom Element Sets\n',
-            tabulate.tabulate(custom_elem_sets,
-                              headers=('Set Name', 'Number of Elements', 'Percent of All Elements'),
-                              tablefmt='pretty') + '\n',
+            tabulate(custom_elem_sets,
+                     headers=('Set Name', 'Number of Elements', 'Percent of All Elements'),
+                     tablefmt='pretty') + '\n',
         ))
 
     logger_stream.flush()

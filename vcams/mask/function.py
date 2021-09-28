@@ -6,6 +6,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# TODO: the definition for level set is reversed. fix. see J. Liu et al. / Advances in Engineering Software 87 (2015) 13–29
 
 def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
                        do_log=True, **kwargs):

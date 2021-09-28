@@ -2,11 +2,12 @@
 import logging  # TODO: add function to close logger.
 import os
 import textwrap
+from pathlib import Path
 
 import numpy as np
 
 from . import __version__, __website__
-from . import helper
+from .helper import is_name_valid, return_default_results_path
 from .output import write_abaqus_inp
 
 logger = logging.getLogger(__name__)
@@ -18,8 +19,7 @@ logger = logging.getLogger(__name__)
 class VoxelPart:
     def __init__(self, size, fill_value=0, voxel_size=(1, 1, 1),
                  dtype='uint8', name='unnamed', description='',
-                 logger_path=os.path.expanduser('~'),
-                 overwrite_logs=True, log_debug=False):
+                 results_path=None, overwrite_logs=True, log_debug=False):
         """
         Args:
             size (tuple): A tuple is the shape of (x,y,z) which determines
@@ -71,8 +71,10 @@ class VoxelPart:
                                of the string.
                                Defaults to an empty string.
 
-            logger_path (str): Path to the folder where the log file will be created.
-                               Defaults to the user's home directory.
+            results_path (str): Path to the folder where the intermediate and final results
+                                and program logs will be stored.
+                                Defaults to :py:obj:`None` which automatically
+                                creates a suitable folder in the user's home directory.
 
             overwrite_logs (bool): If set to :py:obj:`True`, and the log file already exists,
                                    it will be overwritten. Otherwise, the file will be opened
@@ -106,7 +108,7 @@ class VoxelPart:
         self.voxel_size = voxel_size
 
         # Validate name.
-        if not helper.is_name_valid(name):
+        if not is_name_valid(name):
             raise ValueError('Invalid name. Check the documentation for validity criteria.')
         self.name = name
 
@@ -116,13 +118,22 @@ class VoxelPart:
             raise ValueError('Invalid description.')
         self.description = textwrap.fill(description, width=80)
 
-        # Create an empty dictionary for element sets.
+        # Validate results_path.
+        if results_path is None:
+            results_path = return_default_results_path(part_name=self.name)
+        else:
+            results_path = Path(results_path)
+        results_path.mkdir(parents=True, exist_ok=True)
+        self.results_path = results_path
+
+        # Create an empty dictionary for element and node sets.
         self.elem_sets = dict()
+        self.node_sets = dict()
 
         # Create and configure the logger.
         filemode = 'w' if overwrite_logs else 'a'
         log_level = logging.DEBUG if log_debug else logging.INFO
-        logging.basicConfig(filename=os.path.join(logger_path, name + '.log'),
+        logging.basicConfig(filename=os.path.join(self.results_path, name + '.log'),
                             filemode=filemode, level=log_level,
                             format='%(asctime)s - %(levelname) 5s - %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S')
@@ -140,19 +151,25 @@ class VoxelPart:
                     " with %s elements and an initial element value of %u.",
                     name, '*'.join(str(s) for s in size), fill_value)
 
-    def output_abaqus_inp(self, file_name, folder_path, elem_type, dim,
+    def output_abaqus_inp(self, file_name, elem_type, dim,
                           material_elem_sets, custom_elem_sets):
         """Output the part to an Abaqus (TM) input file.
         For a full list of parameters, see :py:meth:`output.write_abaqus_inp`.
         Note that the parameter *scale* is not used in this function and
         is equal to VoxelPart.voxel_size.
+        Similarly, *folder_path* is equal to self.results_path
         """
 
         # Logging is done by the called function.
-        write_abaqus_inp(self, file_name, folder_path, elem_type, dim,
+        write_abaqus_inp(self, file_name=file_name,
+                         folder_path=self.results_path,
+                         elem_code=elem_type, dim=dim,
                          scale=tuple(self.voxel_size),
                          material_elem_sets=material_elem_sets,
-                         custom_elem_sets=custom_elem_sets)
+                         custom_elem_sets=custom_elem_sets,
+                         write_assembly=True,
+                         add_dummy_node=True,
+                         keep_temp_files=False)
 
     def return_material_elem_set(self, mat_code, num_padding=0):
         """Return the IDs of the elements in the part that correspond to the given material code
@@ -177,18 +194,18 @@ class VoxelPart:
             'uint32')
         return name, elem_ids
 
-    def add_custom_elem_set(self, name, elem_ids, replace=True):
+    def add_custom_elem_set(self, name, ids, replace=True):
         """Add a custom element set to the part.
 
         Args:
             name (str): Name of the set. Must be valid according to the documentation
                         for :py:meth:`helper.is_name_valid`.
 
-            elem_ids (tuple): A tuple or numpy.ndarray of integer element IDs to
-                              be added to the set. Element IDs should start
-                              at zero (zero-based indexing), and the proper value is output later.
-                              It is passed to numpy.unique to ensure that it is sorted,
-                              unique, and a numpy ndarray, but is not validated in any other way.
+            ids (tuple): A tuple or numpy.ndarray of integer element IDs to
+                         be added to the set. Element IDs should start
+                         at zero (zero-based indexing), and the proper value is output later.
+                         It is passed to numpy.unique to ensure that it is sorted,
+                         unique, and a numpy ndarray, but is not validated in any other way.
 
             replace (bool): If set to :py:obj:`True` and a set with the same name
                             already  exists, the new set replaces the old one.
@@ -196,14 +213,42 @@ class VoxelPart:
                             Defaults to :py:obj:`True`.
         """
 
-        if not helper.is_name_valid(name):
+        if not is_name_valid(name):
             raise ValueError('Invalid name. Check the documentation for validity criteria.')
         if name in self.elem_sets and not replace:
             raise RuntimeError("An element set with the name '%s' already exists." % name)
 
-        self.elem_sets[name] = np.unique(elem_ids).astype('uint32')
+        self.elem_sets[name] = np.unique(ids).astype('uint32')
         logger.debug("Added custom element set '%s' with %u elements.",
                      name, len(self.elem_sets[name]))
+
+    def add_node_set(self, name, ids, replace=True):
+        """Add a node set to the part.
+
+        Args:
+            name (str): Name of the set. Must be valid according to the documentation
+                        for :py:meth:`helper.is_name_valid`.
+
+            ids (tuple): A tuple or numpy.ndarray of integer node IDs to
+                         be added to the set. Node IDs should start
+                         at zero (zero-based indexing), and the proper value is output later.
+                         It is passed to numpy.unique to ensure that it is sorted,
+                         unique, and a numpy ndarray, but is not validated in any other way.
+
+            replace (bool): If set to :py:obj:`True` and a set with the same name
+                            already  exists, the new set replaces the old one.
+                            Otherwise, an error is raised.
+                            Defaults to :py:obj:`True`.
+        """
+
+        if not is_name_valid(name):
+            raise ValueError('Invalid name. Check the documentation for validity criteria.')
+        if name in self.node_sets and not replace:
+            raise RuntimeError("A node set with the name '%s' already exists." % name)
+
+        self.node_sets[name] = np.unique(ids).astype('uint32')
+        logger.debug("Added custom node set '%s' with %u elements.",
+                     name, len(self.node_sets[name]))
 
     def apply_mask(self, mask, value):
         """Use a boolean mask to change values of the :py:attr:`~data` attribute.
