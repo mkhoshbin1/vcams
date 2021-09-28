@@ -1,8 +1,6 @@
 import sys
 from PyQt5 import QtWidgets, uic
 
-import vcams
-
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -10,8 +8,18 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         # Load the UI Page
-        # uic.loadUi(path.join(gui_path, 'main_window.ui'), self)
         uic.loadUi('main_window.ui', self)
+
+        # Connect the signals.
+        self.mask_add_pb.clicked.connect(self.add_mask_item)
+
+    def add_mask_item(self, row, items):
+        self.mask_table.setRowCount(self.mask_table.rowCount() + 1)
+        self.mask_table.setItem(row, 0, QtWidgets.QTableWidgetItem(items[0]))
+        self.mask_table.setItem(row, 1, QtWidgets.QTableWidgetItem(items[0]))
+        self.mask_table.setItem(row, 2, QtWidgets.QTableWidgetItem(items[0]))
+        self.mask_table.setItem(row, 3, QtWidgets.QTableWidgetItem(items[0]))
+
 
 
     # def create_voxelpart_object(self):
