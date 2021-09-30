@@ -33,7 +33,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="basic_page">
        <property name="geometry">
@@ -60,7 +60,7 @@
            <number>7</number>
           </property>
           <item row="0" column="0">
-           <widget class="QLabel" name="partNameLabel">
+           <widget class="QLabel" name="part_name_label">
             <property name="text">
              <string>Part Name</string>
             </property>
@@ -83,7 +83,7 @@
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QLabel" name="modelingSpaceLabel">
+           <widget class="QLabel" name="dim_combo_label">
             <property name="text">
              <string>Modeling Space</string>
             </property>
@@ -116,19 +116,19 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="part_size">
+           <widget class="QLabel" name="num_voxels_label">
             <property name="text">
-             <string>Part Size   (x,y,z)</string>
+             <string>Number of Voxels (x,y,z)</string>
             </property>
             <property name="buddy">
-             <cstring>size_x</cstring>
+             <cstring>num_voxels_x_field</cstring>
             </property>
            </widget>
           </item>
           <item row="2" column="1">
-           <layout class="QHBoxLayout" name="size_horizontalLayout">
+           <layout class="QHBoxLayout" name="num_voxels_layout">
             <item>
-             <widget class="QLineEdit" name="size_x">
+             <widget class="QLineEdit" name="num_voxels_x_field">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -138,7 +138,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="size_y">
+             <widget class="QLineEdit" name="num_voxels_y_field">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -148,7 +148,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="size_z">
+             <widget class="QLineEdit" name="num_voxels_z_field">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -160,19 +160,19 @@
            </layout>
           </item>
           <item row="3" column="0">
-           <widget class="QLabel" name="voxel_size">
+           <widget class="QLabel" name="voxel_size_label">
             <property name="text">
              <string>Voxel Size (x,y,z)</string>
             </property>
             <property name="buddy">
-             <cstring>voxel_size_x</cstring>
+             <cstring>voxel_size_x_field</cstring>
             </property>
            </widget>
           </item>
           <item row="3" column="1">
-           <layout class="QHBoxLayout" name="voxel_size_horizontalLayout">
+           <layout class="QHBoxLayout" name="voxel_size_layout">
             <item>
-             <widget class="QLineEdit" name="voxel_size_x">
+             <widget class="QLineEdit" name="voxel_size_x_field">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -182,7 +182,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="voxel_size_y">
+             <widget class="QLineEdit" name="voxel_size_y_field">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -192,7 +192,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="voxel_size_z">
+             <widget class="QLineEdit" name="voxel_size_z_field">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -204,7 +204,57 @@
            </layout>
           </item>
           <item row="4" column="0">
-           <widget class="QLabel" name="maxNumberOfMaterialsLabel">
+           <widget class="QLabel" name="part_size_label">
+            <property name="text">
+             <string>Part Size   (x,y,z)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <layout class="QHBoxLayout" name="part_size_layout">
+            <item>
+             <widget class="QLineEdit" name="part_size_x_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="part_size_y_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="part_size_z_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="num_mats_label">
             <property name="text">
              <string>Max Number of Materials
 (Including Empty Space)</string>
@@ -214,7 +264,7 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
+          <item row="5" column="1">
            <widget class="QComboBox" name="num_mats_combo">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -244,25 +294,25 @@
             </item>
            </widget>
           </item>
-          <item row="5" column="0">
-           <widget class="QLabel" name="descriptionLabel">
+          <item row="6" column="0">
+           <widget class="QLabel" name="part_description_label">
             <property name="text">
              <string>Part Description</string>
             </property>
             <property name="buddy">
-             <cstring>description_field</cstring>
+             <cstring>part_description_field</cstring>
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
-           <widget class="QPlainTextEdit" name="description_field">
+          <item row="6" column="1">
+           <widget class="QPlainTextEdit" name="part_description_field">
             <property name="tabChangesFocus">
              <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item row="6" column="0">
-           <widget class="QLabel" name="workingDirectoryLabel">
+          <item row="7" column="0">
+           <widget class="QLabel" name="working_dir_label">
             <property name="text">
              <string>Working Directory</string>
             </property>
@@ -271,13 +321,17 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
-           <layout class="QHBoxLayout" name="horizontalLayout">
+          <item row="7" column="1">
+           <layout class="QHBoxLayout" name="working_dir_layout">
             <item>
-             <widget class="QLineEdit" name="working_dir_field"/>
+             <widget class="QLineEdit" name="working_dir_field">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="select_dir_button">
+             <widget class="QPushButton" name="working_dir_select_button">
               <property name="text">
                <string>Select</string>
               </property>
@@ -285,18 +339,18 @@
             </item>
            </layout>
           </item>
-          <item row="7" column="0">
-           <widget class="QLabel" name="debugLogLabel">
+          <item row="8" column="0">
+           <widget class="QLabel" name="log_debug_field">
             <property name="text">
              <string>Debug Log</string>
             </property>
             <property name="buddy">
-             <cstring>log_debug_CheckBox</cstring>
+             <cstring>log_debug_checkbox</cstring>
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
-           <widget class="QCheckBox" name="log_debug_CheckBox"/>
+          <item row="8" column="1">
+           <widget class="QCheckBox" name="log_debug_checkbox"/>
           </item>
          </layout>
         </item>
@@ -781,7 +835,32 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
      <height>26</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_import_settings"/>
+    <addaction name="action_export_settings"/>
+    <addaction name="separator"/>
+    <addaction name="action_exit"/>
+   </widget>
+   <addaction name="menuFile"/>
   </widget>
+  <action name="action_import_settings">
+   <property name="text">
+    <string>Import Model Settings</string>
+   </property>
+  </action>
+  <action name="action_export_settings">
+   <property name="text">
+    <string>Export Model Settings</string>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>

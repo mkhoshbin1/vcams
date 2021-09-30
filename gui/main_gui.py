@@ -1,9 +1,21 @@
 import sys
+from configparser import ConfigParser
 from os import path
+from pathlib import Path
 
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange
+from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog
+
+
+def return_default_results_path(part_name=None):
+    parts = ['Desktop', 'VCAMS Working Directory']
+    # Validate part_name.
+    if part_name is None:
+        pass  # No subfolder.
+    else:
+        parts.append(part_name)
+    return Path.home().joinpath(*parts)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -14,11 +26,78 @@ class MainWindow(QtWidgets.QMainWindow):
         # Load the UI Page
         uic.loadUi(path.join(path.dirname(__file__), 'main_window.ui'), self)
 
+        # Connect signals for the menu.
+        # self.action_import_settings.triggered.connect(self.import_settings)  # TODO
+        self.action_export_settings.triggered.connect(self.export_settings)
+        self.action_exit.triggered.connect(self.close)
+
         # Connect the signals.
         self.mask_add_pb.clicked.connect(self.table_mask_add)
         self.mask_delete_pb.clicked.connect(self.table_mask_delete_row)
         self.mask_move_up_pb.clicked.connect(self.table_mask_move_up)
         self.mask_move_down_pb.clicked.connect(self.table_mask_move_down)
+
+        # Connect signals for the Basic Modeling Information tab.
+        # working directory.
+        self.working_dir = None
+        self.custom_working_dir = None
+        self.set_working_dir()
+        self.part_name_field.textChanged.connect(self.set_working_dir)
+        # self.working_dir_field.textEdited.connect(self.set_custom_working_dir)
+        self.working_dir_select_button.clicked.connect(self.select_working_dir)
+
+    def export_settings(self):
+        config = ConfigParser()
+        # Tab: Basic Model Information
+        config['Basic'] = {}
+        config['Basic']['part_name'] = self.part_name_field.text()  # TODO: use for name of ini file
+        config['Basic']['dim'] = self.dim_combo.currentText()
+        config['Basic']['num_voxels_x'] = self.num_voxels_x_field.text()
+        config['Basic']['num_voxels_y'] = self.num_voxels_y_field.text()
+        config['Basic']['num_voxels_z'] = self.num_voxels_z_field.text()
+        config['Basic']['voxel_size_x'] = self.voxel_size_x_field.text()
+        config['Basic']['voxel_size_y'] = self.voxel_size_y_field.text()
+        config['Basic']['voxel_size_z'] = self.voxel_size_z_field.text()
+        config['Basic']['num_mats'] = str(self.num_mats_combo.currentIndex())
+        # TODO: check with long text.
+        config['Basic']['part_description'] = self.part_description_field.toPlainText()
+        config['Basic']['working_dir'] = self.working_dir_field.text()
+        config['Basic']['log_debug'] = str(self.log_debug_checkbox.isChecked())
+
+
+        # Write to output.
+        working_dir_path = Path(self.working_dir)
+        working_dir_path.mkdir(parents=True, exist_ok=True)
+        with open(working_dir_path.joinpath('example.ini'), 'w') as config_file:
+            config.write(config_file)
+
+    def set_working_dir(self):
+        # TODO: from vcams.
+        if self.custom_working_dir is None:
+            self.working_dir = str(return_default_results_path(
+                part_name=self.part_name_field.text()))
+        else:
+            self.working_dir = self.custom_working_dir
+        self.working_dir_field.setText(self.working_dir)
+
+    def select_working_dir(self):
+        self.custom_working_dir = self.working_dir
+        dir_str = QFileDialog.getExistingDirectory(self, 'Select the working directory.',
+                                                   self.working_dir, QFileDialog.ShowDirsOnly)
+        dir_str = path.normpath(dir_str)
+        self.custom_working_dir = dir_str
+        self.working_dir = dir_str
+        self.working_dir_field.setText(dir_str)
+
+    # def closeEvent(self, event):
+    #     #TODO: add save prompt.
+    #     reply = QMessageBox.question(self, 'Close Program?',
+    #                                  'Are you sure you want to close the program?',
+    #                                  QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+    #     if reply == QMessageBox.Yes:
+    #         event.accept()
+    #     else:
+    #         event.ignore()
 
     def table_mask_add(self, row=1, items=('asd', 'asd', '')):
         # TODO: add exception for row 0.

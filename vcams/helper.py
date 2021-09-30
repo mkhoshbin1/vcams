@@ -69,7 +69,7 @@ def return_default_results_path(part_name=None):
         A path object containing the full path of a suitable folder in the users Desktop.
     """
 
-    parts = ['Desktop', 'VCAMS Results']
+    parts = ['Desktop', 'VCAMS Working Directory']
     # Validate part_name.
     if part_name is None:
         pass  # No subfolder.
