@@ -330,7 +330,7 @@
              <bool>true</bool>
             </property>
             <property name="rowCount">
-             <number>2</number>
+             <number>1</number>
             </property>
             <attribute name="horizontalHeaderStretchLastSection">
              <bool>true</bool>
@@ -343,7 +343,6 @@
               <string>Initial Mask</string>
              </property>
             </row>
-            <row/>
             <column>
              <property name="text">
               <string>Step Number</string>
