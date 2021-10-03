@@ -105,7 +105,7 @@ class VoxelPart:
                 voxel_size = np.append(voxel_size, 1.0)
             else:
                 raise ValueError('Invalid value for voxel_size.')
-        self.voxel_size = voxel_size
+        self.voxel_size = voxel_size  # TODO: Validate min and max. also check with gui.
 
         # Validate name.
         if not is_name_valid(name):

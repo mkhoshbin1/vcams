@@ -4,11 +4,12 @@ from os import path
 from pathlib import Path
 
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRegularExpression
+from PyQt5.QtGui import QIntValidator, QValidator, QRegularExpressionValidator, QDoubleValidator
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog
 
 
-def return_default_results_path(part_name=None):
+def return_default_results_path(part_name=None):  # TODO: remove this and import from vcams.
     parts = ['Desktop', 'VCAMS Working Directory']
     # Validate part_name.
     if part_name is None:
@@ -38,44 +39,90 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mask_move_down_pb.clicked.connect(self.table_mask_move_down)
 
         # Connect signals for the Basic Modeling Information tab.
-        # working directory.
-        self.working_dir = None
+        # part_name
+        self.part_name = self.part_name_field.text()
+        part_name_regex = "^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`\",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$"
+        self.part_name_field.setValidator(QRegularExpressionValidator(
+            QRegularExpression(part_name_regex)))
+        self.part_name_field_default_style = self.part_name_field.styleSheet()
+        self.part_name_field.textChanged.connect(self.determine_validity_visually)
+        self.part_name_field.textChanged.connect(self.part_name_changed)
+
+        # num_voxels
+        num_voxels_validator = QIntValidator(1, 999999999, self)
+        self.num_voxels_x_field.setValidator(num_voxels_validator)
+        self.num_voxels_y_field.setValidator(num_voxels_validator)
+        self.num_voxels_z_field.setValidator(num_voxels_validator)
+        self.num_voxels_x_field.textChanged.connect(self.determine_validity_visually)
+        self.num_voxels_y_field.textChanged.connect(self.determine_validity_visually)
+        self.num_voxels_z_field.textChanged.connect(self.determine_validity_visually)
+        self.num_voxels_x_field.textChanged.connect(self.calculate_part_size)
+        self.num_voxels_y_field.textChanged.connect(self.calculate_part_size)
+        self.num_voxels_z_field.textChanged.connect(self.calculate_part_size)
+
+        # voxel_size
+        voxel_size_validator = QDoubleValidator(1e-6, 1e+6, 8)
+        self.voxel_size_x_field.setValidator(voxel_size_validator)
+        self.voxel_size_y_field.setValidator(voxel_size_validator)
+        self.voxel_size_z_field.setValidator(voxel_size_validator)
+        self.voxel_size_x_field.textChanged.connect(self.determine_validity_visually)
+        self.voxel_size_y_field.textChanged.connect(self.determine_validity_visually)
+        self.voxel_size_z_field.textChanged.connect(self.determine_validity_visually)
+        self.voxel_size_x_field.textChanged.connect(self.calculate_part_size)
+        self.voxel_size_y_field.textChanged.connect(self.calculate_part_size)
+        self.voxel_size_z_field.textChanged.connect(self.calculate_part_size)
+
+        # num_mats_combo
+        self.num_mats_combo.currentIndexChanged.connect(self.calculate_part_size)
+
+        # working_dir
+        self.working_dir = str(return_default_results_path(part_name=self.part_name))
         self.custom_working_dir = None
-        self.set_working_dir()
-        self.part_name_field.textChanged.connect(self.set_working_dir)
-        # self.working_dir_field.textEdited.connect(self.set_custom_working_dir)
         self.working_dir_select_button.clicked.connect(self.select_working_dir)
 
-    def export_settings(self):
-        config = ConfigParser()
-        # Tab: Basic Model Information
-        config['Basic'] = {}
-        config['Basic']['part_name'] = self.part_name_field.text()  # TODO: use for name of ini file
-        config['Basic']['dim'] = self.dim_combo.currentText()
-        config['Basic']['num_voxels_x'] = self.num_voxels_x_field.text()
-        config['Basic']['num_voxels_y'] = self.num_voxels_y_field.text()
-        config['Basic']['num_voxels_z'] = self.num_voxels_z_field.text()
-        config['Basic']['voxel_size_x'] = self.voxel_size_x_field.text()
-        config['Basic']['voxel_size_y'] = self.voxel_size_y_field.text()
-        config['Basic']['voxel_size_z'] = self.voxel_size_z_field.text()
-        config['Basic']['num_mats'] = str(self.num_mats_combo.currentIndex())
-        # TODO: check with long text.
-        config['Basic']['part_description'] = self.part_description_field.toPlainText()
-        config['Basic']['working_dir'] = self.working_dir_field.text()
-        config['Basic']['log_debug'] = str(self.log_debug_checkbox.isChecked())
+    def calculate_part_size(self):
+        # For part_size fields.
+        num_mats_combo_size_list = [1, 2, 4, 8]  # In bytes.
+        if (self.num_voxels_x_field.hasAcceptableInput() and
+                self.voxel_size_x_field.hasAcceptableInput()):
+            self.part_size_x_field.setText(str(int(self.num_voxels_x_field.text())
+                                               * float(self.voxel_size_x_field.text())))
+        if (self.num_voxels_y_field.hasAcceptableInput() and
+                self.voxel_size_y_field.hasAcceptableInput()):
+            self.part_size_y_field.setText(str(int(self.num_voxels_y_field.text())
+                                               * float(self.voxel_size_y_field.text())))
+        if (self.num_voxels_z_field.hasAcceptableInput() and
+                self.voxel_size_z_field.hasAcceptableInput()):
+            self.part_size_z_field.setText(str(int(self.num_voxels_z_field.text())
+                                               * float(self.voxel_size_z_field.text())))
+        # For model_size_field.
+        if (self.num_voxels_x_field.hasAcceptableInput() and
+                self.num_voxels_y_field.hasAcceptableInput() and
+                self.num_voxels_z_field.hasAcceptableInput()):
+            num_elems = (int(self.num_voxels_x_field.text()) * int(self.num_voxels_y_field.text())
+                         * int(self.num_voxels_z_field.text()))
+            required_memory = (num_elems *
+                               num_mats_combo_size_list[self.num_mats_combo.currentIndex()]
+                               / 2 ** 20)  # In Megabytes.
+            msg_1 = f'The model contains {num_elems:,} elements and consumes '
+            if required_memory < 1:
+                required_memory = required_memory * 2**10
+                msg_2 = f'{required_memory:0.2f} KB of RAM.'
+            else:
+                msg_2 = f'{required_memory:0.2f} MB of RAM.'
+            self.model_size_field.setText(msg_1+msg_2)
 
 
-        # Write to output.
-        working_dir_path = Path(self.working_dir)
-        working_dir_path.mkdir(parents=True, exist_ok=True)
-        with open(working_dir_path.joinpath('example.ini'), 'w') as config_file:
-            config.write(config_file)
+    def determine_validity_visually(self):
+        if not self.sender().hasAcceptableInput():
+            self.sender().setStyleSheet("border: 1px solid red;")  # FIXME: field size changes.
+        else:
+            self.sender().setStyleSheet("border: 1px solid black;")  # TODO: parameterize.
 
-    def set_working_dir(self):
-        # TODO: from vcams.
+    def part_name_changed(self):
+        self.part_name = self.part_name_field.text()
         if self.custom_working_dir is None:
-            self.working_dir = str(return_default_results_path(
-                part_name=self.part_name_field.text()))
+            self.working_dir = str(return_default_results_path(part_name=self.part_name))
         else:
             self.working_dir = self.custom_working_dir
         self.working_dir_field.setText(self.working_dir)
@@ -171,6 +218,33 @@ class MainWindow(QtWidgets.QMainWindow):
                                                self.mask_table.columnCount() - 1)
         self.mask_table.setRangeSelected(sel_range, True)
         self.mask_table.setFocus()
+
+    def export_settings(self):
+        config = ConfigParser()
+
+        # TODO: loop over and if not .hasAcceptableInput(), move focus and mark it.
+
+        # Tab: Basic Model Information
+        config['Basic'] = {}
+        config['Basic']['part_name'] = self.part_name_field.text()  # TODO: use for name of ini file
+        config['Basic']['dim'] = self.dim_combo.currentText()
+        config['Basic']['num_voxels_x'] = self.num_voxels_x_field.text()
+        config['Basic']['num_voxels_y'] = self.num_voxels_y_field.text()
+        config['Basic']['num_voxels_z'] = self.num_voxels_z_field.text()
+        config['Basic']['voxel_size_x'] = self.voxel_size_x_field.text()
+        config['Basic']['voxel_size_y'] = self.voxel_size_y_field.text()
+        config['Basic']['voxel_size_z'] = self.voxel_size_z_field.text()
+        config['Basic']['num_mats'] = str(self.num_mats_combo.currentIndex())
+        # TODO: check with long text.
+        config['Basic']['part_description'] = self.part_description_field.toPlainText()
+        config['Basic']['working_dir'] = self.working_dir_field.text()
+        config['Basic']['log_debug'] = str(self.log_debug_checkbox.isChecked())
+
+        # Write to output.
+        working_dir_path = Path(self.working_dir)
+        working_dir_path.mkdir(parents=True, exist_ok=True)
+        with open(working_dir_path.joinpath(self.part_name + '.vcams'), 'w') as config_file:
+            config.write(config_file)
 
 
 if __name__ == '__main__':
