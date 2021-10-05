@@ -19,7 +19,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_9">
     <item>
-     <widget class="QToolBox" name="toolBox">
+     <widget class="QToolBox" name="main_toolbox">
       <property name="font">
        <font>
         <weight>50</weight>
@@ -33,7 +33,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="basic_page">
        <property name="geometry">
@@ -294,7 +294,11 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="model_size_field"/>
+             <widget class="QLineEdit" name="model_size_field">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -515,13 +519,13 @@ Preset</string>
         <item>
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QGroupBox" name="groupBox">
+           <widget class="QGroupBox" name="bc_type_group_box">
             <property name="title">
              <string>BC Type</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_10">
              <item>
-              <widget class="QRadioButton" name="radioButton_4">
+              <widget class="QRadioButton" name="no_bc_radio">
                <property name="text">
                 <string>No Boundary Conditions</string>
                </property>
@@ -529,27 +533,27 @@ Preset</string>
                 <bool>true</bool>
                </property>
                <attribute name="buttonGroup">
-                <string notr="true">buttonGroup</string>
+                <string notr="true">bc_type_button_group</string>
                </attribute>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_5">
+              <widget class="QRadioButton" name="bc_set_only_radio">
                <property name="text">
                 <string>Create Node Sets Only</string>
                </property>
                <attribute name="buttonGroup">
-                <string notr="true">buttonGroup</string>
+                <string notr="true">bc_type_button_group</string>
                </attribute>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_6">
+              <widget class="QRadioButton" name="periodic_bc_radio">
                <property name="text">
                 <string>Periodic Boundary Conditions</string>
                </property>
                <attribute name="buttonGroup">
-                <string notr="true">buttonGroup</string>
+                <string notr="true">bc_type_button_group</string>
                </attribute>
               </widget>
              </item>
@@ -557,7 +561,7 @@ Preset</string>
            </widget>
           </item>
           <item>
-           <widget class="QGroupBox" name="groupBox_2">
+           <widget class="QGroupBox" name="strain_group_box">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -741,7 +745,7 @@ Preset</string>
                   <bool>true</bool>
                  </property>
                  <attribute name="buttonGroup">
-                  <string notr="true">buttonGroup_2</string>
+                  <string notr="true">strain_button_group</string>
                  </attribute>
                 </widget>
                </item>
@@ -751,7 +755,7 @@ Preset</string>
                   <string>All Materials</string>
                  </property>
                  <attribute name="buttonGroup">
-                  <string notr="true">buttonGroup_2</string>
+                  <string notr="true">strain_button_group</string>
                  </attribute>
                 </widget>
                </item>
@@ -765,7 +769,7 @@ Preset</string>
                   <string>Following Materials</string>
                  </property>
                  <attribute name="buttonGroup">
-                  <string notr="true">buttonGroup_2</string>
+                  <string notr="true">strain_button_group</string>
                  </attribute>
                 </widget>
                </item>
@@ -839,6 +843,16 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
      <height>26</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_import"/>
+    <addaction name="action_export"/>
+    <addaction name="separator"/>
+    <addaction name="action_exit_2"/>
+   </widget>
+   <addaction name="menuFile"/>
   </widget>
   <action name="action_import_settings">
    <property name="text">
@@ -855,13 +869,28 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
     <string>Exit</string>
    </property>
   </action>
+  <action name="action_import">
+   <property name="text">
+    <string>Import Model Settings</string>
+   </property>
+  </action>
+  <action name="action_export">
+   <property name="text">
+    <string>Export Model Settings</string>
+   </property>
+  </action>
+  <action name="action_exit_2">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>
   <connection>
-   <sender>radioButton_4</sender>
+   <sender>no_bc_radio</sender>
    <signal>clicked(bool)</signal>
-   <receiver>groupBox_2</receiver>
+   <receiver>strain_group_box</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -875,9 +904,9 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
    </hints>
   </connection>
   <connection>
-   <sender>radioButton_5</sender>
+   <sender>bc_set_only_radio</sender>
    <signal>clicked(bool)</signal>
-   <receiver>groupBox_2</receiver>
+   <receiver>strain_group_box</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -891,9 +920,9 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
    </hints>
   </connection>
   <connection>
-   <sender>radioButton_6</sender>
+   <sender>periodic_bc_radio</sender>
    <signal>clicked(bool)</signal>
-   <receiver>groupBox_2</receiver>
+   <receiver>strain_group_box</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -972,7 +1001,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="strain_button_group"/>
+  <buttongroup name="bc_type_button_group"/>
  </buttongroups>
 </ui>

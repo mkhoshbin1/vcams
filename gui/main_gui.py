@@ -8,6 +8,8 @@ from PyQt5.QtCore import Qt, QRegularExpression
 from PyQt5.QtGui import QIntValidator, QValidator, QRegularExpressionValidator, QDoubleValidator
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog
 
+from settings_io import export_settings
+
 
 def return_default_results_path(part_name=None):  # TODO: remove this and import from vcams.
     parts = ['Desktop', 'VCAMS Working Directory']
@@ -28,9 +30,9 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi(path.join(path.dirname(__file__), 'main_window.ui'), self)
 
         # Connect signals for the menu.
-        # self.action_import_settings.triggered.connect(self.import_settings)  # TODO
-        self.action_export_settings.triggered.connect(self.export_settings)
-        self.action_exit.triggered.connect(self.close)
+        # self.action_import.triggered.connect(self.import_settings)  # TODO
+        self.action_export.triggered.connect(lambda main_obj: export_settings(main_obj=self))
+        self.action_exit_2.triggered.connect(self.close)
 
         # Connect the signals.
         self.mask_add_pb.clicked.connect(self.table_mask_add)
@@ -106,12 +108,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                / 2 ** 20)  # In Megabytes.
             msg_1 = f'The model contains {num_elems:,} elements and consumes '
             if required_memory < 1:
-                required_memory = required_memory * 2**10
+                required_memory = required_memory * 2 ** 10
                 msg_2 = f'{required_memory:0.2f} KB of RAM.'
             else:
                 msg_2 = f'{required_memory:0.2f} MB of RAM.'
-            self.model_size_field.setText(msg_1+msg_2)
-
+            self.model_size_field.setText(msg_1 + msg_2)
 
     def determine_validity_visually(self):
         if not self.sender().hasAcceptableInput():
@@ -218,33 +219,6 @@ class MainWindow(QtWidgets.QMainWindow):
                                                self.mask_table.columnCount() - 1)
         self.mask_table.setRangeSelected(sel_range, True)
         self.mask_table.setFocus()
-
-    def export_settings(self):
-        config = ConfigParser()
-
-        # TODO: loop over and if not .hasAcceptableInput(), move focus and mark it.
-
-        # Tab: Basic Model Information
-        config['Basic'] = {}
-        config['Basic']['part_name'] = self.part_name_field.text()  # TODO: use for name of ini file
-        config['Basic']['dim'] = self.dim_combo.currentText()
-        config['Basic']['num_voxels_x'] = self.num_voxels_x_field.text()
-        config['Basic']['num_voxels_y'] = self.num_voxels_y_field.text()
-        config['Basic']['num_voxels_z'] = self.num_voxels_z_field.text()
-        config['Basic']['voxel_size_x'] = self.voxel_size_x_field.text()
-        config['Basic']['voxel_size_y'] = self.voxel_size_y_field.text()
-        config['Basic']['voxel_size_z'] = self.voxel_size_z_field.text()
-        config['Basic']['num_mats'] = str(self.num_mats_combo.currentIndex())
-        # TODO: check with long text.
-        config['Basic']['part_description'] = self.part_description_field.toPlainText()
-        config['Basic']['working_dir'] = self.working_dir_field.text()
-        config['Basic']['log_debug'] = str(self.log_debug_checkbox.isChecked())
-
-        # Write to output.
-        working_dir_path = Path(self.working_dir)
-        working_dir_path.mkdir(parents=True, exist_ok=True)
-        with open(working_dir_path.joinpath(self.part_name + '.vcams'), 'w') as config_file:
-            config.write(config_file)
 
 
 if __name__ == '__main__':
