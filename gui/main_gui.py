@@ -6,7 +6,8 @@ from pathlib import Path
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QRegularExpression
 from PyQt5.QtGui import QIntValidator, QValidator, QRegularExpressionValidator, QDoubleValidator
-from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog
+from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog, \
+    QButtonGroup
 
 from settings_io import export_settings
 
@@ -40,16 +41,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mask_move_up_pb.clicked.connect(self.table_mask_move_up)
         self.mask_move_down_pb.clicked.connect(self.table_mask_move_down)
 
-        # Connect signals for the Basic Modeling Information tab.
+        # Code and signals for tab: Basic Modeling Information.
         # part_name
-        self.part_name = self.part_name_field.text()
-        part_name_regex = "^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`\",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$"
+        self.part_name = 'unnamed'
+        self.part_name_field.setText(self.part_name)
+        part_name_regex = r"^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`\",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$"
         self.part_name_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(part_name_regex)))
         self.part_name_field_default_style = self.part_name_field.styleSheet()
         self.part_name_field.textChanged.connect(self.determine_validity_visually)
         self.part_name_field.textChanged.connect(self.part_name_changed)
-
         # num_voxels
         num_voxels_validator = QIntValidator(1, 999999999, self)
         self.num_voxels_x_field.setValidator(num_voxels_validator)
@@ -61,7 +62,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.num_voxels_x_field.textChanged.connect(self.calculate_part_size)
         self.num_voxels_y_field.textChanged.connect(self.calculate_part_size)
         self.num_voxels_z_field.textChanged.connect(self.calculate_part_size)
-
         # voxel_size
         voxel_size_validator = QDoubleValidator(1e-6, 1e+6, 8)
         self.voxel_size_x_field.setValidator(voxel_size_validator)
@@ -73,14 +73,46 @@ class MainWindow(QtWidgets.QMainWindow):
         self.voxel_size_x_field.textChanged.connect(self.calculate_part_size)
         self.voxel_size_y_field.textChanged.connect(self.calculate_part_size)
         self.voxel_size_z_field.textChanged.connect(self.calculate_part_size)
-
         # num_mats_combo
         self.num_mats_combo.currentIndexChanged.connect(self.calculate_part_size)
-
         # working_dir
         self.working_dir = str(return_default_results_path(part_name=self.part_name))
         self.custom_working_dir = None
         self.working_dir_select_button.clicked.connect(self.select_working_dir)
+
+        # Code and signals for tab: Basic Modeling Information.
+        # bc_type
+        self.bc_type_button_group = QButtonGroup(self.bc_type_group_box)
+        self.bc_type_button_group.setExclusive(True)
+        self.bc_type_button_group.addButton(self.no_bc_radio, 0)
+        self.bc_type_button_group.addButton(self.bc_set_only_radio, 1)
+        self.bc_type_button_group.addButton(self.periodic_bc_radio, 2)
+        # strain
+        strain_validator = QDoubleValidator(-1e+6, 1e+6, 8)
+        self.strain11_field.setValidator(strain_validator)
+        self.strain22_field.setValidator(strain_validator)
+        self.strain33_field.setValidator(strain_validator)
+        self.strain12_field.setValidator(strain_validator)
+        self.strain13_field.setValidator(strain_validator)
+        self.strain23_field.setValidator(strain_validator)
+        self.strain11_field.textChanged.connect(self.determine_validity_visually)
+        self.strain22_field.textChanged.connect(self.determine_validity_visually)
+        self.strain33_field.textChanged.connect(self.determine_validity_visually)
+        self.strain12_field.textChanged.connect(self.determine_validity_visually)
+        self.strain13_field.textChanged.connect(self.determine_validity_visually)
+        self.strain23_field.textChanged.connect(self.determine_validity_visually)
+
+        # Code and signals for tab: Output.
+        # output_mats  # TODO: move all signals from QtDesigner to python.
+        self.output_mats_type_button_group = QButtonGroup(self.output_mats_layout1)
+        self.output_mats_type_button_group.setExclusive(True)
+        self.output_mats_type_button_group.addButton(self.output_mats_non_empty_radio, 0)
+        self.output_mats_type_button_group.addButton(self.output_mats_all_radio, 1)
+        self.output_mats_type_button_group.addButton(self.output_mats_select_radio, 2)
+        # output_mats_select_field
+        output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
+        self.output_mats_select_field.setValidator(QRegularExpressionValidator(
+            QRegularExpression(output_mats_select_regex)))
 
     def calculate_part_size(self):
         # For part_size fields.

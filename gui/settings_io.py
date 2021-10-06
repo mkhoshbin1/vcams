@@ -36,6 +36,10 @@ from PyQt5.QtWidgets import QLineEdit, QComboBox, QPlainTextEdit, QMessageBox
 +---------+--------------------+------------------------+----------------+
 """
 
+bc_type_list = ['No Boundary Conditions', 'Create Node Sets Only',
+                'Periodic Boundary Conditions']
+output_mats_type = ['Non-Empty Materials', 'All Materials', 'Following Materials']
+
 
 class InvalidFieldError(Exception):
     def __init__(self, field_obj):
@@ -66,7 +70,6 @@ def set_focus(main_obj, field_obj):
 
 
 def export_settings(main_obj):
-
     config = ConfigParser()
     try:
         # Tab: Basic Model Information
@@ -84,6 +87,29 @@ def export_settings(main_obj):
         # TODO: check with long text.
         config['Basic']['working_dir'] = return_field_value(main_obj.working_dir_field)
         config['Basic']['log_debug'] = str(main_obj.log_debug_checkbox.isChecked())
+
+        # Tab: Boundary Conditions
+        config['BC'] = {}
+        config['BC']['bc_type'] = str(main_obj.bc_type_button_group.checkedId())
+        if config['BC']['bc_type'] == '2':
+            config['BC']['strain11'] = return_field_value(main_obj.strain11_field)
+            config['BC']['strain22'] = return_field_value(main_obj.strain22_field)
+            config['BC']['strain33'] = return_field_value(main_obj.strain33_field)
+            config['BC']['strain12'] = return_field_value(main_obj.strain12_field)
+            config['BC']['strain13'] = return_field_value(main_obj.strain13_field)
+            config['BC']['strain23'] = return_field_value(main_obj.strain23_field)
+
+        # Tab: Output.
+        config['Output'] = {}
+        config['Output']['file_name'] = return_field_value(main_obj.file_name_field)
+        config['Output']['elem_code'] = return_field_value(main_obj.elem_code_field)
+        config['Output']['output_mats_type'] = \
+            str(main_obj.output_mats_type_button_group.checkedId())
+        if config['Output']['output_mats_type'] == '2':
+            config['Output']['output_mats_select'] = \
+                return_field_value(main_obj.output_mats_select_field)
+
+
     except InvalidFieldError as e:
         set_focus(main_obj, e.field_obj)
         QMessageBox.critical(main_obj, 'Export Failed!', 'One of the fields has an invalid value.')
@@ -92,6 +118,5 @@ def export_settings(main_obj):
     # Write to output.
     working_dir_path = Path(main_obj.working_dir)
     working_dir_path.mkdir(parents=True, exist_ok=True)
-    with open(working_dir_path.joinpath(config['Basic']['part_name'] + '.vcams'),
-              'w') as config_file:
+    with open(working_dir_path.joinpath(main_obj.part_name + '.vcams'), 'w') as config_file:
         config.write(config_file)
