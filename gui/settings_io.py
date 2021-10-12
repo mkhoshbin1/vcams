@@ -6,38 +6,12 @@ from pathlib import Path
 from PyQt5.QtWidgets import QLineEdit, QComboBox, QPlainTextEdit, QMessageBox
 
 """This function assumes that the following fields are present in the GUI:
-
-+---------+--------------------+------------------------+----------------+
-| Section | Key in Config File | Object Name            | Object Class   |
-+=========+====================+========================+================+
-| Basic   | part_name          | part_name_field        | QLineEdit      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | dim                | dim_combo              | QComboBox      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | num_voxels_x       | num_voxels_x_field     | QLineEdit      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | num_voxels_y       | num_voxels_y_field     | QLineEdit      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | num_voxels_z       | num_voxels_z_field     | QLineEdit      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | voxel_size_x       | voxel_size_x_field     | QLineEdit      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | voxel_size_y       | voxel_size_y_field     | QLineEdit      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | voxel_size_z       | voxel_size_z_field     | QLineEdit      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | num_mats           | num_mats_combo         | QComboBox      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | part_description   | part_description_field | QPlainTextEdit |
-+---------+--------------------+------------------------+----------------+
-| Basic   | working_dir        | working_dir_field      | QLineEdit      |
-+---------+--------------------+------------------------+----------------+
-| Basic   | log_debug          | log_debug_checkbox     | QCheckBox      |
-+---------+--------------------+------------------------+----------------+
 """
 
+# Zero-Based list corresponding to bc_type_button_group.
 bc_type_list = ['No Boundary Conditions', 'Create Node Sets Only',
                 'Periodic Boundary Conditions']
+# Zero-Based list corresponding to output_mats_type_button_group.
 output_mats_type = ['Non-Empty Materials', 'All Materials', 'Following Materials']
 
 

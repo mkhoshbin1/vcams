@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: change size to shape.
 # TODO: add shape as a variable with a getter.
+# TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 
 class VoxelPart:
     def __init__(self, size, fill_value=0, voxel_size=(1, 1, 1),
