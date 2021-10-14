@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelection
 
 from settings_io import export_settings
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
@@ -25,9 +26,19 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                       ModelingMode('Planar Particle Reinforced Composite', 2, 2,
                                    'This form is used to model a planar particle reinforced '
                                    'composite with circular particles:'))
+TpmsType = namedtuple('TpmsType', ('name', 'formula'))
+tpms_type_list = (TpmsType('Schwarz Primitive (P)',
+                           r'$\Phi = cos(\frac{2\pi}{l} x) + cos(\frac{2\pi}{l} y) + cos(\frac{2\pi}{l} z) - c$'),
+                  TpmsType('Schwarz Diamond (D)',
+                           (
+                               r'$\Phi = sin(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z)$'
+                               r'$+ sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$' '\n'
+                               r'$+ cos(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
+                               r'$+ cos(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z) - c$')))
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
+    matplotlib.rcParams['mathtext.fontset'] = 'cm'
     # Create a figure.
     fig = plt.figure()
     fig.patch.set_facecolor('none')
@@ -140,14 +151,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.strain23_field.textChanged.connect(self.determine_validity_visually)
 
         # Code and signals for tab: Modeling.
+        # TPMS Modeling
+        self.formula_font_size = 20
         # modeling_mode_combo
         for modeling_mode in modeling_mode_list:
             self.modeling_mode_combo.addItem(modeling_mode.name, userData=modeling_mode)
+        self.modeling_mode_combo.setCurrentIndex(0)
         self.modeling_mode_combo.currentTextChanged.connect(self.modeling_mode_changed)
         self.modeling_mode_changed()
+        # select_tpms_combo
+        for tpms_type in tpms_type_list:
+            self.select_tpms_combo.addItem(tpms_type.name, userData=tpms_type)
+        self.select_tpms_combo.currentTextChanged.connect(self.tpms_type_changed)
+        self.tpms_type_changed()
+        # tpms_length_field and tpms_constant_field.
+        self.tpms_length_field.setValidator(QDoubleValidator(1e-5, 1e+6, 8))
+        self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
 
-        self.tpms_formula_real_label.setPixmap(mathtex_to_qpixmap(
-            r'$\Phi = cos(\frac{2 \pi}{l} x) + cos(p \times y) + cos(p \times z) - c$', 15))
+
+
+
 
         # Code and signals for tab: Output.
         # output_mats  # TODO: move all signals from QtDesigner to python.
@@ -160,6 +183,11 @@ class MainWindow(QtWidgets.QMainWindow):
         output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
         self.output_mats_select_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(output_mats_select_regex)))
+
+    def tpms_type_changed(self):
+        tpms_type = self.select_tpms_combo.currentData()
+        self.tpms_formula_real_label.setPixmap(
+            mathtex_to_qpixmap(tpms_type.formula, self.formula_font_size))
 
     def modeling_mode_changed(self):
         modeling_mode = self.modeling_mode_combo.currentData()
@@ -176,7 +204,6 @@ class MainWindow(QtWidgets.QMainWindow):
                                             'modeling space defined in the previous section.')
             self.modeling_stacked_widget.currentWidget().setEnabled(False)
             self.modeling_description_label.setEnabled(False)
-
 
     def calculate_part_size(self):
         # For part_size fields.
