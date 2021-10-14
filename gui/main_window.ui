@@ -33,7 +33,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="basic_page">
        <property name="geometry">
@@ -364,7 +364,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="manipulations_page">
+      <widget class="QWidget" name="modeling_page">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -378,128 +378,96 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QLabel" name="label_2">
+         <layout class="QFormLayout" name="formLayout_4">
+          <item row="0" column="0">
+           <widget class="QLabel" name="modeling_mode_label">
+            <property name="text">
+             <string>Modeling Mode</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="modeling_mode_combo"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="modeling_dim_label">
           <property name="text">
-           <string>The model defined in the previous section can be manipulated using this table to achieve a complex model.</string>
+           <string>Dimension Warning</string>
           </property>
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_3">
-          <item>
-           <widget class="QTableWidget" name="mask_table">
-            <property name="alternatingRowColors">
-             <bool>true</bool>
-            </property>
-            <property name="rowCount">
-             <number>1</number>
-            </property>
-            <attribute name="horizontalHeaderStretchLastSection">
-             <bool>true</bool>
-            </attribute>
-            <attribute name="verticalHeaderVisible">
-             <bool>false</bool>
-            </attribute>
-            <row>
-             <property name="text">
-              <string>Initial Mask</string>
-             </property>
-            </row>
-            <column>
-             <property name="text">
-              <string>Step Number</string>
-             </property>
-             <property name="textAlignment">
-              <set>AlignCenter</set>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Operation Name</string>
-             </property>
-             <property name="textAlignment">
-              <set>AlignCenter</set>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Fill Value</string>
-             </property>
-             <property name="textAlignment">
-              <set>AlignCenter</set>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Details</string>
-             </property>
-             <property name="textAlignment">
-              <set>AlignCenter</set>
-             </property>
-            </column>
-            <item row="0" column="0">
-             <property name="text">
-              <string>1</string>
-             </property>
-            </item>
-            <item row="0" column="1">
-             <property name="text">
-              <string>Initial Fill</string>
-             </property>
-            </item>
-            <item row="0" column="2">
-             <property name="text">
-              <string>1</string>
-             </property>
-            </item>
-            <item row="0" column="3">
-             <property name="text">
-              <string>The model is created with all elements set to 1.</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item>
-           <layout class="QVBoxLayout" name="verticalLayout_4">
+         <widget class="QLabel" name="modeling_description_label">
+          <property name="text">
+           <string>Modeling Description</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QStackedWidget" name="modeling_stacked_widget">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="modeling_empty"/>
+          <widget class="QWidget" name="modeling_tpms">
+           <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>
-             <widget class="QPushButton" name="mask_select_presets_pb">
-              <property name="text">
-               <string>Select
-Preset</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="mask_add_pb">
-              <property name="text">
-               <string>Add</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="mask_delete_pb">
-              <property name="text">
-               <string>Delete</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="mask_move_up_pb">
-              <property name="text">
-               <string>Move Up</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="mask_move_down_pb">
-              <property name="text">
-               <string>Move Down</string>
-              </property>
-             </widget>
+             <layout class="QFormLayout" name="formLayout_6">
+              <item row="0" column="0">
+               <widget class="QLabel" name="select_tpms_label">
+                <property name="text">
+                 <string>Select Surface</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="select_tpms_combo"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="tpms_formula_label">
+                <property name="text">
+                 <string>TPMS Formula</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="tpms_length_label">
+                <property name="text">
+                 <string>Unit Cell Length (L)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="tpms_length_field"/>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="tpms_constant_label">
+                <property name="text">
+                 <string>Formula Constant (C)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="tpms_constant_field"/>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="tpms_formula_real_label">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
-          </item>
-         </layout>
+          </widget>
+          <widget class="QWidget" name="page_6"/>
+         </widget>
         </item>
        </layout>
       </widget>

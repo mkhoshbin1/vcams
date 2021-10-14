@@ -3,7 +3,7 @@
 from configparser import ConfigParser
 from pathlib import Path
 
-from PyQt5.QtWidgets import QLineEdit, QComboBox, QPlainTextEdit, QMessageBox
+from PyQt5.QtWidgets import QLineEdit, QMessageBox
 
 """This function assumes that the following fields are present in the GUI:
 """
@@ -72,6 +72,10 @@ def export_settings(main_obj):
             config['BC']['strain12'] = return_field_value(main_obj.strain12_field)
             config['BC']['strain13'] = return_field_value(main_obj.strain13_field)
             config['BC']['strain23'] = return_field_value(main_obj.strain23_field)
+
+        # Tab: Modeling.
+        modeling_mode_combo
+
 
         # Tab: Output.
         config['Output'] = {}

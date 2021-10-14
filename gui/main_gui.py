@@ -1,15 +1,56 @@
 import sys
-from configparser import ConfigParser
+from collections import namedtuple
 from os import path
 from pathlib import Path
 
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QRegularExpression
-from PyQt5.QtGui import QIntValidator, QValidator, QRegularExpressionValidator, QDoubleValidator
+from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
+    QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog, \
     QButtonGroup
 
 from settings_io import export_settings
+
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
+modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
+                                   'This form will be used to model a structure after you select '
+                                   'the modeling mode.'),
+                      ModelingMode('Triply Periodic Minimal Surface (TPMS)', 3, 1,
+                                   'This form is used to model a triply periodic minimal '
+                                   'surface (TPMS) in the 3D space:'),
+                      ModelingMode('Planar Particle Reinforced Composite', 2, 2,
+                                   'This form is used to model a planar particle reinforced '
+                                   'composite with circular particles:'))
+
+
+def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
+    # Create a figure.
+    fig = plt.figure()
+    fig.patch.set_facecolor('none')
+    fig.set_canvas(FigureCanvasAgg(fig))
+    renderer = fig.canvas.get_renderer()
+    # Add the plot.
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.axis('off')
+    ax.patch.set_facecolor('none')
+    t = ax.text(0, 0, math_tex, ha='left', va='bottom', fontsize=font_size)
+    # Fit figure size to text artist.
+    fwidth, fheight = fig.get_size_inches()
+    fig_bbox = fig.get_window_extent(renderer)
+    text_bbox = t.get_window_extent(renderer)
+    tight_fwidth = text_bbox.width * fwidth / fig_bbox.width
+    tight_fheight = text_bbox.height * fheight / fig_bbox.height
+    fig.set_size_inches(tight_fwidth, tight_fheight)
+    # Convert figure to QPixmap.
+    buf, size = fig.canvas.print_to_buffer()
+    qimage = QImage.rgbSwapped(QImage(buf, size[0], size[1],
+                                      QImage.Format_ARGB32))
+    qpixmap = QPixmap(qimage)
+    return qpixmap
 
 
 def return_default_results_path(part_name=None):  # TODO: remove this and import from vcams.
@@ -35,12 +76,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_export.triggered.connect(lambda main_obj: export_settings(main_obj=self))
         self.action_exit_2.triggered.connect(self.close)
 
-        # Connect the signals.
-        self.mask_add_pb.clicked.connect(self.table_mask_add)
-        self.mask_delete_pb.clicked.connect(self.table_mask_delete_row)
-        self.mask_move_up_pb.clicked.connect(self.table_mask_move_up)
-        self.mask_move_down_pb.clicked.connect(self.table_mask_move_down)
-
         # Code and signals for tab: Basic Modeling Information.
         # part_name
         self.part_name = 'unnamed'
@@ -51,6 +86,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.part_name_field_default_style = self.part_name_field.styleSheet()
         self.part_name_field.textChanged.connect(self.determine_validity_visually)
         self.part_name_field.textChanged.connect(self.part_name_changed)
+        # dim_combo
+        self.dim_combo.currentTextChanged.connect(self.modeling_mode_changed)
         # num_voxels
         num_voxels_validator = QIntValidator(1, 999999999, self)
         self.num_voxels_x_field.setValidator(num_voxels_validator)
@@ -102,6 +139,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.strain13_field.textChanged.connect(self.determine_validity_visually)
         self.strain23_field.textChanged.connect(self.determine_validity_visually)
 
+        # Code and signals for tab: Modeling.
+        # modeling_mode_combo
+        for modeling_mode in modeling_mode_list:
+            self.modeling_mode_combo.addItem(modeling_mode.name, userData=modeling_mode)
+        self.modeling_mode_combo.currentTextChanged.connect(self.modeling_mode_changed)
+        self.modeling_mode_changed()
+
+        self.tpms_formula_real_label.setPixmap(mathtex_to_qpixmap(
+            r'$\Phi = cos(\frac{2 \pi}{l} x) + cos(p \times y) + cos(p \times z) - c$', 15))
+
         # Code and signals for tab: Output.
         # output_mats  # TODO: move all signals from QtDesigner to python.
         self.output_mats_type_button_group = QButtonGroup(self.output_mats_layout1)
@@ -113,6 +160,23 @@ class MainWindow(QtWidgets.QMainWindow):
         output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
         self.output_mats_select_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(output_mats_select_regex)))
+
+    def modeling_mode_changed(self):
+        modeling_mode = self.modeling_mode_combo.currentData()
+        self.modeling_stacked_widget.setCurrentIndex(modeling_mode.page_id)
+        self.modeling_description_label.setText(modeling_mode.description)
+        if modeling_mode.dim == 0:
+            self.modeling_dim_label.setText('')
+        elif self.dim_combo.currentText().startswith(str(modeling_mode.dim)):
+            self.modeling_dim_label.setText('')
+            self.modeling_stacked_widget.currentWidget().setEnabled(True)
+            self.modeling_description_label.setEnabled(True)
+        else:
+            self.modeling_dim_label.setText('This modeling method is inappropriate for the '
+                                            'modeling space defined in the previous section.')
+            self.modeling_stacked_widget.currentWidget().setEnabled(False)
+            self.modeling_description_label.setEnabled(False)
+
 
     def calculate_part_size(self):
         # For part_size fields.
