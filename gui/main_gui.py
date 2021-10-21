@@ -151,7 +151,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.strain23_field.textChanged.connect(self.determine_validity_visually)
 
         # Code and signals for tab: Modeling.
-        # TPMS Modeling
+        # TPMS Modeling.
         self.formula_font_size = 20
         # modeling_mode_combo
         for modeling_mode in modeling_mode_list:
@@ -168,7 +168,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tpms_length_field.setValidator(QDoubleValidator(1e-5, 1e+6, 8))
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
 
-
+        # Circle Modeling.
+        self.modeling_circle_table.cellActivated.connect(self.add_row_to_end)
 
 
 
@@ -183,6 +184,13 @@ class MainWindow(QtWidgets.QMainWindow):
         output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
         self.output_mats_select_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(output_mats_select_regex)))
+
+    def add_row_to_end(self, row, column):
+        sender_table = self.sender()
+        if row == sender_table.rowCount() - 1:
+            print('add r%i, c%i'%(row, column))
+            sender_table.insertRow(row+1)
+
 
     def tpms_type_changed(self):
         tpms_type = self.select_tpms_combo.currentData()
@@ -275,8 +283,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mask_table.insertRow(row)
         self.mask_table.setItem(row, 0, QTableWidgetItem(0))
         self.mask_table.setItem(row, 1, QTableWidgetItem(items[0]))
-        self.mask_table.setItem(row, 2, QTableWidgetItem(items[0]))
-        self.mask_table.setItem(row, 3, QTableWidgetItem(items[0]))
+        self.mask_table.setItem(row, 2, QTableWidgetItem(items[1]))
+        self.mask_table.setItem(row, 3, QTableWidgetItem(items[2]))
         self.table_mask_clean()
 
     def table_mask_delete_row(self):
