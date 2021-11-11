@@ -476,7 +476,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QTableWidget" name="modeling_circle_table">
+             <widget class="CustomTableWidget" name="modeling_circle_table">
               <property name="contextMenuPolicy">
                <enum>Qt::ActionsContextMenu</enum>
               </property>
@@ -485,6 +485,9 @@
               </property>
               <property name="alternatingRowColors">
                <bool>true</bool>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ContiguousSelection</enum>
               </property>
               <property name="sortingEnabled">
                <bool>true</bool>
@@ -927,6 +930,13 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CustomTableWidget</class>
+   <extends>QTableWidget</extends>
+   <header>custom_table</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

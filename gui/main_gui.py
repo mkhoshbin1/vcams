@@ -4,11 +4,11 @@ from os import path
 from pathlib import Path
 
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import Qt, QRegularExpression
+from PyQt5.QtCore import Qt, QRegularExpression, QEvent
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
-    QImage, QPixmap
+    QImage, QPixmap, QKeySequence
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog, \
-    QButtonGroup
+    QButtonGroup, QTableWidget
 
 from settings_io import export_settings
 
@@ -169,7 +169,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
 
         # Circle Modeling.
-        self.modeling_circle_table.cellActivated.connect(self.add_row_to_end)
+        # self.modeling_circle_table.cellActivated.connect(self.add_row_to_end)
+        # self.modeling_circle_table.keyPressEvent = self.custom_table_keyPressEvent
+        # self.modeling_circle_table.installEventFilter(self.modeling_circle_table)
 
 
 
@@ -184,6 +186,9 @@ class MainWindow(QtWidgets.QMainWindow):
         output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
         self.output_mats_select_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(output_mats_select_regex)))
+
+
+
 
     def add_row_to_end(self, row, column):
         sender_table = self.sender()
