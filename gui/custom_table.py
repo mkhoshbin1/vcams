@@ -3,14 +3,15 @@ import csv
 
 from PyQt5.QtCore import QEvent
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QApplication
+from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QApplication, QTableWidgetItem, \
+    QMessageBox
 
 
-# TODO: add the add_row functionality.
 class CustomTableWidget(QTableWidget):
     def __init__(self, *args, **kwargs):
         super(QTableWidget, self).__init__(*args, **kwargs)
         self.installEventFilter(self)
+        self.cellActivated.connect(self.add_row_to_end)
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.KeyPress and event.matches(QKeySequence.Copy):
@@ -21,20 +22,35 @@ class CustomTableWidget(QTableWidget):
             return True
         return super(QTableWidget, self).eventFilter(source, event)
 
+    # noinspection PyUnusedLocal
+    def add_row_to_end(self, row, column):
+        sender_table = self.sender()
+        if row == sender_table.rowCount() - 1:
+            sender_table.insertRow(row+1)
+
     def copy_selection(self):
         # The table must be set to contiguous selection. If not, show a critical error.
         if not self.selectionMode() == QAbstractItemView.ContiguousSelection:
-            print('sdfg')  # TODO
+            QMessageBox.critical(self, 'Copy Unsuccessful!',
+                                 "Selection mode of the table must be set to ContiguousSelection.\n"
+                                 "This error will prevent copy/paste operations and can only be "
+                                 "fixed by contacting the Program's author.")
             return
 
         selection = self.selectedRanges()
         # If the selection list is empty, show an error box.
         if not selection:
-            print('sdfg')  # TODO
+            QMessageBox.critical(self, 'Copy Unsuccessful!',
+                                 'Select some cells to be copied.')
             return
         # If the selection list contains more than one item, show an error box.
         if len(selection) > 1:
-            print('sdfg')  # TODO
+            QMessageBox.critical(self, 'Copy Unsuccessful!',
+                                 "The selection list contains more than one item. Since the "
+                                 "selection mode of the table must be set to ContiguousSelection, "
+                                 "This error must not happen.\n"
+                                 "This error will prevent copy/paste operations and can only be "
+                                 "fixed by contacting the Program's author.")
             return
         selection = selection[0]
 
@@ -56,57 +72,102 @@ class CustomTableWidget(QTableWidget):
         return
 
     def paste_selection(self):
-        print('dfvgfdf')
+        # The table must be set to contiguous selection. If not, show a critical error.
+        if not self.selectionMode() == QAbstractItemView.ContiguousSelection:
+            QMessageBox.critical(self, 'Paste Unsuccessful!',
+                                 "Selection mode of the table must be set to ContiguousSelection.\n"
+                                 "This error will prevent copy/paste operations and can only be "
+                                 "fixed by contacting the Program's author.")
+            return
 
-    #     selection = self.selectedIndexes()
-    #     if selection:
-    #         model = self.model()
-    #
-    #         buffer = QApplication.clipboard().text()
-    #         all_rows = []
-    #         all_columns = []
-    #         for index in selection:
-    #             if not index.row() in all_rows:
-    #                 all_rows.append(index.row())
-    #             if not index.column() in all_columns:
-    #                 all_columns.append(index.column())
-    #         visible_rows = [row for row in all_rows if not self.isRowHidden(row)]
-    #         visible_columns = [
-    #             col for col in all_columns if not self.isColumnHidden(col)
-    #         ]
-    #
-    #         reader = csv.reader(io.StringIO(buffer), delimiter="\t")
-    #         arr = [[cell for cell in row] for row in reader]
-    #         if len(arr) > 0:
-    #             nrows = len(arr)
-    #             ncols = len(arr[0])
-    #             if len(visible_rows) == 1 and len(visible_columns) == 1:
-    #                 # Only the top-left cell is highlighted.
-    #                 for i in range(nrows):
-    #                     insert_rows = [visible_rows[0]]
-    #                     row = insert_rows[0] + 1
-    #                     while len(insert_rows) < nrows:
-    #                         row += 1
-    #                         if not self.isRowHidden(row):
-    #                             insert_rows.append(row)
-    #                 for j in range(ncols):
-    #                     insert_columns = [visible_columns[0]]
-    #                     col = insert_columns[0] + 1
-    #                     while len(insert_columns) < ncols:
-    #                         col += 1
-    #                         if not self.isColumnHidden(col):
-    #                             insert_columns.append(col)
-    #                 for i, insert_row in enumerate(insert_rows):
-    #                     for j, insert_column in enumerate(insert_columns):
-    #                         cell = arr[i][j]
-    #                         model.setData(model.index(insert_row, insert_column), cell)
-    #             else:
-    #                 # Assume the selection size matches the clipboard data size.
-    #                 for index in selection:
-    #                     selection_row = visible_rows.index(index.row())
-    #                     selection_column = visible_columns.index(index.column())
-    #                     model.setData(
-    #                         model.index(index.row(), index.column()),
-    #                         arr[selection_row][selection_column],
-    #                     )
-    #     return
+        # Validate the selection.
+        selection = self.selectedRanges()
+        # If the selection list is empty, show an error box.
+        if not selection:
+            QMessageBox.critical(self, 'Paste Unsuccessful!',
+                                 'No cells are selected.\n'
+                                 'Select one cell as the starting point for pasting or select a '
+                                 'group of cells with the exact shape of the data you want to '
+                                 'paste.')
+            return
+        # If the selection list contains more than one item, show an error box.
+        if len(selection) > 1:
+            QMessageBox.critical(self, 'Paste Unsuccessful!',
+                                 "The selection list contains more than one item. Since the "
+                                 "selection mode of the table must be set to ContiguousSelection, "
+                                 "This error must not happen.\n"
+                                 "This error will prevent copy/paste operations and can only be "
+                                 "fixed by contacting the Program's author.")
+            return
+        selection = selection[0]
+
+        # Create an array for the pasted cells.
+        # Open the text in the clipboard.
+        buffer = QApplication.clipboard().text()
+        buffer_io = StringIO(buffer)
+        # Sniff the dialect of the csv file. This is done because excel uses tab,
+        # but many users may prefer commas.
+        dialect = csv.Sniffer().sniff(buffer_io.readline())
+        buffer_io.seek(0)
+        csv_reader = csv.reader(buffer_io, dialect)
+
+        # Get the text of each cell in every row.
+        row_list = [row for row in csv_reader]
+        num_csv_rows = len(row_list)
+        num_csv_cols = max((len(r) for r in row_list))
+        for r in row_list:
+            if len(r) != num_csv_cols:
+                QMessageBox.critical(self, 'Paste Unsuccessful!',
+                                     "Number of columns is different for each row of the pasted "
+                                     "table.\nThis error probably should not happen. Please "
+                                     "contact the Program's author.")
+                return
+
+        # There are two valid selection types:
+        # Case 1: Single cell which determines the beginning of the pasted cells.
+        # Case 2: Multiple cells which must be of equal size to the pasted cell.
+
+        # Case 1: Single cell.
+        if (selection.topRow() == selection.bottomRow()) \
+                and (selection.leftColumn() == selection.rightColumn()):
+            start_row = selection.topRow()
+            start_col = selection.leftColumn()
+
+            # Make sure enough rows and columns exist. If not, create additional ones.
+            while self.rowCount() < start_row + num_csv_rows:
+                self.insertRow(self.rowCount())
+            if self.columnCount() < start_col + num_csv_cols:
+                QMessageBox.critical(self, 'Paste Unsuccessful!',
+                                     'The pasted columns exceed the number of columns. '
+                                     'Either the selection or the pasted cells are inappropriate.')
+                return
+
+            # Place the contents of row_list into the table.
+            csv_r = 0
+            for row in range(start_row, start_row + num_csv_rows):
+                csv_c = 0
+                for col in range(start_col, start_col + num_csv_cols):
+                    self.setItem(row, col, QTableWidgetItem(row_list[csv_r][csv_c]))
+                    csv_c += 1
+                csv_r += 1
+
+        # Case 2: Multiple cells selected which must be of the same size as the pasted table.
+        else:
+            if not ((selection.topRow() - selection.bottomRow() == num_csv_rows)
+                    and (selection.leftColumn() - selection.rightColumn() == num_csv_cols)):
+                QMessageBox.critical(self, 'Paste Unsuccessful!',
+                                     'Dimensions of the selected and pasted cells are '
+                                     'different. Either reselect cells or select a single cell '
+                                     'as the  start point.')
+                return
+
+            start_row = selection.topRow()
+            start_col = selection.leftColumn()
+            # Place the contents of row_list into the table.
+            csv_r = 0
+            for row in range(start_row, start_row + num_csv_rows):
+                csv_c = 0
+                for col in range(start_col, start_col + num_csv_cols):
+                    self.setItem(row, col, QTableWidgetItem(row_list[csv_r][csv_c]))
+                    csv_c += 1
+                csv_r += 1
