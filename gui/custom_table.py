@@ -2,9 +2,9 @@ from io import StringIO
 import csv
 
 from PyQt5.QtCore import QEvent
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QIntValidator, QDoubleValidator
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QApplication, QTableWidgetItem, \
-    QMessageBox
+    QMessageBox, QStyledItemDelegate, QLineEdit
 
 
 class CustomTableWidget(QTableWidget):
@@ -26,7 +26,7 @@ class CustomTableWidget(QTableWidget):
     def add_row_to_end(self, row, column):
         sender_table = self.sender()
         if row == sender_table.rowCount() - 1:
-            sender_table.insertRow(row+1)
+            sender_table.insertRow(row + 1)
 
     def copy_selection(self):
         # The table must be set to contiguous selection. If not, show a critical error.
@@ -100,6 +100,8 @@ class CustomTableWidget(QTableWidget):
                                  "fixed by contacting the Program's author.")
             return
         selection = selection[0]
+        start_row = selection.topRow()
+        start_col = selection.leftColumn()
 
         # Create an array for the pasted cells.
         # Open the text in the clipboard.
@@ -122,6 +124,7 @@ class CustomTableWidget(QTableWidget):
                                      "table.\nThis error probably should not happen. Please "
                                      "contact the Program's author.")
                 return
+        # TODO: use self.itemDelegateForColumn.validator_obj.validate(string, 0)[0] to validate.
 
         # There are two valid selection types:
         # Case 1: Single cell which determines the beginning of the pasted cells.
@@ -130,8 +133,6 @@ class CustomTableWidget(QTableWidget):
         # Case 1: Single cell.
         if (selection.topRow() == selection.bottomRow()) \
                 and (selection.leftColumn() == selection.rightColumn()):
-            start_row = selection.topRow()
-            start_col = selection.leftColumn()
 
             # Make sure enough rows and columns exist. If not, create additional ones.
             while self.rowCount() < start_row + num_csv_rows:
@@ -161,8 +162,6 @@ class CustomTableWidget(QTableWidget):
                                      'as the  start point.')
                 return
 
-            start_row = selection.topRow()
-            start_col = selection.leftColumn()
             # Place the contents of row_list into the table.
             csv_r = 0
             for row in range(start_row, start_row + num_csv_rows):
@@ -171,3 +170,24 @@ class CustomTableWidget(QTableWidget):
                     self.setItem(row, col, QTableWidgetItem(row_list[csv_r][csv_c]))
                     csv_c += 1
                 csv_r += 1
+
+
+class IntDelegate(QStyledItemDelegate):
+    validator_obj = QIntValidator(1, 999999999)
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        editor.setValidator(self.validator_obj)
+        return editor
+
+
+class FloatDelegate(QStyledItemDelegate):
+    validator_obj = QDoubleValidator(1e-6, 1e+6, 12)
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        editor.setValidator(self.validator_obj)
+        return editor
+
+    def setModelData(self, editor, model, index):
+        model.setData(index, str(float(editor.text())))

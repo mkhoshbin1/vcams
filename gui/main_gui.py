@@ -10,6 +10,7 @@ from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValid
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog, \
     QButtonGroup, QTableWidget
 
+from custom_table import FloatDelegate, IntDelegate
 from settings_io import export_settings
 
 import matplotlib
@@ -26,7 +27,7 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                       ModelingMode('Planar Particle Reinforced Composite', 2, 2,
                                    'This form is used to model a planar particle reinforced '
                                    'composite with circular particles:'))
-TpmsType = namedtuple('TpmsType', ('name', 'formula'))
+TpmsType = namedtuple('TpmsType', ('name', 'formula'))  # TODO: Maybe add and id?
 tpms_type_list = (TpmsType('Schwarz Primitive (P)',
                            r'$\Phi = cos(\frac{2\pi}{l} x) + cos(\frac{2\pi}{l} y) + cos(\frac{2\pi}{l} z) - c$'),
                   TpmsType('Schwarz Diamond (D)',
@@ -169,9 +170,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
 
         # Circle Modeling.
-        # self.modeling_circle_table.cellActivated.connect(self.add_row_to_end)
-        # self.modeling_circle_table.keyPressEvent = self.custom_table_keyPressEvent
-        # self.modeling_circle_table.installEventFilter(self.modeling_circle_table)
+        self.modeling_circle_table.setItemDelegateForColumn(0, FloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(1, FloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(2, FloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(3, IntDelegate(self))
+
 
 
 
@@ -186,15 +189,6 @@ class MainWindow(QtWidgets.QMainWindow):
         output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
         self.output_mats_select_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(output_mats_select_regex)))
-
-
-
-
-    def add_row_to_end(self, row, column):
-        sender_table = self.sender()
-        if row == sender_table.rowCount() - 1:
-            print('add r%i, c%i'%(row, column))
-            sender_table.insertRow(row+1)
 
 
     def tpms_type_changed(self):

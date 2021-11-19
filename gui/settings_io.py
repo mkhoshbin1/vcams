@@ -1,6 +1,7 @@
 """Functions for import and export of GUI settings."""
-
+import csv
 from configparser import ConfigParser
+from io import StringIO
 from pathlib import Path
 
 from PyQt5.QtWidgets import QLineEdit, QMessageBox
@@ -29,6 +30,21 @@ def return_field_value(field_obj):
             raise NotImplementedError('field_obj has a type that has not been implemented.')
     else:
         raise InvalidFieldError(field_obj)
+
+
+def table_to_csv_string(table_obj):
+    csv_stream = StringIO(newline='')
+    csv_writer = csv.writer(csv_stream, delimiter=',')
+    for row in range(table_obj.rowCount()):
+        row_list = []
+        for col in range(table_obj.columnCount()):
+            item = table_obj.item(row, col)
+            if item is None:
+                row_list.append('')
+            else:
+                row_list.append(item.text())
+        csv_writer.writerow(row_list)
+    return csv_stream.getvalue().rstrip()
 
 
 def set_focus(main_obj, field_obj):
@@ -74,8 +90,20 @@ def export_settings(main_obj):
             config['BC']['strain23'] = return_field_value(main_obj.strain23_field)
 
         # Tab: Modeling.
-        modeling_mode_combo
+        config['Modeling'] = {}
+        config['Modeling']['modeling_mode'] = str(main_obj.modeling_mode_combo.currentIndex())
+        if config['Modeling']['modeling_mode'] == '0':  # No further action.
+            # TODO: Do nothing! add this option and test it.
+            pass
+        elif config['Modeling']['modeling_mode'] == '1':  # TPMS
+            config['Modeling']['tpms_type'] = str(main_obj.select_tpms_combo.currentIndex())
+            config['Modeling']['tpms_length'] = return_field_value(main_obj.tpms_length_field)
+            config['Modeling']['tpms_constant'] = return_field_value(main_obj.tpms_constant_field)
+        elif config['Modeling']['modeling_mode'] == '2':  # Planar Composite
+            config['Modeling']['modeling_circle_table'] = \
+                table_to_csv_string(main_obj.modeling_circle_table)
 
+            pass
 
         # Tab: Output.
         config['Output'] = {}
@@ -96,5 +124,6 @@ def export_settings(main_obj):
     # Write to output.
     working_dir_path = Path(main_obj.working_dir)
     working_dir_path.mkdir(parents=True, exist_ok=True)
-    with open(working_dir_path.joinpath(main_obj.part_name + '.vcams'), 'w') as config_file:
+    with open(working_dir_path.joinpath(main_obj.part_name + '.vcams'), 'w', newline='\n') \
+            as config_file:
         config.write(config_file)
