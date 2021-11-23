@@ -411,7 +411,7 @@
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
           <widget class="QWidget" name="modeling_tpms">
@@ -469,13 +469,6 @@
           <widget class="QWidget" name="modeling_circle">
            <layout class="QVBoxLayout" name="verticalLayout_4">
             <item>
-             <widget class="QLabel" name="modeling_circle_description">
-              <property name="text">
-               <string>This form is used to model a planar particle reinforced composite with circular particles:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="CustomTableWidget" name="modeling_circle_table">
               <property name="contextMenuPolicy">
                <enum>Qt::ActionsContextMenu</enum>
@@ -488,9 +481,6 @@
               </property>
               <property name="selectionMode">
                <enum>QAbstractItemView::ContiguousSelection</enum>
-              </property>
-              <property name="sortingEnabled">
-               <bool>true</bool>
               </property>
               <row>
                <property name="text">
@@ -531,6 +521,73 @@
             </item>
             <item>
              <widget class="QLabel" name="modeling_circle_note">
+              <property name="text">
+               <string>Note: Press enter in any cell in the last row to add a row.</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="modeling_sphere">
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <item>
+             <widget class="CustomTableWidget" name="modeling_sphere_table">
+              <property name="contextMenuPolicy">
+               <enum>Qt::ActionsContextMenu</enum>
+              </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+              </property>
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ContiguousSelection</enum>
+              </property>
+              <row>
+               <property name="text">
+                <string>1</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>2</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>3</string>
+               </property>
+              </row>
+              <column>
+               <property name="text">
+                <string>Center X</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Center Y</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Center Z</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Radius</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Material Code</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="modeling_sphere_note">
               <property name="text">
                <string>Note: Press enter in any cell in the last row to add a row.</string>
               </property>

@@ -21,12 +21,18 @@ ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'descriptio
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form will be used to model a structure after you select '
                                    'the modeling mode.'),
-                      ModelingMode('Triply Periodic Minimal Surface (TPMS)', 3, 1,
+                      ModelingMode('Triply Periodic Minimal Surface (TPMS)',
+                                   3, 1,
                                    'This form is used to model a triply periodic minimal '
                                    'surface (TPMS) in the 3D space:'),
-                      ModelingMode('Planar Particle Reinforced Composite', 2, 2,
+                      ModelingMode('Planar Particle Reinforced Composite (Circular Inclusions)',
+                                   2, 2,
                                    'This form is used to model a planar particle reinforced '
-                                   'composite with circular particles:'))
+                                   'composite with circular particles:'),
+                      ModelingMode('Spatial Particle Reinforced Composite (Spherical Inclusions)',
+                                   3, 3,
+                                   'This form is used to model a spatial particle reinforced '
+                                   'composite with spherical particles:'))
 TpmsType = namedtuple('TpmsType', ('name', 'formula'))  # TODO: Maybe add and id?
 tpms_type_list = (TpmsType('Schwarz Primitive (P)',
                            r'$\Phi = cos(\frac{2\pi}{l} x) + cos(\frac{2\pi}{l} y) + cos(\frac{2\pi}{l} z) - c$'),
@@ -152,7 +158,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.strain23_field.textChanged.connect(self.determine_validity_visually)
 
         # Code and signals for tab: Modeling.
-        # TPMS Modeling.
+        # Modeling: TPMS
         self.formula_font_size = 20
         # modeling_mode_combo
         for modeling_mode in modeling_mode_list:
@@ -169,13 +175,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tpms_length_field.setValidator(QDoubleValidator(1e-5, 1e+6, 8))
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
 
-        # Circle Modeling.
+        # Modeling: Planar Composite (Circular Inclusions)
         self.modeling_circle_table.setItemDelegateForColumn(0, FloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(1, FloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(2, FloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(3, IntDelegate(self))
 
-
+        # Modeling: Spatial Composite (Spherical Inclusions)
+        self.modeling_sphere_table.setItemDelegateForColumn(0, FloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(1, FloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(2, FloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(3, FloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(4, IntDelegate(self))
 
 
         # Code and signals for tab: Output.
@@ -189,7 +200,6 @@ class MainWindow(QtWidgets.QMainWindow):
         output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
         self.output_mats_select_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(output_mats_select_regex)))
-
 
     def tpms_type_changed(self):
         tpms_type = self.select_tpms_combo.currentData()

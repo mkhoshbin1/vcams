@@ -93,15 +93,19 @@ def export_settings(main_obj):
         config['Modeling'] = {}
         config['Modeling']['modeling_mode'] = str(main_obj.modeling_mode_combo.currentIndex())
         if config['Modeling']['modeling_mode'] == '0':  # No further action.
-            # TODO: Do nothing! add this option and test it.
+            QMessageBox.critical(main_obj, 'Invalid Data!',
+                                 'No modeling mode is selected in the Model Manipulations section.')
             pass
         elif config['Modeling']['modeling_mode'] == '1':  # TPMS
             config['Modeling']['tpms_type'] = str(main_obj.select_tpms_combo.currentIndex())
             config['Modeling']['tpms_length'] = return_field_value(main_obj.tpms_length_field)
             config['Modeling']['tpms_constant'] = return_field_value(main_obj.tpms_constant_field)
-        elif config['Modeling']['modeling_mode'] == '2':  # Planar Composite
+        elif config['Modeling']['modeling_mode'] == '2':  # Planar Composite (Circular Inclusions)
             config['Modeling']['modeling_circle_table'] = \
                 table_to_csv_string(main_obj.modeling_circle_table)
+        elif config['Modeling']['modeling_mode'] == '3':  # Spatial Composite (Spherical Inclusions)
+            config['Modeling']['modeling_sphere_table'] = \
+                table_to_csv_string(main_obj.modeling_sphere_table)
 
             pass
 
