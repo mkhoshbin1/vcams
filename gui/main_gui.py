@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelection
     QButtonGroup, QTableWidget
 
 from custom_table import FloatDelegate, IntDelegate
-from settings_io import export_settings
+from settings_io import export_settings, import_settings
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -32,7 +32,12 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                       ModelingMode('Spatial Particle Reinforced Composite (Spherical Inclusions)',
                                    3, 3,
                                    'This form is used to model a spatial particle reinforced '
-                                   'composite with spherical particles:'))
+                                   'composite with spherical particles:'),
+                      # ModelingMode('Image Processing (Single Image)',
+                      #              2, 4,
+                      #              'This form is used to create a 2D model based on a single'
+                      #              'binary or grayscale image:')
+                      )
 TpmsType = namedtuple('TpmsType', ('name', 'formula'))  # TODO: Maybe add and id?
 tpms_type_list = (TpmsType('Schwarz Primitive (P)',
                            r'$\Phi = cos(\frac{2\pi}{l} x) + cos(\frac{2\pi}{l} y) + cos(\frac{2\pi}{l} z) - c$'),
@@ -90,9 +95,9 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi(path.join(path.dirname(__file__), 'main_window.ui'), self)
 
         # Connect signals for the menu.
-        # self.action_import.triggered.connect(self.import_settings)  # TODO
-        self.action_export.triggered.connect(lambda main_obj: export_settings(main_obj=self))
-        self.action_exit_2.triggered.connect(self.close)
+        self.action_import_settings.triggered.connect(lambda main_obj: import_settings(main_obj=self))
+        self.action_export_settings.triggered.connect(lambda main_obj: export_settings(main_obj=self))
+        self.action_exit.triggered.connect(self.close)
 
         # Code and signals for tab: Basic Modeling Information.
         # part_name
@@ -171,7 +176,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.select_tpms_combo.addItem(tpms_type.name, userData=tpms_type)
         self.select_tpms_combo.currentTextChanged.connect(self.tpms_type_changed)
         self.tpms_type_changed()
-        # tpms_length_field and tpms_constant_field.
+        # tpms_length_field and tpms_constant_field
         self.tpms_length_field.setValidator(QDoubleValidator(1e-5, 1e+6, 8))
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
 
@@ -188,6 +193,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.modeling_sphere_table.setItemDelegateForColumn(3, FloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(4, IntDelegate(self))
 
+        # Modeling: Single Image
 
         # Code and signals for tab: Output.
         # output_mats  # TODO: move all signals from QtDesigner to python.

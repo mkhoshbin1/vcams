@@ -4,7 +4,8 @@ from configparser import ConfigParser
 from io import StringIO
 from pathlib import Path
 
-from PyQt5.QtWidgets import QLineEdit, QMessageBox
+from PyQt5.QtWidgets import QLineEdit, QMessageBox, QComboBox, QPlainTextEdit, QCheckBox, \
+    QTableWidget
 
 """This function assumes that the following fields are present in the GUI:
 """
@@ -32,19 +33,60 @@ def return_field_value(field_obj):
         raise InvalidFieldError(field_obj)
 
 
-def table_to_csv_string(table_obj):
-    csv_stream = StringIO(newline='')
-    csv_writer = csv.writer(csv_stream, delimiter=',')
-    for row in range(table_obj.rowCount()):
-        row_list = []
-        for col in range(table_obj.columnCount()):
-            item = table_obj.item(row, col)
-            if item is None:
-                row_list.append('')
-            else:
-                row_list.append(item.text())
-        csv_writer.writerow(row_list)
-    return csv_stream.getvalue().rstrip()
+def set_field_value(field_obj, field_name, field_dict, combo_index_mode=False):
+    if field_name not in field_dict:
+        field_obj.setFocus()
+        raise ValueError('Field "%s" is not in the settings file.' % field_name)
+    value = field_dict[field_name]
+
+    if isinstance(field_obj, QLineEdit):
+        return set_qlineedit_value(field_obj, field_name, value)
+    elif isinstance(field_obj, QPlainTextEdit):
+        field_obj.setPlainText(value)
+    elif isinstance(field_obj, QComboBox):
+        set_qcombobox_value(field_obj, field_name, value, combo_index_mode)
+    elif isinstance(field_obj, QCheckBox):
+        field_obj.setCheckState(value)
+    elif isinstance(field_obj, QTableWidget):
+        set_qtablewidget_value(field_obj, field_name, value)
+    else:
+        field_obj.setFocus()
+        raise NotImplementedError('field_obj has a type that has not been implemented.')
+
+
+def set_qlineedit_value(qlineedit_obj, field_name, value):
+    validator = qlineedit_obj.validator()
+    if validator is None:
+        qlineedit_obj.setText(value)
+    else:
+        validator_result = validator.validate(value, 0)[0]
+        if validator_result == 2:
+            qlineedit_obj.setText(value)
+        else:
+            qlineedit_obj.setFocus()
+            raise ValueError('Invalid value in field "%s".' % field_name)
+
+
+def set_qcombobox_value(qcombobox_obj, field_name, value, combo_index_mode=False):
+    if combo_index_mode:
+        qcombobox_obj.setCurrentIndex(int(value))
+        return
+    else:
+        ind = qcombobox_obj.findText(value)
+        if ind == -1:
+            qcombobox_obj.setFocus()
+            raise ValueError('Invalid value in field "%s".' % field_name)
+        else:
+            qcombobox_obj.setCurrentIndex(ind)
+
+
+def set_qtablewidget_value(qtablewidget_obj, field_name, value):
+
+    # Validation is done in inside the function as the ValueError is caught by the calling function.
+    try:
+        qtablewidget_obj.import_from_csv_string(csv_string=value, selection=None)
+    except ValueError as err:
+        raise ValueError('Invalid value in field "%s".\n%s' % (field_name, str(err)))
 
 
 def set_focus(main_obj, field_obj):
@@ -78,17 +120,6 @@ def export_settings(main_obj):
         config['Basic']['working_dir'] = return_field_value(main_obj.working_dir_field)
         config['Basic']['log_debug'] = str(main_obj.log_debug_checkbox.isChecked())
 
-        # Tab: Boundary Conditions
-        config['BC'] = {}
-        config['BC']['bc_type'] = str(main_obj.bc_type_button_group.checkedId())
-        if config['BC']['bc_type'] == '2':
-            config['BC']['strain11'] = return_field_value(main_obj.strain11_field)
-            config['BC']['strain22'] = return_field_value(main_obj.strain22_field)
-            config['BC']['strain33'] = return_field_value(main_obj.strain33_field)
-            config['BC']['strain12'] = return_field_value(main_obj.strain12_field)
-            config['BC']['strain13'] = return_field_value(main_obj.strain13_field)
-            config['BC']['strain23'] = return_field_value(main_obj.strain23_field)
-
         # Tab: Modeling.
         config['Modeling'] = {}
         config['Modeling']['modeling_mode'] = str(main_obj.modeling_mode_combo.currentIndex())
@@ -102,12 +133,21 @@ def export_settings(main_obj):
             config['Modeling']['tpms_constant'] = return_field_value(main_obj.tpms_constant_field)
         elif config['Modeling']['modeling_mode'] == '2':  # Planar Composite (Circular Inclusions)
             config['Modeling']['modeling_circle_table'] = \
-                table_to_csv_string(main_obj.modeling_circle_table)
+                main_obj.modeling_circle_table.return_csv_string(for_excel=False)
         elif config['Modeling']['modeling_mode'] == '3':  # Spatial Composite (Spherical Inclusions)
             config['Modeling']['modeling_sphere_table'] = \
-                table_to_csv_string(main_obj.modeling_sphere_table)
+                main_obj.modeling_sphere_table.return_csv_string(for_excel=False)
 
-            pass
+        # Tab: Boundary Conditions
+        config['BC'] = {}
+        config['BC']['bc_type'] = str(main_obj.bc_type_button_group.checkedId())
+        if config['BC']['bc_type'] == '2':
+            config['BC']['strain11'] = return_field_value(main_obj.strain11_field)
+            config['BC']['strain22'] = return_field_value(main_obj.strain22_field)
+            config['BC']['strain33'] = return_field_value(main_obj.strain33_field)
+            config['BC']['strain12'] = return_field_value(main_obj.strain12_field)
+            config['BC']['strain13'] = return_field_value(main_obj.strain13_field)
+            config['BC']['strain23'] = return_field_value(main_obj.strain23_field)
 
         # Tab: Output.
         config['Output'] = {}
@@ -131,3 +171,60 @@ def export_settings(main_obj):
     with open(working_dir_path.joinpath(main_obj.part_name + '.vcams'), 'w', newline='\n') \
             as config_file:
         config.write(config_file)
+
+
+def import_settings(main_obj):
+    config = ConfigParser()
+    config.read(r'C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed\unnamed.vcams')
+
+    # Check validity of the imported settings.
+    section_list = ('Basic', 'BC', 'Modeling', 'Output')
+    for name in section_list:
+        if name not in config.sections():
+            QMessageBox.critical(main_obj, 'Import Failed!',
+                                 'Section "%s" was not present in the settings file.' % name)
+
+    # # Tab: Basic Model Information
+    # basic = config['Basic']
+    # try:
+    #     set_field_value(main_obj.part_name_field, 'part_name', basic)
+    #     set_field_value(main_obj.dim_combo, 'dim', basic)
+    #     set_field_value(main_obj.num_voxels_x_field, 'num_voxels_x', basic)
+    #     set_field_value(main_obj.num_voxels_y_field, 'num_voxels_y', basic)
+    #     set_field_value(main_obj.num_voxels_z_field, 'num_voxels_z', basic)
+    #     set_field_value(main_obj.voxel_size_x_field, 'voxel_size_x', basic)
+    #     set_field_value(main_obj.voxel_size_y_field, 'voxel_size_y', basic)
+    #     set_field_value(main_obj.voxel_size_z_field, 'voxel_size_z', basic)
+    #     set_field_value(main_obj.num_mats_combo, 'num_mats', basic, combo_index_mode=True)
+    #     set_field_value(main_obj.part_description_field, 'part_description', basic)
+    #     set_field_value(main_obj.working_dir_field, 'working_dir', basic)
+    #     main_obj.log_debug_checkbox.setChecked(config.getboolean('Basic', 'log_debug'))
+    # except ValueError as err:
+    #     main_obj.main_toolbox.setCurrentIndex(0)
+    #     QMessageBox.critical(main_obj, 'Import Failed!', str(err))
+
+    # Tab: Modeling.
+    modeling = config['Modeling']
+    try:
+        set_field_value(main_obj.modeling_mode_combo, 'modeling_mode', modeling, combo_index_mode=True)
+        modeling_mode = str(main_obj.modeling_mode_combo.currentIndex())
+        if modeling_mode == '0':    # No further action.
+            raise ValueError('Field "modeling_mode" is set to 0, which is invalid.')
+        elif modeling_mode == '1':  # TPMS
+            set_field_value(main_obj.select_tpms_combo, 'tpms_type', modeling, combo_index_mode=True)
+            set_field_value(main_obj.tpms_length_field, 'tpms_length', modeling)
+            set_field_value(main_obj.tpms_constant_field, 'tpms_constant', modeling)
+        elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
+            set_field_value(main_obj.modeling_circle_table, 'modeling_circle_table', modeling)
+        elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
+            set_field_value(main_obj.modeling_sphere_table, 'modeling_sphere_table', modeling)
+        else:
+            raise ValueError('Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
+    except ValueError as err:
+        main_obj.main_toolbox.setCurrentIndex(1)
+        QMessageBox.critical(main_obj, 'Import Failed!', str(err))
+
+    # Tab: Boundary Conditions.
+    #FIXME
+
+

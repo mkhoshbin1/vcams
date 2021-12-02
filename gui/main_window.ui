@@ -411,7 +411,7 @@
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>4</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
           <widget class="QWidget" name="modeling_tpms">
@@ -595,6 +595,7 @@
             </item>
            </layout>
           </widget>
+          <widget class="QWidget" name="modeling_single_image"/>
          </widget>
         </item>
        </layout>
@@ -949,10 +950,10 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="action_import"/>
-    <addaction name="action_export"/>
+    <addaction name="action_import_settings"/>
+    <addaction name="action_export_settings"/>
     <addaction name="separator"/>
-    <addaction name="action_exit_2"/>
+    <addaction name="action_exit"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -967,21 +968,6 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
    </property>
   </action>
   <action name="action_exit">
-   <property name="text">
-    <string>Exit</string>
-   </property>
-  </action>
-  <action name="action_import">
-   <property name="text">
-    <string>Import Model Settings</string>
-   </property>
-  </action>
-  <action name="action_export">
-   <property name="text">
-    <string>Export Model Settings</string>
-   </property>
-  </action>
-  <action name="action_exit_2">
    <property name="text">
     <string>Exit</string>
    </property>
