@@ -33,7 +33,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="basic_page">
        <property name="geometry">
@@ -981,118 +981,5 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>no_bc_radio</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>strain_group_box</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>325</x>
-     <y>216</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>372</x>
-     <y>432</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>bc_set_only_radio</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>strain_group_box</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>199</x>
-     <y>270</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>354</x>
-     <y>444</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>periodic_bc_radio</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>strain_group_box</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>299</x>
-     <y>324</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>332</x>
-     <y>437</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>output_mats_all_radio</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>output_mats_select_field</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>931</x>
-     <y>283</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>405</x>
-     <y>298</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>output_mats_non_empty_radio</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>output_mats_select_field</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>538</x>
-     <y>283</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>628</x>
-     <y>304</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>output_mats_select_radio</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>output_mats_select_field</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>214</x>
-     <y>306</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>316</x>
-     <y>308</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>part_name_field</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>file_name_field</receiver>
-   <slot>setText(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>241</x>
-     <y>91</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>588</x>
-     <y>211</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

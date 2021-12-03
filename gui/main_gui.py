@@ -3,19 +3,18 @@ from collections import namedtuple
 from os import path
 from pathlib import Path
 
+import matplotlib
+import matplotlib.pyplot as plt
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import Qt, QRegularExpression, QEvent
+from PyQt5.QtCore import Qt, QRegularExpression
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
-    QImage, QPixmap, QKeySequence
-from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, QFileDialog, \
-    QButtonGroup, QTableWidget
+    QImage, QPixmap
+from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
+    QFileDialog, QButtonGroup
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from custom_table import FloatDelegate, IntDelegate
 from settings_io import export_settings, import_settings
-
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
@@ -95,8 +94,10 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi(path.join(path.dirname(__file__), 'main_window.ui'), self)
 
         # Connect signals for the menu.
-        self.action_import_settings.triggered.connect(lambda main_obj: import_settings(main_obj=self))
-        self.action_export_settings.triggered.connect(lambda main_obj: export_settings(main_obj=self))
+        self.action_import_settings.triggered.connect(
+            lambda main_obj: import_settings(main_obj=self))
+        self.action_export_settings.triggered.connect(
+            lambda main_obj: export_settings(main_obj=self))
         self.action_exit.triggered.connect(self.close)
 
         # Code and signals for tab: Basic Modeling Information.
@@ -147,6 +148,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.bc_type_button_group.addButton(self.no_bc_radio, 0)
         self.bc_type_button_group.addButton(self.bc_set_only_radio, 1)
         self.bc_type_button_group.addButton(self.periodic_bc_radio, 2)
+        self.no_bc_radio.toggled.connect(self.toggle_bc_type)
+        self.bc_set_only_radio.toggled.connect(self.toggle_bc_type)
+        self.periodic_bc_radio.toggled.connect(self.toggle_bc_type)
         # strain
         strain_validator = QDoubleValidator(-1e+6, 1e+6, 8)
         self.strain11_field.setValidator(strain_validator)
@@ -202,10 +206,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.output_mats_type_button_group.addButton(self.output_mats_non_empty_radio, 0)
         self.output_mats_type_button_group.addButton(self.output_mats_all_radio, 1)
         self.output_mats_type_button_group.addButton(self.output_mats_select_radio, 2)
+        self.output_mats_non_empty_radio.toggled.connect(self.toggle_output_mats_type)
+        self.output_mats_all_radio.toggled.connect(self.toggle_output_mats_type)
+        self.output_mats_select_radio.toggled.connect(self.toggle_output_mats_type)
         # output_mats_select_field
         output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
         self.output_mats_select_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(output_mats_select_regex)))
+
+    def toggle_output_mats_type(self):
+        self.output_mats_select_field.setEnabled(self.output_mats_select_radio.isChecked())
+
+    def toggle_bc_type(self):
+        self.strain_group_box.setEnabled(self.periodic_bc_radio.isChecked())
 
     def tpms_type_changed(self):
         tpms_type = self.select_tpms_combo.currentData()
@@ -273,6 +286,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.working_dir = self.custom_working_dir
         self.working_dir_field.setText(self.working_dir)
+        self.file_name_field.setText(self.part_name)
 
     def select_working_dir(self):
         self.custom_working_dir = self.working_dir
