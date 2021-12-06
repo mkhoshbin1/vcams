@@ -35,7 +35,8 @@ def is_name_valid(name):
         bool: :py:obj:`True` for a valid name.
     """
 
-    special_chars = "$&*~!()[]{}|;\'`\",.?/\\"
+    # TODO: consider regex: ^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$
+    forbidden_chars = "$&*~!()[]{}|;\'`\",.?/\\"
     if not isinstance(name, str):
         return False
     elif len(name) < 1:
@@ -46,7 +47,7 @@ def is_name_valid(name):
         return False
     elif name.endswith('_'):  # The beginning is checked above.
         return False
-    elif any((n in special_chars) for n in name):
+    elif any((n in forbidden_chars) for n in name):
         return False
     elif not (name.isascii() and name.isprintable()):
         # Source: https://stackoverflow.com/a/51141941/7180705.
@@ -69,7 +70,7 @@ def return_default_results_path(part_name=None):
         A path object containing the full path of a suitable folder in the users Desktop.
     """
 
-    parts = ['Desktop', 'VCAMS Results']
+    parts = ['Desktop', 'VCAMS Working Directory']
     # Validate part_name.
     if part_name is None:
         pass  # No subfolder.

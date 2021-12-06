@@ -1,0 +1,985 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>968</width>
+    <height>717</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>VCAMS</string>
+  </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Rounded</enum>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_9">
+    <item>
+     <widget class="QToolBox" name="main_toolbox">
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="lineWidth">
+       <number>1</number>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="basic_page">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>946</width>
+         <height>480</height>
+        </rect>
+       </property>
+       <attribute name="label">
+        <string>Basic Model Information</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QFormLayout" name="basic_info_layout">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetDefaultConstraint</enum>
+          </property>
+          <property name="fieldGrowthPolicy">
+           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+          </property>
+          <property name="verticalSpacing">
+           <number>7</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="part_name_label">
+            <property name="text">
+             <string>Part Name</string>
+            </property>
+            <property name="buddy">
+             <cstring>part_name_field</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="part_name_field">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>unnamed</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="dim_combo_label">
+            <property name="text">
+             <string>Modeling Space</string>
+            </property>
+            <property name="buddy">
+             <cstring>dim_combo</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="dim_combo">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="frame">
+             <bool>true</bool>
+            </property>
+            <item>
+             <property name="text">
+              <string>2D</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>3D</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="num_voxels_label">
+            <property name="text">
+             <string>Number of Voxels (x,y,z)</string>
+            </property>
+            <property name="buddy">
+             <cstring>num_voxels_x_field</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <layout class="QHBoxLayout" name="num_voxels_layout">
+            <item>
+             <widget class="QLineEdit" name="num_voxels_x_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="num_voxels_y_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="num_voxels_z_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="voxel_size_label">
+            <property name="text">
+             <string>Voxel Size (x,y,z)</string>
+            </property>
+            <property name="buddy">
+             <cstring>voxel_size_x_field</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <layout class="QHBoxLayout" name="voxel_size_layout">
+            <item>
+             <widget class="QLineEdit" name="voxel_size_x_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="voxel_size_y_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="voxel_size_z_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="part_size_label">
+            <property name="text">
+             <string>Part Size   (x,y,z)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <layout class="QHBoxLayout" name="part_size_layout">
+            <item>
+             <widget class="QLineEdit" name="part_size_x_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="part_size_y_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="part_size_z_field">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="num_mats_label">
+            <property name="text">
+             <string>Max Number of Materials
+(Including Empty Space)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <layout class="QHBoxLayout" name="num_mats_layout">
+            <item>
+             <widget class="QComboBox" name="num_mats_combo">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <item>
+               <property name="text">
+                <string>2⁸ (256)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>2¹⁶ (265536)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>2³²</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>2⁶⁴</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="model_size_field">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="part_description_label">
+            <property name="text">
+             <string>Part Description</string>
+            </property>
+            <property name="buddy">
+             <cstring>part_description_field</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QPlainTextEdit" name="part_description_field">
+            <property name="tabChangesFocus">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="working_dir_label">
+            <property name="text">
+             <string>Working Directory</string>
+            </property>
+            <property name="buddy">
+             <cstring>working_dir_field</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <layout class="QHBoxLayout" name="working_dir_layout">
+            <item>
+             <widget class="QLineEdit" name="working_dir_field">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="working_dir_select_button">
+              <property name="text">
+               <string>Select</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="log_debug_field">
+            <property name="text">
+             <string>Debug Log</string>
+            </property>
+            <property name="buddy">
+             <cstring>log_debug_checkbox</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="QCheckBox" name="log_debug_checkbox"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="modeling_page">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>946</width>
+         <height>480</height>
+        </rect>
+       </property>
+       <attribute name="label">
+        <string>Model Manipulations</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <layout class="QFormLayout" name="formLayout_4">
+          <item row="0" column="0">
+           <widget class="QLabel" name="modeling_mode_label">
+            <property name="text">
+             <string>Modeling Mode</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="modeling_mode_combo"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="modeling_dim_label">
+          <property name="text">
+           <string>Dimension Warning</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="modeling_description_label">
+          <property name="text">
+           <string>Modeling Description</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QStackedWidget" name="modeling_stacked_widget">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="currentIndex">
+           <number>4</number>
+          </property>
+          <widget class="QWidget" name="modeling_empty"/>
+          <widget class="QWidget" name="modeling_tpms">
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <layout class="QFormLayout" name="formLayout_6">
+              <item row="0" column="0">
+               <widget class="QLabel" name="select_tpms_label">
+                <property name="text">
+                 <string>Select Surface</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="select_tpms_combo"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="tpms_formula_label">
+                <property name="text">
+                 <string>TPMS Formula</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="tpms_length_label">
+                <property name="text">
+                 <string>Unit Cell Length (L)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="tpms_length_field"/>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="tpms_constant_label">
+                <property name="text">
+                 <string>Formula Constant (C)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="tpms_constant_field"/>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="tpms_formula_real_label">
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="modeling_circle">
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <widget class="CustomTableWidget" name="modeling_circle_table">
+              <property name="contextMenuPolicy">
+               <enum>Qt::ActionsContextMenu</enum>
+              </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+              </property>
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ContiguousSelection</enum>
+              </property>
+              <row>
+               <property name="text">
+                <string>1</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>2</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>3</string>
+               </property>
+              </row>
+              <column>
+               <property name="text">
+                <string>Center X</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Center Y</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Radius</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Material Code</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="modeling_circle_note">
+              <property name="text">
+               <string>Note: Press enter in any cell in the last row to add a row.</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="modeling_sphere">
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <item>
+             <widget class="CustomTableWidget" name="modeling_sphere_table">
+              <property name="contextMenuPolicy">
+               <enum>Qt::ActionsContextMenu</enum>
+              </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+              </property>
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ContiguousSelection</enum>
+              </property>
+              <row>
+               <property name="text">
+                <string>1</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>2</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>3</string>
+               </property>
+              </row>
+              <column>
+               <property name="text">
+                <string>Center X</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Center Y</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Center Z</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Radius</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Material Code</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="modeling_sphere_note">
+              <property name="text">
+               <string>Note: Press enter in any cell in the last row to add a row.</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="modeling_single_image"/>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="bc_page">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>946</width>
+         <height>480</height>
+        </rect>
+       </property>
+       <attribute name="label">
+        <string>Boundary Conditions</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QGroupBox" name="bc_type_group_box">
+            <property name="title">
+             <string>BC Type</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_10">
+             <item>
+              <widget class="QRadioButton" name="no_bc_radio">
+               <property name="text">
+                <string>No Boundary Conditions</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="bc_set_only_radio">
+               <property name="text">
+                <string>Create Node Sets Only</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="periodic_bc_radio">
+               <property name="text">
+                <string>Periodic Boundary Conditions</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="strain_group_box">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="title">
+             <string>BC Value</string>
+            </property>
+            <layout class="QFormLayout" name="formLayout_2">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="strain11_label">
+               <property name="text">
+                <string>&amp;epsilon;&lt;sub&gt;11&lt;sub&gt;</string>
+               </property>
+               <property name="textFormat">
+                <enum>Qt::AutoText</enum>
+               </property>
+               <property name="buddy">
+                <cstring>strain11_field</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="strain11_field">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="strain22Label">
+               <property name="text">
+                <string>&amp;epsilon;&lt;sub&gt;22&lt;sub&gt;</string>
+               </property>
+               <property name="buddy">
+                <cstring>strain22_field</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="strain22_field">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="strain33_label">
+               <property name="text">
+                <string>&amp;epsilon;&lt;sub&gt;33&lt;sub&gt;</string>
+               </property>
+               <property name="buddy">
+                <cstring>strain33_field</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="strain33_field">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="strain12_label">
+               <property name="text">
+                <string>&amp;epsilon;&lt;sub&gt;12&lt;sub&gt;</string>
+               </property>
+               <property name="buddy">
+                <cstring>strain12_field</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLineEdit" name="strain12_field">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="strain13_label">
+               <property name="text">
+                <string>&amp;epsilon;&lt;sub&gt;13&lt;sub&gt;</string>
+               </property>
+               <property name="buddy">
+                <cstring>strain13_field</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QLineEdit" name="strain13_field">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="strain23_label">
+               <property name="text">
+                <string>&amp;epsilon;&lt;sub&gt;23&lt;sub&gt;</string>
+               </property>
+               <property name="buddy">
+                <cstring>strain23_field</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QLineEdit" name="strain23_field">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="bc_image_label">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="pixmap">
+           <pixmap>resources/bc_2d.png</pixmap>
+          </property>
+          <property name="scaledContents">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="output_page">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>946</width>
+         <height>480</height>
+        </rect>
+       </property>
+       <attribute name="label">
+        <string>Output</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_11">
+        <item>
+         <widget class="QGroupBox" name="output_group_box">
+          <property name="title">
+           <string>Output Parameters</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout_3">
+           <item row="0" column="0">
+            <widget class="QLabel" name="file_name_label">
+             <property name="text">
+              <string>File Name</string>
+             </property>
+             <property name="buddy">
+              <cstring>file_name_field</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="file_name_field">
+             <property name="text">
+              <string>unnamed</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="elem_code_label">
+             <property name="text">
+              <string>Element Code</string>
+             </property>
+             <property name="buddy">
+              <cstring>elem_code_field</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="elem_code_field"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="output_mats_label">
+             <property name="text">
+              <string>Materials to Output</string>
+             </property>
+             <property name="buddy">
+              <cstring>output_mats_all_radio</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <layout class="QVBoxLayout" name="output_mats_layout1">
+             <item>
+              <layout class="QHBoxLayout" name="output_mats_layout2">
+               <item>
+                <widget class="QRadioButton" name="output_mats_non_empty_radio">
+                 <property name="text">
+                  <string>Non-Empty Materials</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="output_mats_all_radio">
+                 <property name="text">
+                  <string>All Materials</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="output_mats_layout3">
+               <item>
+                <widget class="QRadioButton" name="output_mats_select_radio">
+                 <property name="text">
+                  <string>Following Materials</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="output_mats_select_field">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPlainTextEdit" name="log_field">
+          <property name="documentTitle">
+           <string/>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="footerLabel">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="contextMenuPolicy">
+       <enum>Qt::NoContextMenu</enum>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="text">
+       <string>Copyright © 2021, Mohammadreza Khoshbin.
+VCAMS is a free and open source software published under the GNU AGPLv3 license.
+</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>968</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_import_settings"/>
+    <addaction name="action_export_settings"/>
+    <addaction name="separator"/>
+    <addaction name="action_exit"/>
+   </widget>
+   <addaction name="menuFile"/>
+  </widget>
+  <action name="action_import_settings">
+   <property name="text">
+    <string>Import Model Settings</string>
+   </property>
+  </action>
+  <action name="action_export_settings">
+   <property name="text">
+    <string>Export Model Settings</string>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CustomTableWidget</class>
+   <extends>QTableWidget</extends>
+   <header>custom_table</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
