@@ -181,7 +181,7 @@ def export_settings(main_obj):
 
 def import_settings(main_obj):
     config = ConfigParser()
-    config.read(r'C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed\unnamed.vcams')
+    config.read(r'C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed\unnamed.vcams')  # FIXME
 
     # Check validity of the imported settings.
     section_list = ('Basic', 'BC', 'Modeling', 'Output')
@@ -190,7 +190,7 @@ def import_settings(main_obj):
             QMessageBox.critical(main_obj, 'Import Failed!',
                                  'Section "%s" was not present in the settings file.' % name)
 
-    # # Tab: Basic Model Information
+    # Tab: Basic Model Information
     basic = config['Basic']
     try:
         set_field_value(main_obj.part_name_field, 'part_name', basic)

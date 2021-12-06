@@ -3,6 +3,7 @@ import logging  # TODO: add function to close logger.
 import os
 import textwrap
 from pathlib import Path
+from configparser import ConfigParser
 
 import numpy as np
 
@@ -120,7 +121,7 @@ class VoxelPart:
         self.description = textwrap.fill(description, width=80)
 
         # Validate results_path.
-        if results_path is None:
+        if results_path is None:  # TODO: rename to working_dir.
             results_path = return_default_results_path(part_name=self.name)
         else:
             results_path = Path(results_path)
@@ -294,16 +295,49 @@ class VoxelPart:
 
 
 def from_config_file(file_path):
-    pass
+    config = ConfigParser()
+    config.read(file_path)
+
+    # Check validity of the imported settings.
+    section_list = ('Basic', 'BC', 'Modeling', 'Output')
+    for name in section_list:
+        if name not in config.sections():
+            raise ValueError('Section "%s" was not present in the settings file.' % name)
+
+    # Basic: Information used for creating the part.
+    part_creation_dict = dict()
+    basic = config['Basic']
+    part_creation_dict['size'] = (int(basic['num_voxels_x']),
+                                  int(basic['num_voxels_y']), int(basic['num_voxels_z']))
+    if 'fill_value' in basic:
+        part_creation_dict['fill_value'] = basic['fill_value']
+    else:
+        part_creation_dict['fill_value'] = 0
+    part_creation_dict['voxel_size'] = (float(basic['voxel_size_x']),
+                                        float(basic['voxel_size_y']), float(basic['voxel_size_z']))
+    num_mats = basic['num_mats']
+    if num_mats == '0':
+        part_creation_dict['dtype'] = 'uint8'
+    elif num_mats == '1':
+        part_creation_dict['dtype'] = 'uint16'
+    elif num_mats == '2':
+        part_creation_dict['dtype'] = 'uint32'
+    elif num_mats == '3':
+        part_creation_dict['dtype'] = 'uint54'
+    else:
+        raise ValueError("Invalid value for field 'num_mats'.")
+    part_creation_dict['name'] = basic['part_name']
+    part_creation_dict['description'] = basic['part_description']
+    part_creation_dict['results_path'] = basic['working_dir']
+    part_creation_dict['overwrite_logs'] = True
+    part_creation_dict['log_debug'] = config.getboolean('Basic', 'log_debug')
+
+    # Modeling: Manipulating the part.
+    # Cases: tpms, circle, sphere.
 
 
-
-
-
-
-
-
-
+    part = VoxelPart(**part_creation_dict)
+    return part
 
 
 
