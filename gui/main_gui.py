@@ -1,17 +1,16 @@
 import sys
 from collections import namedtuple
-from os import path
 from pathlib import Path
 
-import matplotlib
+from matplotlib import rcParams
 import matplotlib.pyplot as plt
-from PyQt5 import QtWidgets, uic
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
     QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
-    QFileDialog, QButtonGroup
-from matplotlib.backends.backend_agg import FigureCanvasAgg
+    QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
 from custom_table import FloatDelegate, IntDelegate
 from settings_io import export_settings, import_settings
@@ -49,7 +48,7 @@ tpms_type_list = (TpmsType('Schwarz Primitive (P)',
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
-    matplotlib.rcParams['mathtext.fontset'] = 'cm'
+    rcParams['mathtext.fontset'] = 'cm'
     # Create a figure.
     fig = plt.figure()
     fig.patch.set_facecolor('none')
@@ -85,13 +84,13 @@ def return_default_results_path(part_name=None):  # TODO: remove this and import
     return Path.home().joinpath(*parts)
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         # Load the UI Page
-        uic.loadUi(path.join(path.dirname(__file__), 'main_window.ui'), self)
+        uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
 
         # Connect signals for the menu.
         self.action_import_settings.triggered.connect(
@@ -292,7 +291,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.custom_working_dir = self.working_dir
         dir_str = QFileDialog.getExistingDirectory(self, 'Select the working directory.',
                                                    self.working_dir, QFileDialog.ShowDirsOnly)
-        dir_str = path.normpath(dir_str)
+        dir_str = str(Path(dir_str).resolve(strict=False))
+
         self.custom_working_dir = dir_str
         self.working_dir = dir_str
         self.working_dir_field.setText(dir_str)
@@ -382,7 +382,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
+    app.setStyle(QStyleFactory.create('fusion'))
     main = MainWindow()
     main.show()
     sys.exit(app.exec_())
