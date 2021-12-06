@@ -291,3 +291,22 @@ class VoxelPart:
 
         # Apply the mask to self.data.
         np.putmask(self.data, mask, value)
+
+
+def from_config_file(file_path):
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
