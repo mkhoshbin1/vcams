@@ -1,12 +1,12 @@
 [Basic]
 part_name = unnamed
 dim = 3D
-num_voxels_x = 10
-num_voxels_y = 30
-num_voxels_z = 5
-voxel_size_x = 0.1
-voxel_size_y = 2
-voxel_size_z = 0.003
+num_voxels_x = 100
+num_voxels_y = 100
+num_voxels_z = 100
+voxel_size_x = 0.01
+voxel_size_y = 0.01
+voxel_size_z = 0.01
 num_mats = 0
 part_description = 
 working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed
@@ -15,8 +15,8 @@ log_debug = False
 [Modeling]
 modeling_mode = 1
 tpms_type = 0
-tpms_length = 2
-tpms_constant = 3
+tpms_length = 0.5
+tpms_constant = 0
 
 [BC]
 bc_type = 2

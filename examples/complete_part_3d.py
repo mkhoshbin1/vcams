@@ -9,6 +9,8 @@ part = vcams.voxelpart.VoxelPart(size=(50, 75, 100), fill_value=1,
                                  name='Filled 3D Part',
                                  description='A cubic 50*50*50 part filled with elements.')
 
+part.add_default_node_sets(dim='3D')
+
 # Output the part.
 part.output_abaqus_inp(file_name='complete_part_3d',
                        elem_type='C3D8R', dim='3D',

@@ -4,11 +4,14 @@ import os
 import textwrap
 from pathlib import Path
 from configparser import ConfigParser
+from typing import Union
 
 import numpy as np
 
 from . import __version__, __website__
+from .bc import create_node_sets
 from .helper import is_name_valid, return_default_results_path
+from .mask.function import mask_from_function
 from .mask.tpms import tpms_dict
 from .output import write_abaqus_inp
 
@@ -36,7 +39,7 @@ class VoxelPart:
                               Make sure it is within the range specified by *dtype* #TODO: link
                               Defaults to 0 which represents empty space.
 
-            voxel_size (tuple): A tuple containing two or three floats which determine
+            voxel_size (tuple | numpy.ndarray): A tuple containing two or three floats which determine
                                 the size of a voxel in the x, y, and z directions.
                                 For example, if the tuple (0.02, 0.1, 1.5) is specified,
                                 each voxel will have those dimensions in the x, y, and z directions.
@@ -253,6 +256,15 @@ class VoxelPart:
         logger.debug("Added custom node set '%s' with %u elements.",
                      name, len(self.node_sets[name]))
 
+    def add_default_node_sets(self, dim):
+        """Define default node sets in the VoxelPart. They are created according to TODO
+
+        Args:
+            dim (str): Dimensionality of the part which affects the created node sets.
+                       Valid values are '2D' and '3D'.
+        """
+        create_node_sets(part=self, dim=dim)
+
     def apply_mask(self, mask, value):
         """Use a boolean mask to change values of the :py:attr:`~data` attribute.
 
@@ -296,11 +308,12 @@ class VoxelPart:
 
 
 def from_config_file(file_path):
+    # TODO: log.
     config = ConfigParser()
     config.read(file_path)
 
     # Check validity of the imported settings.
-    section_list = ('Basic', 'BC', 'Modeling', 'Output')
+    section_list = ('Basic', 'Modeling', 'BC', 'Output')
     for name in section_list:
         if name not in config.sections():
             raise ValueError('Section "%s" was not present in the settings file.' % name)
@@ -308,10 +321,11 @@ def from_config_file(file_path):
     # Basic: Information used for creating the part.
     part_creation_dict = dict()
     basic = config['Basic']
+    dim = basic['dim']  # FIXME
     part_creation_dict['size'] = (int(basic['num_voxels_x']),
                                   int(basic['num_voxels_y']), int(basic['num_voxels_z']))
     if 'fill_value' in basic:
-        part_creation_dict['fill_value'] = basic['fill_value']
+        part_creation_dict['fill_value'] = int(basic['fill_value'])
     else:
         part_creation_dict['fill_value'] = 0
     part_creation_dict['voxel_size'] = (float(basic['voxel_size_x']),
@@ -339,15 +353,15 @@ def from_config_file(file_path):
     modeling_mode = modeling['modeling_mode']
     part_manipulation_dict['modeling_mode'] = modeling_mode
     if modeling_mode == '0':  # No further action.
-        raise ValueError('Field "modeling_mode" is set to 0, which is invalid.')
+        pass
     elif modeling_mode == '1':  # TPMS
         tpms_type = modeling['tpms_type']
         if int(tpms_type) in tpms_dict.keys():
-            part_manipulation_dict['tpms_type'] = tpms_type
+            part_manipulation_dict['tpms_type'] = int(tpms_type)
         else:
             raise ValueError('Field "tpms_type" is set to %s, which is invalid.' % tpms_type)
-        part_manipulation_dict['tpms_length'] = modeling['tpms_length']
-        part_manipulation_dict['tpms_constant'] = modeling['tpms_constant']
+        part_manipulation_dict['tpms_length'] = float(modeling['tpms_length'])
+        part_manipulation_dict['tpms_constant'] = float(modeling['tpms_constant'])
     elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
         raise NotImplementedError('Addition of Circular Inclusions has not been implemented.')
     elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
@@ -355,12 +369,50 @@ def from_config_file(file_path):
     else:
         raise ValueError('Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
 
+    # BC: Boundary Conditions.
+    bc_dict = dict()
+    bc = config['BC']
+    bc_type = bc['bc_type']
+    bc_dict['bc_type'] = bc_type
+    if bc_type == '0':  # No BC.
+        pass
+    elif bc_type == '1':  # Sets only.
+        raise NotImplementedError('Creation of sets has not been implemented.')  # TODO: pass
+    elif bc_type == '2':  # Periodic BC.
+        raise NotImplementedError('Periodic BC has not been implemented.')  # TODO
+    else:
+        raise ValueError('Field "bc_type" is set to %s, which is invalid.' % bc_type)
+
     part = VoxelPart(**part_creation_dict)
 
+    modeling_mode = part_manipulation_dict['modeling_mode']
+    if modeling_mode == '0':  # No further action.
+        pass
+    elif modeling_mode == '1':  # TPMS
+        boolean_mask = mask_from_function(mask_shape=part.data.shape,
+                                          func=tpms_dict[part_manipulation_dict['tpms_type']],
+                                          voxel_size=part.voxel_size,
+                                          l=part_manipulation_dict['tpms_length'],
+                                          c=part_manipulation_dict['tpms_constant'])
+        part.apply_mask(mask=boolean_mask, value=1)
+    elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
+        raise NotImplementedError('Addition of Circular Inclusions has not been implemented.')
+    elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
+        raise NotImplementedError('Addition of Spherical Inclusions has not been implemented.')
+    else:
+        raise ValueError(
+            "Invalid value '%s' for part_manipulation_dict['modeling_mode']." % modeling_mode)
+
+    bc_type = bc_dict['bc_type']
+    if bc_type == '0':  # No BC.
+        pass
+    elif bc_type == '1':  # Sets only.
+        part.add_default_node_sets(dim=dim)  # FIXME
+    elif bc_type == '2':  # Periodic BC.
+        raise NotImplementedError('Periodic BC has not been implemented.')  # TODO
+    else:
+        raise ValueError("Invalid value '%s' for bc_dict['bc_type']" % bc_type)
+
+
+
     return part
-
-
-
-
-
-

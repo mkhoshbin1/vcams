@@ -184,7 +184,7 @@ def import_settings(main_obj):
     config.read(r'C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed\unnamed.vcams')  # FIXME
 
     # Check validity of the imported settings.
-    section_list = ('Basic', 'BC', 'Modeling', 'Output')
+    section_list = ('Basic', 'Modeling', 'BC', 'Output')
     for name in section_list:
         if name not in config.sections():
             QMessageBox.critical(main_obj, 'Import Failed!',

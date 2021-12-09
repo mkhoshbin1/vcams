@@ -20,7 +20,7 @@ def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
     Args:
         mask_shape (tuple): A tuple containing three integers which determine
                             the shape of the returned boolean mask.
-        func (Union[function, BaseTpms]): A function object which evaluates a point and returns a value.
+        func (function | BaseTpms): A function object which evaluates a point and returns a value.
                          This function must accept x, y, and z parameters (if not use them)
                          and can receive other keyword arguments. See **kwargs.
                          This function can represent anything, for example:
