@@ -5,6 +5,7 @@ from pathlib import Path
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+# noinspection PyUnresolvedReferences
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
@@ -14,6 +15,7 @@ from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelection
 
 from custom_table import FloatDelegate, IntDelegate
 from settings_io import export_settings, import_settings
+from vcams.mask.tpms import tpms_dict
 
 ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
@@ -36,15 +38,6 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                       #              'This form is used to create a 2D model based on a single'
                       #              'binary or grayscale image:')
                       )
-TpmsType = namedtuple('TpmsType', ('name', 'formula'))  # TODO: Maybe add and id?
-tpms_type_list = (TpmsType('Schwarz Primitive (P)',
-                           r'$\Phi = cos(\frac{2\pi}{l} x) + cos(\frac{2\pi}{l} y) + cos(\frac{2\pi}{l} z) - c$'),
-                  TpmsType('Schwarz Diamond (D)',
-                           (
-                               r'$\Phi = sin(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z)$'
-                               r'$+ sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$' '\n'
-                               r'$+ cos(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
-                               r'$+ cos(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z) - c$')))
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
@@ -174,8 +167,7 @@ class MainWindow(QMainWindow):
         self.modeling_mode_combo.setCurrentIndex(0)
         self.modeling_mode_combo.currentTextChanged.connect(self.modeling_mode_changed)
         self.modeling_mode_changed()
-        # select_tpms_combo
-        for tpms_type in tpms_type_list:
+        for tpms_type in tpms_dict.values():
             self.select_tpms_combo.addItem(tpms_type.name, userData=tpms_type)
         self.select_tpms_combo.currentTextChanged.connect(self.tpms_type_changed)
         self.tpms_type_changed()

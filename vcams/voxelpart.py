@@ -333,8 +333,22 @@ def from_config_file(file_path):
     part_creation_dict['log_debug'] = config.getboolean('Basic', 'log_debug')
 
     # Modeling: Manipulating the part.
-    # Cases: tpms, circle, sphere.
-
+    part_manipulation_dict = dict()
+    modeling = config['Modeling']
+    modeling_mode = modeling['modeling_mode']
+    part_manipulation_dict['modeling_mode'] = modeling_mode
+    if modeling_mode == '0':  # No further action.
+        raise ValueError('Field "modeling_mode" is set to 0, which is invalid.')
+    elif modeling_mode == '1':  # TPMS
+        part_manipulation_dict['tpms_type'] = modeling['tpms_type']
+        part_manipulation_dict['tpms_length'] = modeling['tpms_length']
+        part_manipulation_dict['tpms_constant'] = modeling['tpms_constant']
+    elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
+        raise NotImplementedError('Addition of Circular Inclusions has not been implemented.')
+    elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
+        raise NotImplementedError('Addition of Spherical Inclusions has not been implemented.')
+    else:
+        raise ValueError('Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
 
     part = VoxelPart(**part_creation_dict)
     return part
