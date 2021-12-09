@@ -1,12 +1,17 @@
 """Functions used for creating a boolean mask from a function."""
 import logging
 import time
+from typing import Union
 
 import numpy as np
 
+from vcams.mask.tpms import BaseTpms
+
 logger = logging.getLogger(__name__)
 
+
 # TODO: the definition for level set is reversed. fix. see J. Liu et al. / Advances in Engineering Software 87 (2015) 13–29
+
 
 def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
                        do_log=True, **kwargs):
@@ -15,7 +20,7 @@ def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
     Args:
         mask_shape (tuple): A tuple containing three integers which determine
                             the shape of the returned boolean mask.
-        func (function): A function object which evaluates a point and returns a value.
+        func (Union[function, BaseTpms]): A function object which evaluates a point and returns a value.
                          This function must accept x, y, and z parameters (if not use them)
                          and can receive other keyword arguments. See **kwargs.
                          This function can represent anything, for example:
@@ -23,6 +28,8 @@ def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
                            triply periodic minimal surface (TPMS).
                            + The equation for a circle. In this case,
                            the function receives the z variable, but does not use it.
+                        It is possible to pass a subclass of *BaseTpms* (#TODO: add)
+                        to this function. In that case, it's function is used for the operation.
 
         voxel_size (tuple): A tuple containing three floats which determine the size of a voxel
                             in the x, y, and z directions.
@@ -49,6 +56,10 @@ def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
 
     if len(mask_shape) == 2:
         mask_shape = np.append(mask_shape, 1)
+
+    # noinspection PyTypeChecker
+    if issubclass(func, BaseTpms):
+        func = func.func
 
     start_time = time.perf_counter()
     if vectorized:

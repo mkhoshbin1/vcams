@@ -9,6 +9,7 @@ import numpy as np
 
 from . import __version__, __website__
 from .helper import is_name_valid, return_default_results_path
+from .mask.tpms import tpms_dict
 from .output import write_abaqus_inp
 
 logger = logging.getLogger(__name__)
@@ -340,7 +341,11 @@ def from_config_file(file_path):
     if modeling_mode == '0':  # No further action.
         raise ValueError('Field "modeling_mode" is set to 0, which is invalid.')
     elif modeling_mode == '1':  # TPMS
-        part_manipulation_dict['tpms_type'] = modeling['tpms_type']
+        tpms_type = modeling['tpms_type']
+        if int(tpms_type) in tpms_dict.keys():
+            part_manipulation_dict['tpms_type'] = tpms_type
+        else:
+            raise ValueError('Field "tpms_type" is set to %s, which is invalid.' % tpms_type)
         part_manipulation_dict['tpms_length'] = modeling['tpms_length']
         part_manipulation_dict['tpms_constant'] = modeling['tpms_constant']
     elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
@@ -351,6 +356,7 @@ def from_config_file(file_path):
         raise ValueError('Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
 
     part = VoxelPart(**part_creation_dict)
+
     return part
 
 
