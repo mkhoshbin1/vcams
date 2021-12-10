@@ -19,7 +19,7 @@ tpms_length = 0.5
 tpms_constant = 0
 
 [BC]
-bc_type = 2
+bc_type = 0
 strain11 = 1
 strain22 = 2
 strain33 = 3
@@ -28,8 +28,8 @@ strain13 = 5
 strain23 = 6
 
 [Output]
-file_name = unnamed
+file_name = unnamed2
 elem_code = C3D8R
 output_mats_type = 2
-output_mats_select = 2, 3, 4, 5
+output_mats_select = 1
 

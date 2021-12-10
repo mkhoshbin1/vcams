@@ -9,10 +9,10 @@ from PyQt5.QtWidgets import QLineEdit, QMessageBox, QComboBox, QPlainTextEdit, Q
 """
 
 # Zero-Based list corresponding to bc_type_button_group.
-bc_type_list = ['No Boundary Conditions', 'Create Node Sets Only',
-                'Periodic Boundary Conditions']
+# bc_type_list = ['No Boundary Conditions', 'Create Node Sets Only',
+#                'Periodic Boundary Conditions']
 # Zero-Based list corresponding to output_mats_type_button_group.
-output_mats_type = ['Non-Empty Materials', 'All Materials', 'Following Materials']
+# output_mats_type = ['Non-Empty Materials', 'All Materials', 'Following Materials']
 
 
 class InvalidFieldError(Exception):

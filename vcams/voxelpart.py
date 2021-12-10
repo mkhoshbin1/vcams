@@ -3,14 +3,13 @@ import logging  # TODO: add function to close logger.
 import os
 import textwrap
 from pathlib import Path
-from configparser import ConfigParser
 from typing import Union
 
 import numpy as np
 
 from . import __version__, __website__
 from .bc import create_node_sets
-from .helper import is_name_valid, return_default_results_path
+from .helper import is_name_valid, return_default_results_path, read_configuration
 from .mask.function import mask_from_function
 from .mask.tpms import tpms_dict
 from .output import write_abaqus_inp
@@ -158,7 +157,7 @@ class VoxelPart:
                     name, '*'.join(str(s) for s in size), fill_value)
 
     def output_abaqus_inp(self, file_name, elem_type, dim,
-                          material_elem_sets, custom_elem_sets):
+                          material_elem_sets, custom_elem_sets=True):
         """Output the part to an Abaqus (TM) input file.
         For a full list of parameters, see :py:meth:`output.write_abaqus_inp`.
         Note that the parameter *scale* is not used in this function and
@@ -309,80 +308,10 @@ class VoxelPart:
 
 def from_config_file(file_path):
     # TODO: log.
-    config = ConfigParser()
-    config.read(file_path)
+    (part_creation_dict, part_manipulation_dict, bc_dict, output_dict) = \
+        read_configuration(file_path)
 
-    # Check validity of the imported settings.
-    section_list = ('Basic', 'Modeling', 'BC', 'Output')
-    for name in section_list:
-        if name not in config.sections():
-            raise ValueError('Section "%s" was not present in the settings file.' % name)
-
-    # Basic: Information used for creating the part.
-    part_creation_dict = dict()
-    basic = config['Basic']
-    dim = basic['dim']  # FIXME
-    part_creation_dict['size'] = (int(basic['num_voxels_x']),
-                                  int(basic['num_voxels_y']), int(basic['num_voxels_z']))
-    if 'fill_value' in basic:
-        part_creation_dict['fill_value'] = int(basic['fill_value'])
-    else:
-        part_creation_dict['fill_value'] = 0
-    part_creation_dict['voxel_size'] = (float(basic['voxel_size_x']),
-                                        float(basic['voxel_size_y']), float(basic['voxel_size_z']))
-    num_mats = basic['num_mats']
-    if num_mats == '0':
-        part_creation_dict['dtype'] = 'uint8'
-    elif num_mats == '1':
-        part_creation_dict['dtype'] = 'uint16'
-    elif num_mats == '2':
-        part_creation_dict['dtype'] = 'uint32'
-    elif num_mats == '3':
-        part_creation_dict['dtype'] = 'uint54'
-    else:
-        raise ValueError("Invalid value for field 'num_mats'.")
-    part_creation_dict['name'] = basic['part_name']
-    part_creation_dict['description'] = basic['part_description']
-    part_creation_dict['results_path'] = basic['working_dir']
-    part_creation_dict['overwrite_logs'] = True
-    part_creation_dict['log_debug'] = config.getboolean('Basic', 'log_debug')
-
-    # Modeling: Manipulating the part.
-    part_manipulation_dict = dict()
-    modeling = config['Modeling']
-    modeling_mode = modeling['modeling_mode']
-    part_manipulation_dict['modeling_mode'] = modeling_mode
-    if modeling_mode == '0':  # No further action.
-        pass
-    elif modeling_mode == '1':  # TPMS
-        tpms_type = modeling['tpms_type']
-        if int(tpms_type) in tpms_dict.keys():
-            part_manipulation_dict['tpms_type'] = int(tpms_type)
-        else:
-            raise ValueError('Field "tpms_type" is set to %s, which is invalid.' % tpms_type)
-        part_manipulation_dict['tpms_length'] = float(modeling['tpms_length'])
-        part_manipulation_dict['tpms_constant'] = float(modeling['tpms_constant'])
-    elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
-        raise NotImplementedError('Addition of Circular Inclusions has not been implemented.')
-    elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
-        raise NotImplementedError('Addition of Spherical Inclusions has not been implemented.')
-    else:
-        raise ValueError('Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
-
-    # BC: Boundary Conditions.
-    bc_dict = dict()
-    bc = config['BC']
-    bc_type = bc['bc_type']
-    bc_dict['bc_type'] = bc_type
-    if bc_type == '0':  # No BC.
-        pass
-    elif bc_type == '1':  # Sets only.
-        raise NotImplementedError('Creation of sets has not been implemented.')  # TODO: pass
-    elif bc_type == '2':  # Periodic BC.
-        raise NotImplementedError('Periodic BC has not been implemented.')  # TODO
-    else:
-        raise ValueError('Field "bc_type" is set to %s, which is invalid.' % bc_type)
-
+    ################################################
     part = VoxelPart(**part_creation_dict)
 
     modeling_mode = part_manipulation_dict['modeling_mode']
@@ -407,12 +336,12 @@ def from_config_file(file_path):
     if bc_type == '0':  # No BC.
         pass
     elif bc_type == '1':  # Sets only.
-        part.add_default_node_sets(dim=dim)  # FIXME
+        part.add_default_node_sets(dim=bc_dict['dim'])  # FIXME
     elif bc_type == '2':  # Periodic BC.
         raise NotImplementedError('Periodic BC has not been implemented.')  # TODO
     else:
         raise ValueError("Invalid value '%s' for bc_dict['bc_type']" % bc_type)
 
-
+    part.output_abaqus_inp(**output_dict)
 
     return part

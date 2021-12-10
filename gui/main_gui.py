@@ -194,8 +194,8 @@ class MainWindow(QMainWindow):
         # output_mats  # TODO: move all signals from QtDesigner to python.
         self.output_mats_type_button_group = QButtonGroup(self.output_mats_layout1)
         self.output_mats_type_button_group.setExclusive(True)
-        self.output_mats_type_button_group.addButton(self.output_mats_non_empty_radio, 0)
-        self.output_mats_type_button_group.addButton(self.output_mats_all_radio, 1)
+        self.output_mats_type_button_group.addButton(self.output_mats_all_radio, 0)
+        self.output_mats_type_button_group.addButton(self.output_mats_non_empty_radio, 1)
         self.output_mats_type_button_group.addButton(self.output_mats_select_radio, 2)
         self.output_mats_non_empty_radio.toggled.connect(self.toggle_output_mats_type)
         self.output_mats_all_radio.toggled.connect(self.toggle_output_mats_type)
