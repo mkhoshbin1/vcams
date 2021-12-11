@@ -1,6 +1,7 @@
 """Functions used for creating a boolean mask from a function."""
 import logging
 import time
+from inspect import isclass
 from typing import Union
 
 import numpy as np
@@ -58,7 +59,7 @@ def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
         mask_shape = np.append(mask_shape, 1)
 
     # noinspection PyTypeChecker
-    if issubclass(func, BaseTpms):
+    if isclass(func) and issubclass(func, BaseTpms):  # TODO: maybe check for function / rename?
         func = func.func
 
     start_time = time.perf_counter()

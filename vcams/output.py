@@ -217,7 +217,7 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
                             ' which is not supported by Abaqus (TM).'))
 
     # Validate dim.
-    if dim not in ['2D', '3D']:
+    if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
 
     # Make sure elem_id_list is unique and sorted.
@@ -360,7 +360,7 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
     num_real_nodes = node_id_list.size
 
     # Validate dim.
-    if dim not in ['2D', '3D']:
+    if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
 
     # Set format string and number of columns in node_coordinates based on dim.
