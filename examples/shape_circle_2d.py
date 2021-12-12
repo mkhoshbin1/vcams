@@ -19,17 +19,14 @@ part = vcams.voxelpart.VoxelPart(size=(50, 50), fill_value=1,
 # Create a mask with the same shape and voxel_size as the part.
 t = part.data.shape[0] * part.voxel_size[0] / 2
 
-shape_array = ShapeArray(dim='2D')  # FIXME: mask from shape array.
+shape_array = ShapeArray(dim='2D', part_shape=part.data.shape,
+                         voxel_size=part.voxel_size, is_mask_calculation_lazy=True)
 shape_array.add_shape(Circle, a=0, b=0, r=0.1)
 shape_array.add_shape(Circle, a=0.4, b=0.2, r=0.15)
 shape_array.add_shape(Circle, a=0.7, b=0.5, r=0.15)
 
-circle_mask = vcams.mask.function.mask_from_function(mask_shape=part.data.shape,
-                                                     func=vcams.mask.shape.Circle(1, t, t, t).func,
-                                                     voxel_size=part.voxel_size)
-
 # Apply the mask to the part.
-part.apply_mask(mask=circle_mask, value=2)
+part.apply_mask(mask=shape_array.mask, value=2)
 
 # Output the part.
 part.output_abaqus_inp(file_name='shape_circle_2d',

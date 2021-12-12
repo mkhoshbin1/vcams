@@ -57,7 +57,7 @@ def mask_from_function(mask_shape, func, voxel_size, vectorized=True,
 
     if len(mask_shape) == 2:
         mask_shape = np.append(mask_shape, 1)
-
+    # TODO: use VoxelPart as arg. set unused to None.
     # noinspection PyTypeChecker
     if isclass(func) and issubclass(func, BaseTpms):  # TODO: maybe check for function / rename?
         func = func.func
