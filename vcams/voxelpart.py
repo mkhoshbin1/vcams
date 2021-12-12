@@ -11,6 +11,7 @@ from . import __version__, __website__
 from .bc import create_node_sets
 from .helper import is_name_valid, return_default_results_path, read_configuration
 from .mask.function import mask_from_function
+from .mask.shape import ShapeArray, Circle, Sphere
 from .mask.tpms import tpms_dict
 from .output import write_abaqus_inp
 
@@ -325,9 +326,18 @@ def from_config_file(file_path):
                                           c=part_manipulation_dict['tpms_constant'])
         part.apply_mask(mask=boolean_mask, value=1)
     elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
-        raise NotImplementedError('Addition of Circular Inclusions has not been implemented.')
+        for row in part_manipulation_dict['circle_list']:
+            circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))
+            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape,
+                                                           voxel_size=part.voxel_size),
+                            value=int(row[3]))
     elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
-        raise NotImplementedError('Addition of Spherical Inclusions has not been implemented.')
+        for row in part_manipulation_dict['sphere_list']:
+            circle_obj = Sphere(id=0, a=float(row[0]), b=float(row[1]),
+                                c=float(row[2]), r=float(row[3]))
+            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape,
+                                                           voxel_size=part.voxel_size),
+                            value=int(row[4]))
     else:
         raise ValueError(
             "Invalid value '%s' for part_manipulation_dict['modeling_mode']." % modeling_mode)

@@ -1,7 +1,8 @@
 """Various helper functions."""
-
+import csv
 from configparser import ConfigParser
 import logging
+from io import StringIO
 from pathlib import Path
 
 from vcams.mask.tpms import tpms_dict
@@ -115,9 +116,16 @@ def read_configuration(file_path):
     # Basic: Information used for creating the part.
     part_creation_dict = dict()
     basic_section = config['Basic']
-    part_creation_dict['size'] = (int(basic_section['num_voxels_x']),
-                                  int(basic_section['num_voxels_y']),
-                                  int(basic_section['num_voxels_z']))
+    dim = basic_section['dim'].upper()
+    if dim == '2D':
+        part_creation_dict['size'] = (int(basic_section['num_voxels_x']),
+                                      int(basic_section['num_voxels_y']))
+    elif dim == '3D':
+        part_creation_dict['size'] = (int(basic_section['num_voxels_x']),
+                                      int(basic_section['num_voxels_y']),
+                                      int(basic_section['num_voxels_z']))
+    else:
+        raise ValueError('Field "dim" is set to %s, which is invalid.' % basic_section['dim'])
     if 'fill_value' in basic_section:
         part_creation_dict['fill_value'] = int(basic_section['fill_value'])
     else:
@@ -147,6 +155,7 @@ def read_configuration(file_path):
     modeling_section = config['Modeling']
     modeling_mode = modeling_section['modeling_mode']
     part_manipulation_dict['modeling_mode'] = modeling_mode
+    part_manipulation_dict['dim'] = dim
     if modeling_mode == '0':  # No further action.
         pass
     elif modeling_mode == '1':  # TPMS
@@ -158,16 +167,18 @@ def read_configuration(file_path):
         part_manipulation_dict['tpms_length'] = float(modeling_section['tpms_length'])
         part_manipulation_dict['tpms_constant'] = float(modeling_section['tpms_constant'])
     elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
-        raise NotImplementedError('Addition of Circular Inclusions has not been implemented.')  # TODO
+        part_manipulation_dict['circle_list'] = \
+            csv_string_to_list(modeling_section['modeling_circle_table'])
     elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
-        raise NotImplementedError('Addition of Spherical Inclusions has not been implemented.')  # TODO
+        part_manipulation_dict['sphere_list'] = \
+            csv_string_to_list(modeling_section['modeling_sphere_table'])
     else:
         raise ValueError('Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
 
     # BC: Boundary Conditions.
     bc_dict = dict()
     bc_section = config['BC']
-    bc_dict['dim'] = basic_section['dim']
+    bc_dict['dim'] = dim
     bc_type = bc_section['bc_type']
     bc_dict['bc_type'] = bc_type
     if bc_type == '0':  # No BC.
@@ -193,7 +204,7 @@ def read_configuration(file_path):
     else:
         raise ValueError('Field "file_name" contains an invalid name.')
     output_dict['elem_type'] = output_section['elem_code']
-    output_dict['dim'] = basic_section['dim']
+    output_dict['dim'] = dim
     output_mats_type = output_section['output_mats_type']
     if output_mats_type == '0':  # All Materials.
         output_dict['material_elem_sets'] = 'All'
@@ -207,3 +218,11 @@ def read_configuration(file_path):
             'Field "output_mats_type" is set to %s, which is invalid.' % output_mats_type)
 
     return part_creation_dict, part_manipulation_dict, bc_dict, output_dict
+
+
+def csv_string_to_list(csv_string):
+    buffer_io = StringIO(csv_string)
+    dialect = csv.Sniffer().sniff(buffer_io.readline())
+    buffer_io.seek(0)
+    csv_reader = csv.reader(buffer_io, dialect)
+    return [row for row in csv_reader]

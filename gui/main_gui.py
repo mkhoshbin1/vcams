@@ -13,7 +13,7 @@ from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValid
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
-from custom_table import FloatDelegate, IntDelegate
+from custom_table import IntDelegate, RadiusFloatDelegate, PositionFloatDelegate
 from settings_io import export_settings, import_settings
 from vcams.mask.tpms import tpms_dict
 
@@ -86,9 +86,9 @@ class MainWindow(QMainWindow):
         uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
 
         # Connect signals for the menu.
-        self.action_import_settings.triggered.connect(
+        self.action_import_settings.triggered.connect(  # TODO: select file.
             lambda main_obj: import_settings(main_obj=self))
-        self.action_export_settings.triggered.connect(
+        self.action_export_settings.triggered.connect(  # TODO: select file.
             lambda main_obj: export_settings(main_obj=self))
         self.action_exit.triggered.connect(self.close)
 
@@ -176,16 +176,16 @@ class MainWindow(QMainWindow):
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
 
         # Modeling: Planar Composite (Circular Inclusions)
-        self.modeling_circle_table.setItemDelegateForColumn(0, FloatDelegate(self))
-        self.modeling_circle_table.setItemDelegateForColumn(1, FloatDelegate(self))
-        self.modeling_circle_table.setItemDelegateForColumn(2, FloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(2, RadiusFloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(3, IntDelegate(self))
 
         # Modeling: Spatial Composite (Spherical Inclusions)
-        self.modeling_sphere_table.setItemDelegateForColumn(0, FloatDelegate(self))
-        self.modeling_sphere_table.setItemDelegateForColumn(1, FloatDelegate(self))
-        self.modeling_sphere_table.setItemDelegateForColumn(2, FloatDelegate(self))
-        self.modeling_sphere_table.setItemDelegateForColumn(3, FloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(2, PositionFloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(3, RadiusFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(4, IntDelegate(self))
 
         # Modeling: Single Image

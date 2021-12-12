@@ -1,0 +1,36 @@
+[Basic]
+part_name = unnamed
+dim = 2D
+num_voxels_x = 100
+num_voxels_y = 100
+num_voxels_z = 100
+voxel_size_x = 0.01
+voxel_size_y = 0.01
+voxel_size_z = 0.01
+fill_value = 1
+num_mats = 0
+part_description = 
+working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed
+log_debug = False
+
+[Modeling]
+modeling_mode = 2
+modeling_circle_table = 0.0,0.0,0.1,2
+	0.4,0.2,0.15,3
+	0.7,0.5,0.15,4
+
+[BC]
+bc_type = 0
+strain11 = 1
+strain22 = 2
+strain33 = 3
+strain12 = 4
+strain13 = 5
+strain23 = 6
+
+[Output]
+file_name = unnamed2
+elem_code = CPE4R
+output_mats_type = 2
+output_mats_select = 1, 2, 3, 4
+
