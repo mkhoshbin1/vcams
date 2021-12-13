@@ -61,7 +61,7 @@ class CustomTableWidget(QTableWidget):
         else:
             row_range = range(self.rowCount())
             col_range = range(self.columnCount())
-        for row in row_range:
+        for row in row_range:  # TODO: what about empty rows?
             row_list = []
             for col in col_range:
                 current_cell = self.item(row, col)
@@ -174,7 +174,19 @@ class IntDelegate(QStyledItemDelegate):
         return editor
 
 
-class FloatDelegate(QStyledItemDelegate):
+class PositionFloatDelegate(QStyledItemDelegate):
+    validator_obj = QDoubleValidator(-1e+6, 1e+6, 12)
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        editor.setValidator(self.validator_obj)
+        return editor
+
+    def setModelData(self, editor, model, index):
+        model.setData(index, str(float(editor.text())))
+
+
+class RadiusFloatDelegate(QStyledItemDelegate):
     validator_obj = QDoubleValidator(1e-6, 1e+6, 12)
 
     def createEditor(self, parent, option, index):

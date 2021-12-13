@@ -3,11 +3,16 @@ import logging  # TODO: add function to close logger.
 import os
 import textwrap
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 
 from . import __version__, __website__
-from .helper import is_name_valid, return_default_results_path
+from .bc import create_node_sets
+from .helper import is_name_valid, return_default_results_path, read_configuration
+from .mask.function import mask_from_function
+from .mask.shape import ShapeArray, Circle, Sphere
+from .mask.tpms import tpms_dict
 from .output import write_abaqus_inp
 
 logger = logging.getLogger(__name__)
@@ -34,7 +39,7 @@ class VoxelPart:
                               Make sure it is within the range specified by *dtype* #TODO: link
                               Defaults to 0 which represents empty space.
 
-            voxel_size (tuple): A tuple containing two or three floats which determine
+            voxel_size (tuple | numpy.ndarray): A tuple containing two or three floats which determine
                                 the size of a voxel in the x, y, and z directions.
                                 For example, if the tuple (0.02, 0.1, 1.5) is specified,
                                 each voxel will have those dimensions in the x, y, and z directions.
@@ -120,7 +125,7 @@ class VoxelPart:
         self.description = textwrap.fill(description, width=80)
 
         # Validate results_path.
-        if results_path is None:
+        if results_path is None:  # TODO: rename to working_dir.
             results_path = return_default_results_path(part_name=self.name)
         else:
             results_path = Path(results_path)
@@ -153,7 +158,7 @@ class VoxelPart:
                     name, '*'.join(str(s) for s in size), fill_value)
 
     def output_abaqus_inp(self, file_name, elem_type, dim,
-                          material_elem_sets, custom_elem_sets):
+                          material_elem_sets, custom_elem_sets=True):
         """Output the part to an Abaqus (TM) input file.
         For a full list of parameters, see :py:meth:`output.write_abaqus_inp`.
         Note that the parameter *scale* is not used in this function and
@@ -251,6 +256,15 @@ class VoxelPart:
         logger.debug("Added custom node set '%s' with %u elements.",
                      name, len(self.node_sets[name]))
 
+    def add_default_node_sets(self, dim):
+        """Define default node sets in the VoxelPart. They are created according to TODO
+
+        Args:
+            dim (str): Dimensionality of the part which affects the created node sets.
+                       Valid values are '2D' and '3D'.
+        """
+        create_node_sets(part=self, dim=dim)
+
     def apply_mask(self, mask, value):
         """Use a boolean mask to change values of the :py:attr:`~data` attribute.
 
@@ -291,3 +305,53 @@ class VoxelPart:
 
         # Apply the mask to self.data.
         np.putmask(self.data, mask, value)
+
+
+def from_config_file(file_path):
+    # TODO: log.
+    (part_creation_dict, part_manipulation_dict, bc_dict, output_dict) = \
+        read_configuration(file_path)
+
+    ################################################
+    part = VoxelPart(**part_creation_dict)
+
+    modeling_mode = part_manipulation_dict['modeling_mode']
+    if modeling_mode == '0':  # No further action.
+        pass
+    elif modeling_mode == '1':  # TPMS
+        boolean_mask = mask_from_function(mask_shape=part.data.shape,
+                                          func=tpms_dict[part_manipulation_dict['tpms_type']],
+                                          voxel_size=part.voxel_size,
+                                          l=part_manipulation_dict['tpms_length'],
+                                          c=part_manipulation_dict['tpms_constant'])
+        part.apply_mask(mask=boolean_mask, value=1)
+    elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
+        for row in part_manipulation_dict['circle_list']:
+            circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))
+            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape,
+                                                           voxel_size=part.voxel_size),
+                            value=int(row[3]))
+    elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
+        for row in part_manipulation_dict['sphere_list']:
+            circle_obj = Sphere(id=0, a=float(row[0]), b=float(row[1]),
+                                c=float(row[2]), r=float(row[3]))
+            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape,
+                                                           voxel_size=part.voxel_size),
+                            value=int(row[4]))
+    else:
+        raise ValueError(
+            "Invalid value '%s' for part_manipulation_dict['modeling_mode']." % modeling_mode)
+
+    bc_type = bc_dict['bc_type']
+    if bc_type == '0':  # No BC.
+        pass
+    elif bc_type == '1':  # Sets only.
+        part.add_default_node_sets(dim=bc_dict['dim'])  # FIXME
+    elif bc_type == '2':  # Periodic BC.
+        raise NotImplementedError('Periodic BC has not been implemented.')  # TODO
+    else:
+        raise ValueError("Invalid value '%s' for bc_dict['bc_type']" % bc_type)
+
+    part.output_abaqus_inp(**output_dict)
+
+    return part

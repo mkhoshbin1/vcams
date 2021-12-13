@@ -5,6 +5,7 @@ from pathlib import Path
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+# noinspection PyUnresolvedReferences
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
@@ -12,8 +13,9 @@ from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValid
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
-from custom_table import FloatDelegate, IntDelegate
+from custom_table import IntDelegate, RadiusFloatDelegate, PositionFloatDelegate
 from settings_io import export_settings, import_settings
+from vcams.mask.tpms import tpms_dict
 
 ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
@@ -36,15 +38,6 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                       #              'This form is used to create a 2D model based on a single'
                       #              'binary or grayscale image:')
                       )
-TpmsType = namedtuple('TpmsType', ('name', 'formula'))  # TODO: Maybe add and id?
-tpms_type_list = (TpmsType('Schwarz Primitive (P)',
-                           r'$\Phi = cos(\frac{2\pi}{l} x) + cos(\frac{2\pi}{l} y) + cos(\frac{2\pi}{l} z) - c$'),
-                  TpmsType('Schwarz Diamond (D)',
-                           (
-                               r'$\Phi = sin(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z)$'
-                               r'$+ sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$' '\n'
-                               r'$+ cos(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
-                               r'$+ cos(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z) - c$')))
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
@@ -93,9 +86,9 @@ class MainWindow(QMainWindow):
         uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
 
         # Connect signals for the menu.
-        self.action_import_settings.triggered.connect(
+        self.action_import_settings.triggered.connect(  # TODO: select file.
             lambda main_obj: import_settings(main_obj=self))
-        self.action_export_settings.triggered.connect(
+        self.action_export_settings.triggered.connect(  # TODO: select file.
             lambda main_obj: export_settings(main_obj=self))
         self.action_exit.triggered.connect(self.close)
 
@@ -174,8 +167,7 @@ class MainWindow(QMainWindow):
         self.modeling_mode_combo.setCurrentIndex(0)
         self.modeling_mode_combo.currentTextChanged.connect(self.modeling_mode_changed)
         self.modeling_mode_changed()
-        # select_tpms_combo
-        for tpms_type in tpms_type_list:
+        for tpms_type in tpms_dict.values():
             self.select_tpms_combo.addItem(tpms_type.name, userData=tpms_type)
         self.select_tpms_combo.currentTextChanged.connect(self.tpms_type_changed)
         self.tpms_type_changed()
@@ -184,16 +176,16 @@ class MainWindow(QMainWindow):
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
 
         # Modeling: Planar Composite (Circular Inclusions)
-        self.modeling_circle_table.setItemDelegateForColumn(0, FloatDelegate(self))
-        self.modeling_circle_table.setItemDelegateForColumn(1, FloatDelegate(self))
-        self.modeling_circle_table.setItemDelegateForColumn(2, FloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(2, RadiusFloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(3, IntDelegate(self))
 
         # Modeling: Spatial Composite (Spherical Inclusions)
-        self.modeling_sphere_table.setItemDelegateForColumn(0, FloatDelegate(self))
-        self.modeling_sphere_table.setItemDelegateForColumn(1, FloatDelegate(self))
-        self.modeling_sphere_table.setItemDelegateForColumn(2, FloatDelegate(self))
-        self.modeling_sphere_table.setItemDelegateForColumn(3, FloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(2, PositionFloatDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(3, RadiusFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(4, IntDelegate(self))
 
         # Modeling: Single Image
@@ -202,8 +194,8 @@ class MainWindow(QMainWindow):
         # output_mats  # TODO: move all signals from QtDesigner to python.
         self.output_mats_type_button_group = QButtonGroup(self.output_mats_layout1)
         self.output_mats_type_button_group.setExclusive(True)
-        self.output_mats_type_button_group.addButton(self.output_mats_non_empty_radio, 0)
-        self.output_mats_type_button_group.addButton(self.output_mats_all_radio, 1)
+        self.output_mats_type_button_group.addButton(self.output_mats_all_radio, 0)
+        self.output_mats_type_button_group.addButton(self.output_mats_non_empty_radio, 1)
         self.output_mats_type_button_group.addButton(self.output_mats_select_radio, 2)
         self.output_mats_non_empty_radio.toggled.connect(self.toggle_output_mats_type)
         self.output_mats_all_radio.toggled.connect(self.toggle_output_mats_type)
