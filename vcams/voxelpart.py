@@ -308,12 +308,11 @@ class VoxelPart:
 
 
 def from_config_file(file_path):
-    # TODO: log.
     (part_creation_dict, part_manipulation_dict, bc_dict, output_dict) = \
         read_configuration(file_path)
 
-    ################################################
     part = VoxelPart(**part_creation_dict)
+    logger.info('The model is being created from a configuration file loaded from %s' % file_path)
 
     modeling_mode = part_manipulation_dict['modeling_mode']
     if modeling_mode == '0':  # No further action.
@@ -354,4 +353,5 @@ def from_config_file(file_path):
 
     part.output_abaqus_inp(**output_dict)
 
+    logger.info('Creation of the model from the configuration file completed successfully.')
     return part

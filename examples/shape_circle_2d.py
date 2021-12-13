@@ -31,4 +31,4 @@ part.apply_mask(mask=shape_array.mask, value=2)
 # Output the part.
 part.output_abaqus_inp(file_name='shape_circle_2d',
                        elem_type='CPE4R', dim='2D',
-                       material_elem_sets=(1, 2), custom_elem_sets=True)
+                       material_elem_sets='All', custom_elem_sets=True)
