@@ -126,7 +126,7 @@ def export_settings(main_obj, file_path_str):
         config['Basic']['num_mats'] = str(main_obj.num_mats_combo.currentIndex())
         config['Basic']['part_description'] = main_obj.part_description_field.toPlainText()
         # TODO: check with long text.
-        config['Basic']['working_dir'] = return_field_value(main_obj.working_dir_field)
+        config['Basic']['working_dir'] = main_obj.working_dir
         config['Basic']['log_debug'] = str(main_obj.log_debug_checkbox.isChecked())
 
         # Tab: Modeling.
@@ -145,6 +145,8 @@ def export_settings(main_obj, file_path_str):
         elif config['Modeling']['modeling_mode'] == '3':  # Spatial Composite (Spherical Inclusions)
             config['Modeling']['modeling_sphere_table'] = \
                 main_obj.modeling_sphere_table.return_csv_string(for_excel=False)
+        else:
+            raise ValueError('Invalid value for modeling_mode which should not happen.')
 
         # Tab: Boundary Conditions
         config['BC'] = {}
@@ -178,9 +180,9 @@ def export_settings(main_obj, file_path_str):
         config.write(config_file)
 
 
-def import_settings(main_obj):
+def import_settings(main_obj, file_path_str):
     config = ConfigParser()
-    config.read(r'C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed\unnamed.vcams')  # FIXME
+    config.read(file_path_str)
 
     # Check validity of the imported settings.
     section_list = ('Basic', 'Modeling', 'BC', 'Output')
