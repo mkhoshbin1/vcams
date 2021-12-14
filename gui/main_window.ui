@@ -912,7 +912,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="footerLabel">
+     <widget class="QLabel" name="footer_label">
       <property name="enabled">
        <bool>false</bool>
       </property>
@@ -955,7 +955,23 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
     <addaction name="separator"/>
     <addaction name="action_exit"/>
    </widget>
+   <widget class="QMenu" name="menuRun">
+    <property name="title">
+     <string>Run</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="action_docs"/>
+    <addaction name="action_code"/>
+    <addaction name="separator"/>
+    <addaction name="action_about"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuRun"/>
+   <addaction name="menuHelp"/>
   </widget>
   <action name="action_import_settings">
    <property name="text">
@@ -970,6 +986,30 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   <action name="action_exit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="action_docs">
+   <property name="text">
+    <string>Documentation</string>
+   </property>
+   <property name="toolTip">
+    <string>View VCAMS software's online documentation.</string>
+   </property>
+  </action>
+  <action name="action_code">
+   <property name="text">
+    <string>Source Code</string>
+   </property>
+   <property name="toolTip">
+    <string>Open VCAMS software's GitHub repository.</string>
+   </property>
+  </action>
+  <action name="action_about">
+   <property name="text">
+    <string>About VCAMS</string>
+   </property>
+   <property name="toolTip">
+    <string>About VCAMS</string>
    </property>
   </action>
  </widget>

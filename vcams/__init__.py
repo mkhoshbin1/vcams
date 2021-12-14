@@ -1,5 +1,5 @@
 __author__ = 'Mohammadreza Khoshbin'
-__copyright__ = 'Copyright 2013-2021, Mohammadreza Khoshbin'
+__copyright__ = 'Copyright © 2013-2021, Mohammadreza Khoshbin'
 __credits__ = ['Mohammadreza Khoshbin']
 __license__ = 'AGPLv3'
 __version__ = "3.0.3"
@@ -7,9 +7,26 @@ __maintainer__ = 'Mohammadreza Khoshbin'
 __email__ = 'm.khoshbin@live.com'
 __status__ = 'Production'
 __website__ = 'https://github.com/mkhoshbin1/vcams'
-# __docs__ = ''
+__repo__ = 'https://github.com/mkhoshbin1/vcams'
+__docs__ = 'https://github.com/mkhoshbin1/vcams'  # FIXME
 # __description__ = ''
+# __author_website__ = 'www.mkhoshbin.com'
+__contact__ = __email__
+__deprecated__ = False
 
+# The following are used in the GUI:
+gui_footer_notice = ('%s\nVCAMS is a free and open source software published under'
+                     'the GNU AGPLv3 license.\n' % __copyright__)
+about_vcams = ('<h1>VCAMS v%s</h1>'
+               '<font size="+1"><p align="justify">VCAMS (Voxel-Based Computer-Aided '
+               'Modeling Software for Complex Structures) is a free and open source '
+               'software for creating complex FEA models using voxels. It can be used '
+               'and extended by anyone in accordance with the GNU AGPLv3 license.</p>'
+               '<p align="justify">You are currently using the software\'s GUI, '
+               'but the main library is even more powerful! You will find links to the '
+               'software\'s code and documentation (including examples) '
+               'in the Help menu.</p></font>'
+               '<p align="center">%s</p>' % (__version__, __copyright__))
 
 # Import the modules. Although general guidelines are against polluting the namespace,
 # it's done to improve usability for less experienced users.

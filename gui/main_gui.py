@@ -7,14 +7,16 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 # noinspection PyUnresolvedReferences
 from PyQt5 import uic
-from PyQt5.QtCore import Qt, QRegularExpression
+from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
-    QImage, QPixmap
+    QImage, QPixmap, QDesktopServices
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
 from custom_table import IntDelegate, RadiusFloatDelegate, PositionFloatDelegate
 from settings_io import export_settings, import_settings
+
+from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
 from vcams.mask.tpms import tpms_dict
 
 ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
@@ -82,8 +84,10 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
-        # Load the UI Page
+        # Load the UI Page.
         uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
+        # Update the footer notice.
+        self.footer_label.setText(gui_footer_notice)
 
         # Connect signals for the menu.
         self.action_import_settings.triggered.connect(  # TODO: select file.
@@ -91,6 +95,9 @@ class MainWindow(QMainWindow):
         self.action_export_settings.triggered.connect(  # TODO: select file.
             lambda main_obj: export_settings(main_obj=self))
         self.action_exit.triggered.connect(self.close)
+        self.action_docs.triggered.connect(lambda x: QDesktopServices.openUrl(QUrl(docs_url)))
+        self.action_code.triggered.connect(lambda x: QDesktopServices.openUrl(QUrl(repo_url)))
+        self.action_about.triggered.connect(self.open_about)
 
         # Code and signals for tab: Basic Modeling Information.
         # part_name
@@ -371,6 +378,11 @@ class MainWindow(QMainWindow):
                                                self.mask_table.columnCount() - 1)
         self.mask_table.setRangeSelected(sel_range, True)
         self.mask_table.setFocus()
+
+    # Functions used for actions.
+    def open_about(self):
+        QMessageBox.information(self, 'About VCAMS', about_vcams)  # TODO: add icon
+        return
 
 
 if __name__ == '__main__':
