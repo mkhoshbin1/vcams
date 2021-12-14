@@ -92,12 +92,14 @@ class MainWindow(QMainWindow):
         # Connect signals for the menu.
         self.action_import_settings.triggered.connect(  # TODO: select file.
             lambda main_obj: import_settings(main_obj=self))
-        self.action_export_settings.triggered.connect(  # TODO: select file.
-            lambda main_obj: export_settings(main_obj=self))
+        self.action_export_settings.triggered.connect(self.export_config)
+        # self.action_export_settings.triggered.connect(  # TODO: select file.
+        #     lambda main_obj: export_settings(main_obj=self))
         self.action_exit.triggered.connect(self.close)
         self.action_docs.triggered.connect(lambda x: QDesktopServices.openUrl(QUrl(docs_url)))
         self.action_code.triggered.connect(lambda x: QDesktopServices.openUrl(QUrl(repo_url)))
         self.action_about.triggered.connect(self.open_about)
+        self.action_create_model.triggered.connect(self.create_model)
 
         # Code and signals for tab: Basic Modeling Information.
         # part_name
@@ -380,9 +382,19 @@ class MainWindow(QMainWindow):
         self.mask_table.setFocus()
 
     # Functions used for actions.
+    def export_config(self):
+        default_path = str(Path(self.working_dir) / self.part_name)
+        (file_name, _) = QFileDialog.getSaveFileName(self, 'Export Model Settings',
+                                                     default_path,
+                                                     'VCAMS configuration file (*.vcams)')
+        export_settings(main_obj=self, file_path_str=file_name)
+
     def open_about(self):
         QMessageBox.information(self, 'About VCAMS', about_vcams)  # TODO: add icon
         return
+
+    def create_model(self):
+        pass
 
 
 if __name__ == '__main__':

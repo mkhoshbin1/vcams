@@ -959,6 +959,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
     <property name="title">
      <string>Run</string>
     </property>
+    <addaction name="action_create_model"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1010,6 +1011,14 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
    </property>
    <property name="toolTip">
     <string>About VCAMS</string>
+   </property>
+  </action>
+  <action name="action_create_model">
+   <property name="text">
+    <string>Create Model</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a model based on the current settings.</string>
    </property>
   </action>
  </widget>

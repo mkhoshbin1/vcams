@@ -110,7 +110,7 @@ def set_focus(main_obj, field_obj):
     raise RuntimeError('Could not find field_obj as a child of any of the main tabs.')
 
 
-def export_settings(main_obj):
+def export_settings(main_obj, file_path_str):
     config = ConfigParser()
     try:
         # Tab: Basic Model Information
@@ -172,10 +172,9 @@ def export_settings(main_obj):
         return
 
     # Write to output.
-    working_dir_path = Path(main_obj.working_dir)
-    working_dir_path.mkdir(parents=True, exist_ok=True)
-    with open(working_dir_path.joinpath(main_obj.part_name + '.vcams'), 'w', newline='\n') \
-            as config_file:
+    file_path = Path(file_path_str)
+    file_path.parents[0].mkdir(parents=True, exist_ok=True)
+    with open(file_path, 'w', newline='\n') as config_file:
         config.write(config_file)
 
 
