@@ -1,0 +1,5 @@
+Red:        #981b1e
+Green:      #2e8540
+Light Blue: #00B0F0
+
+Splash Background: #f6fdff

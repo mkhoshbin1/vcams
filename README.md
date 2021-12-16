@@ -1,2 +1,2 @@
 # VCAMS
-Voxel-Based Computer-Aided Modeling Software for Complex Structures
+A Program and Python Library for Voxel-Based Computer-Aided Modeling of Complex Structures

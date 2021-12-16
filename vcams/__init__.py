@@ -9,7 +9,8 @@ __status__ = 'Production'
 __website__ = 'https://github.com/mkhoshbin1/vcams'
 __repo__ = 'https://github.com/mkhoshbin1/vcams'
 __docs__ = 'https://github.com/mkhoshbin1/vcams'  # FIXME
-# __description__ = ''
+__description__ = 'A Program and Python Library for Voxel-Based Computer-Aided' \
+                  ' Modeling of Complex Structures '
 # __author_website__ = 'www.mkhoshbin.com'
 __contact__ = __email__
 __deprecated__ = False
@@ -18,8 +19,8 @@ __deprecated__ = False
 gui_footer_notice = ('%s\nVCAMS is a free and open source software published under'
                      'the GNU AGPLv3 license.\n' % __copyright__)
 about_vcams = ('<h1>VCAMS v%s</h1>'
-               '<font size="+1"><p align="justify">VCAMS (Voxel-Based Computer-Aided '
-               'Modeling Software for Complex Structures) is a free and open source '
+               '<font size="+1"><p align="justify">VCAMS (Voxel-Based Computer-Aided'
+               'Modeling of Complex Structures) is a free and open source '
                'software for creating complex FEA models using voxels. It can be used '
                'and extended by anyone in accordance with the GNU AGPLv3 license.</p>'
                '<p align="justify">You are currently using the software\'s GUI, '

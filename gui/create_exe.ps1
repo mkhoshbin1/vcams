@@ -8,7 +8,7 @@
 
 pyinstaller --onefile --clean --windowed `
     --add-data 'main_window.ui;.' `
-    --icon="NONE" `
+    --icon=".\resources\icon.ico" `
     --splash=".\resources\splash.png" `
     --paths .. `
     --name VCAMS `
