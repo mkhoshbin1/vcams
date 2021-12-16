@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 
 class VoxelPart:
-    def __init__(self, size, fill_value=0, voxel_size=(1, 1, 1),
+    def __init__(self, size, base_material=0, voxel_size=(1, 1, 1),
                  dtype='uint8', name='unnamed', description='',
                  results_path=None, overwrite_logs=True, log_debug=False):
         """
@@ -34,10 +34,10 @@ class VoxelPart:
                           The three values must be integers and for 2D structures,
                           size of the z dimension must be set to 1.
 
-            fill_value (int): The value used for filling :py:attr:`~data`.
-                              It is passed to numpy.full.
-                              Make sure it is within the range specified by *dtype* #TODO: link
-                              Defaults to 0 which represents empty space.
+            base_material (int): The value used for filling :py:attr:`~data`.
+                                 It is passed to numpy.full.
+                                 Make sure it is within the range specified by *dtype* #TODO: link
+                                 Defaults to 0 which represents empty space.
 
             voxel_size (tuple | numpy.ndarray): A tuple containing two or three floats which determine
                                 the size of a voxel in the x, y, and z directions.
@@ -99,10 +99,10 @@ class VoxelPart:
         # It seems that numpy.zeros has a special implementation which
         # makes it faster. numpy.ones is the same as numpy.fill.
         # Source: https://stackoverflow.com/questions/31498784.
-        if fill_value == 0:
+        if base_material == 0:
             self.data = np.zeros(shape=size, dtype=dtype.lower())
         else:
-            self.data = np.full(shape=size, fill_value=fill_value, dtype=dtype.lower())
+            self.data = np.full(shape=size, fill_value=base_material, dtype=dtype.lower())
 
         # Validate and set voxel_size. Make sure that it has three elements.
         voxel_size = np.array(voxel_size, dtype='float')  # This catches strings and such.
@@ -155,7 +155,7 @@ class VoxelPart:
 
         logger.info("A VoxelPart object named '%s' was created" +
                     " with %s elements and an initial element value of %u.",
-                    name, '*'.join(str(s) for s in size), fill_value)
+                    name, '*'.join(str(s) for s in size), base_material)
 
     def output_abaqus_inp(self, file_name, elem_type, dim,
                           material_elem_sets, custom_elem_sets=True):
@@ -323,7 +323,7 @@ def from_config_file(file_path):
                                           voxel_size=part.voxel_size,
                                           l=part_manipulation_dict['tpms_length'],
                                           c=part_manipulation_dict['tpms_constant'])
-        part.apply_mask(mask=boolean_mask, value=1)
+        part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['tpms_fill_value'])
     elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:
             circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))

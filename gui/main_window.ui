@@ -33,11 +33,11 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>5</number>
       </property>
-      <widget class="QWidget" name="intro_page">
+      <widget class="QWidget" name="welcome_page">
        <attribute name="label">
-        <string>Introduction</string>
+        <string>Welcome</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_6">
         <item>
@@ -84,7 +84,7 @@
          <widget class="QLabel" name="welcome_label">
           <property name="text">
            <string>&lt;h2&gt;Welcome to VCAMS!&lt;/h2&gt;
-&lt;font size=&quot;+1&quot;&gt;&lt;p align=&quot;justify&quot;&gt;Using this GUI you can create very complex models and export them to the Abaqus (TM) FEA software.&lt;/p&gt;
+&lt;font size=&quot;+1&quot;&gt;&lt;p align=&quot;justify&quot;&gt;Using this GUI you can create very complex models and export them to the Abaqus™ FEA software.&lt;/p&gt;
 &lt;p align=&quot;justify&quot;&gt;If you need access to the library's full functionality, you can install and use its API.&lt;br&gt;
 Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&gt;</string>
           </property>
@@ -101,7 +101,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
          <x>0</x>
          <y>0</y>
          <width>946</width>
-         <height>449</height>
+         <height>418</height>
         </rect>
        </property>
        <attribute name="label">
@@ -362,7 +362,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </item>
            </layout>
           </item>
-          <item row="6" column="0">
+          <item row="7" column="0">
            <widget class="QLabel" name="part_description_label">
             <property name="text">
              <string>Part Description</string>
@@ -372,14 +372,14 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
+          <item row="7" column="1">
            <widget class="QPlainTextEdit" name="part_description_field">
             <property name="tabChangesFocus">
              <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item row="7" column="0">
+          <item row="8" column="0">
            <widget class="QLabel" name="working_dir_label">
             <property name="text">
              <string>Working Directory</string>
@@ -389,7 +389,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
+          <item row="8" column="1">
            <layout class="QHBoxLayout" name="working_dir_layout">
             <item>
              <widget class="QLineEdit" name="working_dir_field">
@@ -407,7 +407,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </item>
            </layout>
           </item>
-          <item row="8" column="0">
+          <item row="9" column="0">
            <widget class="QLabel" name="log_debug_field">
             <property name="text">
              <string>Debug Log</string>
@@ -417,8 +417,25 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </property>
            </widget>
           </item>
-          <item row="8" column="1">
+          <item row="9" column="1">
            <widget class="QCheckBox" name="log_debug_checkbox"/>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="base_material_label">
+            <property name="text">
+             <string>Base Material</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="base_material_field">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -430,7 +447,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
          <x>0</x>
          <y>0</y>
          <width>946</width>
-         <height>449</height>
+         <height>418</height>
         </rect>
        </property>
        <attribute name="label">
@@ -486,7 +503,14 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QComboBox" name="select_tpms_combo"/>
+               <widget class="QComboBox" name="select_tpms_combo">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="1" column="0">
                <widget class="QLabel" name="tpms_formula_label">
@@ -503,7 +527,14 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                </widget>
               </item>
               <item row="2" column="1">
-               <widget class="QLineEdit" name="tpms_length_field"/>
+               <widget class="QLineEdit" name="tpms_length_field">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="tpms_constant_label">
@@ -513,12 +544,36 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                </widget>
               </item>
               <item row="3" column="1">
-               <widget class="QLineEdit" name="tpms_constant_field"/>
+               <widget class="QLineEdit" name="tpms_constant_field">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="1" column="1">
                <widget class="QLabel" name="tpms_formula_real_label">
                 <property name="text">
                  <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="tpms_fill_value_label">
+                <property name="text">
+                 <string>Fill Value</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="tpms_fill_value_field">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
                 </property>
                </widget>
               </item>
@@ -666,7 +721,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
          <x>0</x>
          <y>0</y>
          <width>946</width>
-         <height>449</height>
+         <height>418</height>
         </rect>
        </property>
        <attribute name="label">
@@ -851,7 +906,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
          <x>0</x>
          <y>0</y>
          <width>946</width>
-         <height>449</height>
+         <height>418</height>
         </rect>
        </property>
        <attribute name="label">
@@ -948,6 +1003,20 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </layout>
            </item>
           </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="run_page">
+       <attribute name="label">
+        <string>Run</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <widget class="QLabel" name="run_label">
+          <property name="text">
+           <string>TextLabel</string>
+          </property>
          </widget>
         </item>
         <item>

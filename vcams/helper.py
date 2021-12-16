@@ -126,10 +126,10 @@ def read_configuration(file_path):
                                       int(basic_section['num_voxels_z']))
     else:
         raise ValueError('Field "dim" is set to %s, which is invalid.' % basic_section['dim'])
-    if 'fill_value' in basic_section:
-        part_creation_dict['fill_value'] = int(basic_section['fill_value'])
+    if 'base_material' in basic_section:
+        part_creation_dict['base_material'] = int(basic_section['base_material'])
     else:
-        part_creation_dict['fill_value'] = 0
+        part_creation_dict['base_material'] = 0
     part_creation_dict['voxel_size'] = (float(basic_section['voxel_size_x']),
                                         float(basic_section['voxel_size_y']),
                                         float(basic_section['voxel_size_z']))
@@ -166,6 +166,7 @@ def read_configuration(file_path):
             raise ValueError('Field "tpms_type" is set to %s, which is invalid.' % tpms_type)
         part_manipulation_dict['tpms_length'] = float(modeling_section['tpms_length'])
         part_manipulation_dict['tpms_constant'] = float(modeling_section['tpms_constant'])
+        part_manipulation_dict['tpms_fill_value'] = int(modeling_section['tpms_fill_value_field'])
     elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
         part_manipulation_dict['circle_list'] = \
             csv_string_to_list(modeling_section['modeling_circle_table'])

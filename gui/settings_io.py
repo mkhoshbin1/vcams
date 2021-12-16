@@ -124,6 +124,7 @@ def export_settings(main_obj, file_path_str):
         config['Basic']['voxel_size_y'] = return_field_value(main_obj.voxel_size_y_field)
         config['Basic']['voxel_size_z'] = return_field_value(main_obj.voxel_size_z_field)
         config['Basic']['num_mats'] = str(main_obj.num_mats_combo.currentIndex())
+        config['Basic']['base_material'] = return_field_value(main_obj.base_material_field)
         config['Basic']['part_description'] = main_obj.part_description_field.toPlainText()
         # TODO: check with long text.
         config['Basic']['working_dir'] = main_obj.working_dir
@@ -139,6 +140,8 @@ def export_settings(main_obj, file_path_str):
             config['Modeling']['tpms_type'] = str(main_obj.select_tpms_combo.currentIndex())
             config['Modeling']['tpms_length'] = return_field_value(main_obj.tpms_length_field)
             config['Modeling']['tpms_constant'] = return_field_value(main_obj.tpms_constant_field)
+            config['Modeling']['tpms_fill_value'] = \
+                return_field_value(main_obj.tpms_fill_value_field)
         elif config['Modeling']['modeling_mode'] == '2':  # Planar Composite (Circular Inclusions)
             config['Modeling']['modeling_circle_table'] = \
                 main_obj.modeling_circle_table.return_csv_string(for_excel=False)
@@ -203,6 +206,7 @@ def import_settings(main_obj, file_path_str):
         set_field_value(main_obj.voxel_size_y_field, 'voxel_size_y', basic)
         set_field_value(main_obj.voxel_size_z_field, 'voxel_size_z', basic)
         set_field_value(main_obj.num_mats_combo, 'num_mats', basic, combo_index_mode=True)
+        set_field_value(main_obj.base_material_field, 'base_material', basic)
         set_field_value(main_obj.part_description_field, 'part_description', basic)
         set_field_value(main_obj.working_dir_field, 'working_dir', basic)
         main_obj.log_debug_checkbox.setChecked(config.getboolean('Basic', 'log_debug'))
@@ -223,6 +227,7 @@ def import_settings(main_obj, file_path_str):
                             combo_index_mode=True)
             set_field_value(main_obj.tpms_length_field, 'tpms_length', modeling)
             set_field_value(main_obj.tpms_constant_field, 'tpms_constant', modeling)
+            set_field_value(main_obj.tpms_fill_value_field, 'tpms_fill_value', modeling)
         elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
             set_field_value(main_obj.modeling_circle_table, 'modeling_circle_table', modeling)
         elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)

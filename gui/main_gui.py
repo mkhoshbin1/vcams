@@ -126,6 +126,8 @@ class MainWindow(QMainWindow):
         self.voxel_size_z_field.textChanged.connect(self.calculate_part_size)
         # num_mats_combo
         self.num_mats_combo.currentIndexChanged.connect(self.calculate_part_size)
+        # base_material_field
+        self.base_material_field.setValidator(QIntValidator(0, 999999999, self))
         # working_dir
         self.working_dir = str(return_default_results_path(part_name=self.part_name))
         self.custom_working_dir = None
@@ -172,6 +174,8 @@ class MainWindow(QMainWindow):
         # tpms_length_field and tpms_constant_field
         self.tpms_length_field.setValidator(QDoubleValidator(1e-5, 1e+6, 8))
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
+        # tpms_fill_value_field
+        self.tpms_fill_value_field.setValidator(QIntValidator(0, 999999999, self))
 
         # Modeling: Planar Composite (Circular Inclusions)
         self.modeling_circle_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
