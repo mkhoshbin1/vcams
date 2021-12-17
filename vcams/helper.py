@@ -89,6 +89,16 @@ def return_default_results_path(part_name=None):
     return Path.home().joinpath(*parts)
 
 
+def write_to_logger_streams(msg):
+    """Write a message directly to all streams of the module's logger object.
+
+    Args:
+        msg (str): The message that is written.
+    """
+    for handler in logger.root.handlers:
+        handler.stream.writelines(msg)
+
+
 def read_configuration(file_path):
     """Read a configuration file containing all the information used for creating a VoxelPart
     and return the information as a list of dictionaries.
@@ -166,7 +176,7 @@ def read_configuration(file_path):
             raise ValueError('Field "tpms_type" is set to %s, which is invalid.' % tpms_type)
         part_manipulation_dict['tpms_length'] = float(modeling_section['tpms_length'])
         part_manipulation_dict['tpms_constant'] = float(modeling_section['tpms_constant'])
-        part_manipulation_dict['tpms_fill_value'] = int(modeling_section['tpms_fill_value_field'])
+        part_manipulation_dict['tpms_fill_value'] = int(modeling_section['tpms_fill_value'])
     elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
         part_manipulation_dict['circle_list'] = \
             csv_string_to_list(modeling_section['modeling_circle_table'])
@@ -218,6 +228,7 @@ def read_configuration(file_path):
         raise ValueError(
             'Field "output_mats_type" is set to %s, which is invalid.' % output_mats_type)
 
+    logger.debug('Configuration file read successfully.')
     return part_creation_dict, part_manipulation_dict, bc_dict, output_dict
 
 

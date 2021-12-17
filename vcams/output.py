@@ -609,28 +609,21 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
         else:
             custom_elem_sets.append(
                 (item[0], item[1], '{:.2f}'.format((item[1] / num_elems) * 100)))
-    logger_stream = logger.root.handlers[0].stream
-    logger_stream.writelines((
-        '\nModel Details\n',
-        tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n',
-        '\nMaterial Element Sets\n',
-        tabulate(mat_elem_sets,
-                 headers=('Set Name', 'Number of Elements',
-                          'Percent of All Elements', 'Percent of Model'),
-                 tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n',
-    ))
-
+    summary_text = (
+        '*Model Details*\n' +
+        (tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n') +
+        '\n*Material Element Sets*\n' +
+        (tabulate(mat_elem_sets, headers=('Set Name', 'Number of Elements',
+                                          'Percent of All Elements', 'Percent of Model'),
+                  tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n')
+    )
     if len(custom_elem_sets) == 0:
-        logger_stream.writelines((
-            '\nCustom Element Sets\n',
-            'No custom element sets were defined.\n\n'
-        ))
+        summary_text += '\n*Custom Element Sets*\nNo custom element sets were defined.\n'
     else:
-        logger_stream.writelines((
-            '\nCustom Element Sets\n',
-            tabulate(custom_elem_sets,
-                     headers=('Set Name', 'Number of Elements', 'Percent of All Elements'),
-                     tablefmt='pretty') + '\n',
-        ))
-
-    logger_stream.flush()
+        summary_text += ('\n*Custom Element Sets*\n' +
+                         tabulate(custom_elem_sets,
+                                  headers=('Set Name', 'Number of Elements',
+                                           'Percent of All Elements'),
+                                  tablefmt='pretty') + '\n'
+        )
+    logger.info('A summary of the created part is as follows:\n***\n%s***\n' % summary_text)

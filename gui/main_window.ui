@@ -36,6 +36,14 @@
        <number>5</number>
       </property>
       <widget class="QWidget" name="welcome_page">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>925</width>
+         <height>434</height>
+        </rect>
+       </property>
        <attribute name="label">
         <string>Welcome</string>
        </attribute>
@@ -1008,6 +1016,14 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
        </layout>
       </widget>
       <widget class="QWidget" name="run_page">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>946</width>
+         <height>418</height>
+        </rect>
+       </property>
        <attribute name="label">
         <string>Run</string>
        </attribute>
@@ -1020,12 +1036,71 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
          </widget>
         </item>
         <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QPushButton" name="run_export_button">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Export Model Settings</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="run_create_model_button">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Create Model</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="run_open_dir_button">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Open Results Folder</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="log_label">
+          <property name="text">
+           <string>Process Log:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPlainTextEdit" name="log_field">
           <property name="documentTitle">
            <string/>
           </property>
+          <property name="undoRedoEnabled">
+           <bool>false</bool>
+          </property>
+          <property name="lineWrapMode">
+           <enum>QPlainTextEdit::NoWrap</enum>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
+          </property>
+          <property name="plainText">
+           <string/>
           </property>
          </widget>
         </item>

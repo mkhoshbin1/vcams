@@ -211,7 +211,7 @@ def import_settings(main_obj, file_path_str):
         set_field_value(main_obj.working_dir_field, 'working_dir', basic)
         main_obj.log_debug_checkbox.setChecked(config.getboolean('Basic', 'log_debug'))
     except ValueError as err:
-        main_obj.main_toolbox.setCurrentIndex(0)
+        main_obj.main_toolbox.setCurrentWidget(main_obj.basic_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))
 
     # Tab: Modeling.
@@ -236,7 +236,7 @@ def import_settings(main_obj, file_path_str):
             raise ValueError(
                 'Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
     except ValueError as err:
-        main_obj.main_toolbox.setCurrentIndex(1)
+        main_obj.main_toolbox.setCurrentWidget(main_obj.modeling_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))
 
     # Tab: Boundary Conditions.
@@ -252,7 +252,7 @@ def import_settings(main_obj, file_path_str):
             set_field_value(main_obj.strain13_field, 'strain13', bc)
             set_field_value(main_obj.strain23_field, 'strain23', bc)
     except ValueError as err:
-        main_obj.main_toolbox.setCurrentIndex(2)
+        main_obj.main_toolbox.setCurrentWidget(main_obj.bc_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))
 
     # Tab: Output.
@@ -265,5 +265,5 @@ def import_settings(main_obj, file_path_str):
         if selected_output_mats_type == '2':  # Output Selected Materials.
             set_field_value(main_obj.output_mats_select_field, 'output_mats_select', output)
     except ValueError as err:
-        main_obj.main_toolbox.setCurrentIndex(3)
+        main_obj.main_toolbox.setCurrentWidget(main_obj.output_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))

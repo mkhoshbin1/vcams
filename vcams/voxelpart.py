@@ -9,7 +9,8 @@ import numpy as np
 
 from . import __version__, __website__
 from .bc import create_node_sets
-from .helper import is_name_valid, return_default_results_path, read_configuration
+from .helper import is_name_valid, return_default_results_path, read_configuration, \
+    write_to_logger_streams
 from .mask.function import mask_from_function
 from .mask.shape import ShapeArray, Circle, Sphere
 from .mask.tpms import tpms_dict
@@ -139,20 +140,16 @@ class VoxelPart:
         # Create and configure the logger.
         filemode = 'w' if overwrite_logs else 'a'
         log_level = logging.DEBUG if log_debug else logging.INFO
-        logging.basicConfig(filename=os.path.join(self.results_path, name + '.log'),
-                            filemode=filemode, level=log_level,
+        log_file_path = Path(self.results_path) / (name + '.log')
+        logging.basicConfig(filename=log_file_path, filemode=filemode, level=log_level,
                             format='%(asctime)s - %(levelname) 5s - %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S')
 
         # Log creation of the object.
-        logger_stream = logger.root.handlers[0].stream
-        logger_stream.writelines(
-            ['Created using VCAMS v%s.\n' % __version__,
-             'VCAMS is a free and open source program available at:\n%s\n' % __website__,
-             'Author: Mohammadreza Khoshbin (www.mkhoshbin.com)\n\nProgram Log\n']
-        )
-        logger_stream.flush()
-
+        logger.info('\n**Created using VCAMS v%s.'
+                    '\n**VCAMS is a free and open source program available at: %s'
+                    '\n**Author: Mohammadreza Khoshbin (www.mkhoshbin.com)\n',
+                    __version__, __website__)
         logger.info("A VoxelPart object named '%s' was created" +
                     " with %s elements and an initial element value of %u.",
                     name, '*'.join(str(s) for s in size), base_material)
