@@ -1,5 +1,7 @@
+import logging
 import sys
 from collections import namedtuple
+import logging
 from pathlib import Path
 
 from matplotlib import rcParams
@@ -7,15 +9,22 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 # noinspection PyUnresolvedReferences
 from PyQt5 import uic
-from PyQt5.QtCore import Qt, QRegularExpression
+from PyQt5.QtCore import Qt, QRegularExpression, QUrl, QCoreApplication
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
-    QImage, QPixmap
+    QImage, QPixmap, QDesktopServices
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
 from custom_table import IntDelegate, RadiusFloatDelegate, PositionFloatDelegate
 from settings_io import export_settings, import_settings
+
+from vcams import __name__ as vcams_name
+from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
+from vcams.helper import return_default_results_path
 from vcams.mask.tpms import tpms_dict
+from vcams.voxelpart import from_config_file
+
+logger = logging.getLogger(vcams_name)
 
 ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
@@ -67,14 +76,20 @@ def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it sho
     return qpixmap
 
 
-def return_default_results_path(part_name=None):  # TODO: remove this and import from vcams.
-    parts = ['Desktop', 'VCAMS Working Directory']
-    # Validate part_name.
-    if part_name is None:
-        pass  # No subfolder.
-    else:
-        parts.append(part_name)
-    return Path.home().joinpath(*parts)
+class QTextEditLogger(logging.Handler):
+    """Logging handler for displaying the log in a QPlainTextEdit.
+    Adapted from: https://stackoverflow.com/a/51641943/7180705
+    """
+
+    def __init__(self, plaintextedit_obj):
+        super().__init__()
+        self.widget = plaintextedit_obj
+        self.widget.setReadOnly(True)
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget.appendPlainText(msg)
+        self.widget.repaint()  # The preferred way is a QThread, but this should be OK.
 
 
 class MainWindow(QMainWindow):
@@ -82,15 +97,19 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
-        # Load the UI Page
+        # Load the UI Page.
         uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
+        # Update the footer notice.
+        self.footer_label.setText(gui_footer_notice)
 
         # Connect signals for the menu.
-        self.action_import_settings.triggered.connect(  # TODO: select file.
-            lambda main_obj: import_settings(main_obj=self))
-        self.action_export_settings.triggered.connect(  # TODO: select file.
-            lambda main_obj: export_settings(main_obj=self))
+        self.action_import_settings.triggered.connect(self.import_config)
+        self.action_export_settings.triggered.connect(self.export_config)
         self.action_exit.triggered.connect(self.close)
+        self.action_docs.triggered.connect(lambda x: QDesktopServices.openUrl(QUrl(docs_url)))
+        self.action_code.triggered.connect(lambda x: QDesktopServices.openUrl(QUrl(repo_url)))
+        self.action_about.triggered.connect(self.open_about)
+        self.action_create_model.triggered.connect(self.create_model)
 
         # Code and signals for tab: Basic Modeling Information.
         # part_name
@@ -128,6 +147,8 @@ class MainWindow(QMainWindow):
         self.voxel_size_z_field.textChanged.connect(self.calculate_part_size)
         # num_mats_combo
         self.num_mats_combo.currentIndexChanged.connect(self.calculate_part_size)
+        # base_material_field
+        self.base_material_field.setValidator(QIntValidator(0, 999999999, self))
         # working_dir
         self.working_dir = str(return_default_results_path(part_name=self.part_name))
         self.custom_working_dir = None
@@ -174,6 +195,8 @@ class MainWindow(QMainWindow):
         # tpms_length_field and tpms_constant_field
         self.tpms_length_field.setValidator(QDoubleValidator(1e-5, 1e+6, 8))
         self.tpms_constant_field.setValidator(QDoubleValidator(-1e+6, 1e+6, 8))
+        # tpms_fill_value_field
+        self.tpms_fill_value_field.setValidator(QIntValidator(0, 999999999, self))
 
         # Modeling: Planar Composite (Circular Inclusions)
         self.modeling_circle_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
@@ -189,6 +212,7 @@ class MainWindow(QMainWindow):
         self.modeling_sphere_table.setItemDelegateForColumn(4, IntDelegate(self))
 
         # Modeling: Single Image
+        # TODO
 
         # Code and signals for tab: Output.
         # output_mats  # TODO: move all signals from QtDesigner to python.
@@ -204,6 +228,11 @@ class MainWindow(QMainWindow):
         output_mats_select_regex = r"((?:\d+[, \t]*)+)?\d+"  # TODO: add as parameter.
         self.output_mats_select_field.setValidator(QRegularExpressionValidator(
             QRegularExpression(output_mats_select_regex)))
+
+        # Code and signals for tab: Run.
+        self.run_export_button.clicked.connect(self.export_config)
+        self.run_create_model_button.clicked.connect(self.create_model)
+        self.run_open_dir_button.clicked.connect(self.open_working_dir)
 
     def toggle_output_mats_type(self):
         self.output_mats_select_field.setEnabled(self.output_mats_select_radio.isChecked())
@@ -266,7 +295,7 @@ class MainWindow(QMainWindow):
 
     def determine_validity_visually(self):
         if not self.sender().hasAcceptableInput():
-            self.sender().setStyleSheet("border: 1px solid red;")  # FIXME: field size changes.
+            self.sender().setStyleSheet("border: 1px solid red;")  # TODO: field size changes.
         else:
             self.sender().setStyleSheet("border: 1px solid black;")  # TODO: parameterize.
 
@@ -280,7 +309,7 @@ class MainWindow(QMainWindow):
         self.file_name_field.setText(self.part_name)
 
     def select_working_dir(self):
-        self.custom_working_dir = self.working_dir
+        self.custom_working_dir = self.working_dir  # TODO: what is custom_working_dir used for?
         dir_str = QFileDialog.getExistingDirectory(self, 'Select the working directory.',
                                                    self.working_dir, QFileDialog.ShowDirsOnly)
         dir_str = str(Path(dir_str).resolve(strict=False))
@@ -371,6 +400,50 @@ class MainWindow(QMainWindow):
                                                self.mask_table.columnCount() - 1)
         self.mask_table.setRangeSelected(sel_range, True)
         self.mask_table.setFocus()
+
+    # Functions used for actions.
+    def import_config(self):
+        default_path = str(Path(self.working_dir))
+        (file_name, _) = QFileDialog.getOpenFileName(self, 'Import Model Settings', default_path,
+                                                     'VCAMS configuration file (*.vcams)')
+        import_settings(main_obj=self, file_path_str=file_name)
+
+    def export_config(self):
+        default_path = str(Path(self.working_dir) / self.part_name)
+        (file_name, _) = QFileDialog.getSaveFileName(self, 'Export Model Settings', default_path,
+                                                     'VCAMS configuration file (*.vcams)')
+        export_settings(main_obj=self, file_path_str=file_name)
+
+    def open_about(self):
+        QMessageBox.information(self, 'About VCAMS', about_vcams)  # TODO: add icon
+        return
+
+    def create_model(self):
+        default_path = str(Path(self.working_dir) / (self.part_name + '.vcams'))
+        export_settings(main_obj=self, file_path_str=default_path)
+        try:
+            self.main_toolbox.setCurrentWidget(self.run_page)
+            gui_logging_handler = QTextEditLogger(self.log_field)
+            gui_logging_handler.setFormatter(
+                logging.Formatter(
+                    fmt='%(asctime)s - %(levelname) 5s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+            logger.addHandler(gui_logging_handler)
+            from_config_file(file_path=default_path)  # TODO: show a QProgressDialog.
+        except Exception as err:
+            QMessageBox.critical(self, 'Model Creation Failed!', str(err))
+        else:
+            QMessageBox.information(self, 'Done!',
+                                    ('Model Created Successfully!\n'
+                                     'You can find all files at:\n%s' % self.working_dir))
+
+    def open_working_dir(self):
+        import webbrowser
+        dir_path = Path(self.working_dir)
+        if dir_path.exists() and dir_path.is_dir():
+            webbrowser.open(self.dir_path)
+        else:
+            QMessageBox.critical(self, 'Error!',
+                                 'The results folder does not exist.\nHave you run the model?')
 
 
 if __name__ == '__main__':

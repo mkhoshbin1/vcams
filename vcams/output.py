@@ -44,8 +44,13 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
                        For example, if the tuple (0.02, 0.1, 1.5) is specified,
                        each voxel will have those dimensions in the x, y, and z directions.
 
-        material_elem_sets (tuple): A tuple of integer material codes corresponding
-                                    to the materials that should be written to the output.
+        material_elem_sets (str | tuple): One of the following:
+                                            + The string 'All' which corresponds to all elements
+                                              present in the VoxelPart.
+                                            + The string 'Non-Empty' which corresponds to all
+                                              non-zero elements present in the VoxelPart.
+                                            + A tuple of integer material codes corresponding
+                                              to the materials that should be written to the output.
 
         custom_elem_sets (bool): If set to :py:obj:`True`, custom sets will be written to the output.
                                  Defaults to :py:obj:`True`.
@@ -65,6 +70,7 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
     """
 
     logger.info("Attempting to output part '%s' to an Abaqus input file.", part.name)
+    # TODO: recheck everything about BCs. especially sets and args.
 
     begin_time = time.perf_counter()
 
@@ -73,9 +79,26 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
         raise ValueError('Invalid file_name. Check the documentation for validity criteria.')
     file_name = file_name + '.inp'
 
+    # Validate and process material_elem_sets.
+    valid_materials = unique(part.data)
+    if isinstance(material_elem_sets, str):
+        if material_elem_sets.upper() in ['ALL', 'NON-EMPTY']:
+            selected_mats = list(valid_materials)
+            if (0 in selected_mats) and (material_elem_sets.upper() == 'NON-EMPTY'):
+                selected_mats.remove(0)
+            material_elem_sets = selected_mats
+        else:
+            raise ValueError("Invalid string '%s' for material_elem_sets. Valid values are 'All' "
+                             "and 'Non-Empty'." % material_elem_sets)
+    else:  # Will raise most errors.
+        for mat in material_elem_sets:
+            if mat not in valid_materials:
+                raise ValueError('Material %i specified in material_elem_sets is not present in '
+                                 'the model.' % mat)
+
     dummy_node_id = 999999999  # Will only be used if add_dummy_node is True.
     if add_dummy_node:
-        part.add_node_set(name='RP-NodeSet', ids=(dummy_node_id-1,))  # ids is zero-based.
+        part.add_node_set(name='RP-NodeSet', ids=(dummy_node_id - 1,))  # ids is zero-based.
 
     # Write element sets.
     (set_file_path, elem_id_list, elem_set_stats) = \
@@ -184,7 +207,7 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
                                       The function makes sure that it is unique and sorted.
                                       Note that Abaqus only accepts element IDs that are positive
                                       and less than 999999999.
-                                      Elements IDs must also be integers, but this is not
+                                      Element IDs must also be integers, but this is not
                                       directly checked. However, they will raise an error
                                       once they are passed as indices to numpy.
 
@@ -307,7 +330,7 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
     """Write the node definition portion of an Abaqus input file to a temporary file,
     which will be concatenated with other portions to form an input file.
 
-    Node definition consists of specifying the node ID and and writing its coordinates
+    Node definition consists of specifying the node ID and writing its coordinates
     in the x, y, and z directions.
 
     Currently, only cartesian global coordinates are supported.
@@ -456,7 +479,7 @@ def write_set_ids(file_obj, kind, name, ids):
     # Write the set header manually.
     file_obj.write('*%s,%s="%s"\n' % (kind.upper(), kind.upper(), name))
 
-    # If there are 9 or less IDs, they are written manually.
+    # If there are 9 or fewer IDs, they are written manually.
     # Otherwise, they are written as chunks of 9 IDs, ensuring low line length.
     # numpy.savetxt can only write a full 2D array, meaning that sometimes
     # the array needs to be broken into chunks.
@@ -501,7 +524,7 @@ def write_set_def(part, material_elem_sets, folder_path, custom_elem_sets=True):
     Returns:
         tuple: The tuple (set_file_path, elem_id_list, elem_set_stats) where
                The first element is the path to the temporary set definition file,
-               the second element is a unique sorted list of all element IDs in the sets,
+               the second element is a unique and sorted list of all element IDs in the sets,
                and the third element is a dictionary where the keys are names
                of the element sets and the values are the number of elements in that set.
     """
@@ -560,7 +583,7 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
 
         elem_set_stats (dict): Dictionary returned by :py:meth:`output.write_elem_set_def`.
 
-        elapsed_time (float): Elapsed time for the the output process in seconds.
+        elapsed_time (float): Elapsed time for the output process in seconds.
     """
 
     # Prepare part summary.
@@ -586,28 +609,21 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
         else:
             custom_elem_sets.append(
                 (item[0], item[1], '{:.2f}'.format((item[1] / num_elems) * 100)))
-    logger_stream = logger.root.handlers[0].stream
-    logger_stream.writelines((
-        '\nModel Details\n',
-        tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n',
-        '\nMaterial Element Sets\n',
-        tabulate(mat_elem_sets,
-                 headers=('Set Name', 'Number of Elements',
-                                   'Percent of All Elements', 'Percent of Model'),
-                 tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n',
-    ))
-
+    summary_text = (
+            '*Model Details*\n' +
+            (tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n') +
+            '\n*Material Element Sets*\n' +
+            (tabulate(mat_elem_sets, headers=('Set Name', 'Number of Elements',
+                                              'Percent of All Elements', 'Percent of Model'),
+                      tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n')
+    )
     if len(custom_elem_sets) == 0:
-        logger_stream.writelines((
-            '\nCustom Element Sets\n',
-            'No custom element sets were defined.\n\n'
-        ))
+        summary_text += '\n*Custom Element Sets*\nNo custom element sets were defined.\n'
     else:
-        logger_stream.writelines((
-            '\nCustom Element Sets\n',
-            tabulate(custom_elem_sets,
-                     headers=('Set Name', 'Number of Elements', 'Percent of All Elements'),
-                     tablefmt='pretty') + '\n',
-        ))
-
-    logger_stream.flush()
+        summary_text += ('\n*Custom Element Sets*\n' +
+                         tabulate(custom_elem_sets,
+                                  headers=('Set Name', 'Number of Elements',
+                                           'Percent of All Elements'),
+                                  tablefmt='pretty') + '\n'
+                         )
+    logger.info('A summary of the created part is as follows:\n***\n%s***\n' % summary_text)

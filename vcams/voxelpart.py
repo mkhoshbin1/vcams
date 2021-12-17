@@ -9,7 +9,8 @@ import numpy as np
 
 from . import __version__, __website__
 from .bc import create_node_sets
-from .helper import is_name_valid, return_default_results_path, read_configuration
+from .helper import is_name_valid, return_default_results_path, read_configuration, \
+    write_to_logger_streams
 from .mask.function import mask_from_function
 from .mask.shape import ShapeArray, Circle, Sphere
 from .mask.tpms import tpms_dict
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 # TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 
 class VoxelPart:
-    def __init__(self, size, fill_value=0, voxel_size=(1, 1, 1),
+    def __init__(self, size, base_material=0, voxel_size=(1, 1, 1),
                  dtype='uint8', name='unnamed', description='',
                  results_path=None, overwrite_logs=True, log_debug=False):
         """
@@ -34,10 +35,10 @@ class VoxelPart:
                           The three values must be integers and for 2D structures,
                           size of the z dimension must be set to 1.
 
-            fill_value (int): The value used for filling :py:attr:`~data`.
-                              It is passed to numpy.full.
-                              Make sure it is within the range specified by *dtype* #TODO: link
-                              Defaults to 0 which represents empty space.
+            base_material (int): The value used for filling :py:attr:`~data`.
+                                 It is passed to numpy.full.
+                                 Make sure it is within the range specified by *dtype* #TODO: link
+                                 Defaults to 0 which represents empty space.
 
             voxel_size (tuple | numpy.ndarray): A tuple containing two or three floats which determine
                                 the size of a voxel in the x, y, and z directions.
@@ -99,10 +100,10 @@ class VoxelPart:
         # It seems that numpy.zeros has a special implementation which
         # makes it faster. numpy.ones is the same as numpy.fill.
         # Source: https://stackoverflow.com/questions/31498784.
-        if fill_value == 0:
+        if base_material == 0:
             self.data = np.zeros(shape=size, dtype=dtype.lower())
         else:
-            self.data = np.full(shape=size, fill_value=fill_value, dtype=dtype.lower())
+            self.data = np.full(shape=size, fill_value=base_material, dtype=dtype.lower())
 
         # Validate and set voxel_size. Make sure that it has three elements.
         voxel_size = np.array(voxel_size, dtype='float')  # This catches strings and such.
@@ -139,23 +140,19 @@ class VoxelPart:
         # Create and configure the logger.
         filemode = 'w' if overwrite_logs else 'a'
         log_level = logging.DEBUG if log_debug else logging.INFO
-        logging.basicConfig(filename=os.path.join(self.results_path, name + '.log'),
-                            filemode=filemode, level=log_level,
+        log_file_path = Path(self.results_path) / (name + '.log')
+        logging.basicConfig(filename=log_file_path, filemode=filemode, level=log_level,
                             format='%(asctime)s - %(levelname) 5s - %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S')
 
         # Log creation of the object.
-        logger_stream = logger.root.handlers[0].stream
-        logger_stream.writelines(
-            ['Created using VCAMS v%s.\n' % __version__,
-             'VCAMS is a free and open source program available at:\n%s\n' % __website__,
-             'Author: Mohammadreza Khoshbin (www.mkhoshbin.com)\n\nProgram Log\n']
-        )
-        logger_stream.flush()
-
+        logger.info('\n**Created using VCAMS v%s.'
+                    '\n**VCAMS is a free and open source program available at: %s'
+                    '\n**Author: Mohammadreza Khoshbin (www.mkhoshbin.com)\n',
+                    __version__, __website__)
         logger.info("A VoxelPart object named '%s' was created" +
                     " with %s elements and an initial element value of %u.",
-                    name, '*'.join(str(s) for s in size), fill_value)
+                    name, '*'.join(str(s) for s in size), base_material)
 
     def output_abaqus_inp(self, file_name, elem_type, dim,
                           material_elem_sets, custom_elem_sets=True):
@@ -308,12 +305,11 @@ class VoxelPart:
 
 
 def from_config_file(file_path):
-    # TODO: log.
     (part_creation_dict, part_manipulation_dict, bc_dict, output_dict) = \
         read_configuration(file_path)
 
-    ################################################
     part = VoxelPart(**part_creation_dict)
+    logger.info('The model is being created from a configuration file loaded from %s' % file_path)
 
     modeling_mode = part_manipulation_dict['modeling_mode']
     if modeling_mode == '0':  # No further action.
@@ -324,7 +320,7 @@ def from_config_file(file_path):
                                           voxel_size=part.voxel_size,
                                           l=part_manipulation_dict['tpms_length'],
                                           c=part_manipulation_dict['tpms_constant'])
-        part.apply_mask(mask=boolean_mask, value=1)
+        part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['tpms_fill_value'])
     elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:
             circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))
@@ -354,4 +350,5 @@ def from_config_file(file_path):
 
     part.output_abaqus_inp(**output_dict)
 
+    logger.info('Creation of the model from the configuration file completed successfully.')
     return part

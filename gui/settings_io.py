@@ -110,7 +110,7 @@ def set_focus(main_obj, field_obj):
     raise RuntimeError('Could not find field_obj as a child of any of the main tabs.')
 
 
-def export_settings(main_obj):
+def export_settings(main_obj, file_path_str):
     config = ConfigParser()
     try:
         # Tab: Basic Model Information
@@ -124,9 +124,10 @@ def export_settings(main_obj):
         config['Basic']['voxel_size_y'] = return_field_value(main_obj.voxel_size_y_field)
         config['Basic']['voxel_size_z'] = return_field_value(main_obj.voxel_size_z_field)
         config['Basic']['num_mats'] = str(main_obj.num_mats_combo.currentIndex())
+        config['Basic']['base_material'] = return_field_value(main_obj.base_material_field)
         config['Basic']['part_description'] = main_obj.part_description_field.toPlainText()
         # TODO: check with long text.
-        config['Basic']['working_dir'] = return_field_value(main_obj.working_dir_field)
+        config['Basic']['working_dir'] = main_obj.working_dir
         config['Basic']['log_debug'] = str(main_obj.log_debug_checkbox.isChecked())
 
         # Tab: Modeling.
@@ -139,12 +140,16 @@ def export_settings(main_obj):
             config['Modeling']['tpms_type'] = str(main_obj.select_tpms_combo.currentIndex())
             config['Modeling']['tpms_length'] = return_field_value(main_obj.tpms_length_field)
             config['Modeling']['tpms_constant'] = return_field_value(main_obj.tpms_constant_field)
+            config['Modeling']['tpms_fill_value'] = \
+                return_field_value(main_obj.tpms_fill_value_field)
         elif config['Modeling']['modeling_mode'] == '2':  # Planar Composite (Circular Inclusions)
             config['Modeling']['modeling_circle_table'] = \
                 main_obj.modeling_circle_table.return_csv_string(for_excel=False)
         elif config['Modeling']['modeling_mode'] == '3':  # Spatial Composite (Spherical Inclusions)
             config['Modeling']['modeling_sphere_table'] = \
                 main_obj.modeling_sphere_table.return_csv_string(for_excel=False)
+        else:
+            raise ValueError('Invalid value for modeling_mode which should not happen.')
 
         # Tab: Boundary Conditions
         config['BC'] = {}
@@ -172,16 +177,15 @@ def export_settings(main_obj):
         return
 
     # Write to output.
-    working_dir_path = Path(main_obj.working_dir)
-    working_dir_path.mkdir(parents=True, exist_ok=True)
-    with open(working_dir_path.joinpath(main_obj.part_name + '.vcams'), 'w', newline='\n') \
-            as config_file:
+    file_path = Path(file_path_str)
+    file_path.parents[0].mkdir(parents=True, exist_ok=True)
+    with open(file_path, 'w', newline='\n') as config_file:
         config.write(config_file)
 
 
-def import_settings(main_obj):
+def import_settings(main_obj, file_path_str):
     config = ConfigParser()
-    config.read(r'C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed\unnamed.vcams')  # FIXME
+    config.read(file_path_str)
 
     # Check validity of the imported settings.
     section_list = ('Basic', 'Modeling', 'BC', 'Output')
@@ -202,11 +206,12 @@ def import_settings(main_obj):
         set_field_value(main_obj.voxel_size_y_field, 'voxel_size_y', basic)
         set_field_value(main_obj.voxel_size_z_field, 'voxel_size_z', basic)
         set_field_value(main_obj.num_mats_combo, 'num_mats', basic, combo_index_mode=True)
+        set_field_value(main_obj.base_material_field, 'base_material', basic)
         set_field_value(main_obj.part_description_field, 'part_description', basic)
         set_field_value(main_obj.working_dir_field, 'working_dir', basic)
         main_obj.log_debug_checkbox.setChecked(config.getboolean('Basic', 'log_debug'))
     except ValueError as err:
-        main_obj.main_toolbox.setCurrentIndex(0)
+        main_obj.main_toolbox.setCurrentWidget(main_obj.basic_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))
 
     # Tab: Modeling.
@@ -222,6 +227,7 @@ def import_settings(main_obj):
                             combo_index_mode=True)
             set_field_value(main_obj.tpms_length_field, 'tpms_length', modeling)
             set_field_value(main_obj.tpms_constant_field, 'tpms_constant', modeling)
+            set_field_value(main_obj.tpms_fill_value_field, 'tpms_fill_value', modeling)
         elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
             set_field_value(main_obj.modeling_circle_table, 'modeling_circle_table', modeling)
         elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
@@ -230,7 +236,7 @@ def import_settings(main_obj):
             raise ValueError(
                 'Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
     except ValueError as err:
-        main_obj.main_toolbox.setCurrentIndex(1)
+        main_obj.main_toolbox.setCurrentWidget(main_obj.modeling_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))
 
     # Tab: Boundary Conditions.
@@ -246,7 +252,7 @@ def import_settings(main_obj):
             set_field_value(main_obj.strain13_field, 'strain13', bc)
             set_field_value(main_obj.strain23_field, 'strain23', bc)
     except ValueError as err:
-        main_obj.main_toolbox.setCurrentIndex(2)
+        main_obj.main_toolbox.setCurrentWidget(main_obj.bc_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))
 
     # Tab: Output.
@@ -259,5 +265,5 @@ def import_settings(main_obj):
         if selected_output_mats_type == '2':  # Output Selected Materials.
             set_field_value(main_obj.output_mats_select_field, 'output_mats_select', output)
     except ValueError as err:
-        main_obj.main_toolbox.setCurrentIndex(3)
+        main_obj.main_toolbox.setCurrentWidget(main_obj.output_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))

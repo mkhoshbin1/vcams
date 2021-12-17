@@ -8,28 +8,23 @@ voxel_size_x = 0.01
 voxel_size_y = 0.01
 voxel_size_z = 0.01
 num_mats = 0
+base_material = 0
 part_description = 
 working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed
-log_debug = False
+log_debug = True
 
 [Modeling]
 modeling_mode = 1
 tpms_type = 0
 tpms_length = 0.5
 tpms_constant = 0
+tpms_fill_value = 1
 
 [BC]
 bc_type = 0
-strain11 = 1
-strain22 = 2
-strain33 = 3
-strain12 = 4
-strain13 = 5
-strain23 = 6
 
 [Output]
 file_name = unnamed2
 elem_code = C3D8R
-output_mats_type = 2
-output_mats_select = 1
+output_mats_type = 1
 
