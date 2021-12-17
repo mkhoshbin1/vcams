@@ -1,4 +1,5 @@
-"""Functions used for creating boundary conditions."""
+"""Functions used for creating boundary conditions.
+The BC and it's information is stored in the VoxelPart object and written to the output with it."""
 from numpy import ravel_multi_index, array, arange, meshgrid
 
 
