@@ -295,7 +295,7 @@ class MainWindow(QMainWindow):
 
     def determine_validity_visually(self):
         if not self.sender().hasAcceptableInput():
-            self.sender().setStyleSheet("border: 1px solid red;")  # FIXME: field size changes.
+            self.sender().setStyleSheet("border: 1px solid red;")  # TODO: field size changes.
         else:
             self.sender().setStyleSheet("border: 1px solid black;")  # TODO: parameterize.
 

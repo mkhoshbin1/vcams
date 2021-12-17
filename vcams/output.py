@@ -207,7 +207,7 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
                                       The function makes sure that it is unique and sorted.
                                       Note that Abaqus only accepts element IDs that are positive
                                       and less than 999999999.
-                                      Elements IDs must also be integers, but this is not
+                                      Element IDs must also be integers, but this is not
                                       directly checked. However, they will raise an error
                                       once they are passed as indices to numpy.
 
@@ -610,12 +610,12 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
             custom_elem_sets.append(
                 (item[0], item[1], '{:.2f}'.format((item[1] / num_elems) * 100)))
     summary_text = (
-        '*Model Details*\n' +
-        (tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n') +
-        '\n*Material Element Sets*\n' +
-        (tabulate(mat_elem_sets, headers=('Set Name', 'Number of Elements',
-                                          'Percent of All Elements', 'Percent of Model'),
-                  tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n')
+            '*Model Details*\n' +
+            (tabulate(part_summary, tablefmt='pretty', colalign=('left', 'left')) + '\n') +
+            '\n*Material Element Sets*\n' +
+            (tabulate(mat_elem_sets, headers=('Set Name', 'Number of Elements',
+                                              'Percent of All Elements', 'Percent of Model'),
+                      tablefmt='pretty', colalign=('left', 'left', 'left')) + '\n')
     )
     if len(custom_elem_sets) == 0:
         summary_text += '\n*Custom Element Sets*\nNo custom element sets were defined.\n'
@@ -625,5 +625,5 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
                                   headers=('Set Name', 'Number of Elements',
                                            'Percent of All Elements'),
                                   tablefmt='pretty') + '\n'
-        )
+                         )
     logger.info('A summary of the created part is as follows:\n***\n%s***\n' % summary_text)
