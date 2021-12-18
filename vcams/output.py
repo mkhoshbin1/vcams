@@ -6,7 +6,7 @@ import time
 import shutil
 
 from numpy import savetxt, unravel_index, ravel_multi_index, array, unique, uint32, float64, \
-    union1d, any, zeros, append
+    union1d, any, zeros, append, intersect1d
 from tabulate import tabulate
 
 from . import __version__, __website__
@@ -71,6 +71,7 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
 
     logger.info("Attempting to output part '%s' to an Abaqus input file.", part.name)
     # TODO: recheck everything about BCs. especially sets and args.
+    # TODO: add BC type to report.
 
     begin_time = time.perf_counter()
 
@@ -101,8 +102,8 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
         part.add_node_set(name='RP-NodeSet', ids=(dummy_node_id - 1,))  # ids is zero-based.
 
     # Write element sets.
-    (set_file_path, elem_id_list, elem_set_stats) = \
-        write_set_def(part, material_elem_sets, folder_path, custom_elem_sets)
+    (elem_set_file_path, elem_id_list, elem_set_stats) = \
+        write_elem_set_def(part, material_elem_sets, folder_path, custom_elem_sets)
 
     # Write temporary element definition file.
     (elem_file_path, num_elems, node_id_list) = write_elem_def(part_data_shape=part.data.shape,
@@ -111,12 +112,15 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
                                                                folder_path=folder_path)
 
     # Write temporary node definition file.
-    (node_file_path, num_nodes, dummy_node_id) = write_node_def(part_data_shape=part.data.shape,
-                                                                node_id_list=node_id_list,
-                                                                scale=scale, dim=dim,
-                                                                folder_path=folder_path,
-                                                                add_dummy_node=add_dummy_node,
-                                                                dummy_node_id=dummy_node_id)
+    (node_file_path, num_nodes, node_id_list) = write_node_def(part_data_shape=part.data.shape,
+                                                               node_id_list=node_id_list,
+                                                               scale=scale, dim=dim,
+                                                               folder_path=folder_path,
+                                                               add_dummy_node=add_dummy_node,
+                                                               dummy_node_id=dummy_node_id)
+
+    # Write node sets.
+    node_set_file_path = write_node_set_def(part, node_id_list, folder_path)
 
     # Write the final input file.  #TODO: better logging.
     main_file_path = os.path.join(folder_path, file_name)
@@ -146,8 +150,12 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
         with open(elem_file_path, 'r') as elem_file:
             shutil.copyfileobj(elem_file, main_file)
 
+        # Write node sets.
+        with open(node_set_file_path, 'r') as node_set_file:
+            shutil.copyfileobj(node_set_file, main_file)
+
         # Write element sets.
-        with open(set_file_path, 'r') as elem_set_file:
+        with open(elem_set_file_path, 'r') as elem_set_file:
             shutil.copyfileobj(elem_set_file, main_file)
 
         # Declare the end of this part.
@@ -176,7 +184,8 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
         logger.debug('Deleting temporary files.')
         os.remove(node_file_path)
         os.remove(elem_file_path)
-        os.remove(set_file_path)
+        os.remove(node_set_file_path)
+        os.remove(elem_set_file_path)
 
     elapsed_time = time.perf_counter() - begin_time
     logger.info("Finished exporting part '%s' to the Abaqus input file at '%s'.",
@@ -364,10 +373,10 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
                              Defaults to 999999999.
 
     Returns:
-        tuple: The tuple *(file_path, num_nodes, dummy_node_id)* containing
+        tuple: The tuple *(file_path, num_nodes, node_id_list)* containing
         the path to the temporary element definition file,
         the number of nodes which have been written to the file,
-        and the id of the dummy node which is either an integer or :py:obj:`None`.
+        and the id of the nodes written to file which has been updated by adding the dummy node.
     """
 
     logger.debug("Attempting to write node definitions to the temporary file 'node_def.tmp'.")
@@ -420,6 +429,7 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
     if add_dummy_node:
         node_table[-1, :] = append(
             array([dummy_node_id]), (node_table.max(axis=0, initial=-1) * 1.10)[1:])
+        node_id_list = append(node_id_list, dummy_node_id - 1)
 
     # Write node_table to a temporary text file.
     file_path = os.path.join(folder_path, 'node_def.tmp')
@@ -430,7 +440,7 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
 
     logger.debug("Wrote %u %s nodes to the temporary file 'node_def.tmp'.",
                  num_real_nodes, dim.upper())
-    return file_path, num_real_nodes, dummy_node_id
+    return file_path, num_real_nodes, node_id_list
 
 
 def write_set_ids(file_obj, kind, name, ids):
@@ -504,8 +514,8 @@ def write_set_ids(file_obj, kind, name, ids):
     return name, len(ids)
 
 
-def write_set_def(part, material_elem_sets, folder_path, custom_elem_sets=True):
-    """Write the node and element set portion of an Abaqus input file to a temporary file.
+def write_elem_set_def(part, material_elem_sets, folder_path, custom_elem_sets=True):
+    """Write the element set portion of an Abaqus input file to a temporary file.
     This function also returns which elements must be output.
 
     Args:
@@ -522,24 +532,19 @@ def write_set_def(part, material_elem_sets, folder_path, custom_elem_sets=True):
                            will be placed.
 
     Returns:
-        tuple: The tuple (set_file_path, elem_id_list, elem_set_stats) where
+        tuple: The tuple (elem_set_file_path, elem_id_list, elem_set_stats) where
                The first element is the path to the temporary set definition file,
                the second element is a unique and sorted list of all element IDs in the sets,
                and the third element is a dictionary where the keys are names
                of the element sets and the values are the number of elements in that set.
     """
 
-    logger.debug("Attempting to write node and element sets to the temporary file 'set.tmp'.")
+    logger.debug("Attempting to write element sets to the temporary file 'elemset.tmp'.")
     elem_set_stats = dict()
     elem_id_list = array([], order='C', dtype='uint32')
-    set_file_path = os.path.join(folder_path, 'set.tmp')
+    elem_set_file_path = os.path.join(folder_path, 'elemset.tmp')
 
-    with open(set_file_path, 'w', encoding='latin1') as file_obj:
-
-        # Write node sets.
-        for (name, node_ids) in part.node_sets.items():
-            write_set_ids(file_obj=file_obj, kind='NSET', name=name, ids=node_ids)
-
+    with open(elem_set_file_path, 'w', encoding='latin1') as file_obj:
         # Write custom element sets. The element IDs are unique and sorted.
         if custom_elem_sets and bool(part.elem_sets):
             for (name, elem_ids) in part.elem_sets.items():
@@ -547,7 +552,6 @@ def write_set_def(part, material_elem_sets, folder_path, custom_elem_sets=True):
                                                     name=name, ids=elem_ids)
                 elem_id_list = union1d(elem_id_list, elem_ids)
                 elem_set_stats[set_name] = num_ids
-
         # Write the the materials that should be output.
         # TODO: make sure all materials have at least one element.
         for mat_code in material_elem_sets:
@@ -557,9 +561,49 @@ def write_set_def(part, material_elem_sets, folder_path, custom_elem_sets=True):
             elem_id_list = union1d(elem_id_list, elem_ids)
             elem_set_stats[set_name] = num_ids
 
-    logger.debug("Wrote %u node sets and %u element sets to the temporary file 'set.tmp'.",
-                 len(part.node_sets), len(elem_set_stats))
-    return set_file_path, elem_id_list, elem_set_stats
+    logger.debug("Wrote %u element sets to the temporary file 'elemset.tmp'.", len(elem_set_stats))
+    return elem_set_file_path, elem_id_list, elem_set_stats
+
+
+def write_node_set_def(part, node_id_list, folder_path):
+    """Write the node and element set portion of an Abaqus input file to a temporary file.
+    This function also returns which elements must be output.
+
+    Args:
+        part (VoxelPart): The VoxelPart object which is to be output.
+
+        node_id_list (numpy.ndarray): A 1-D Numpy ndarray containing IDs of the nodes
+                                      that have been written to the output. It is used
+                                      to determine which nodes from the node set
+                                      should actually be defined in the output.
+
+        folder_path (str): Path to the folder where the temporary node definition file
+                           will be placed.
+
+    Returns:
+        str: The path to the temporary set definition file.
+    """
+
+    logger.debug("Attempting to write node sets to the temporary file 'nodeset.tmp'.")
+    node_set_file_path = os.path.join(folder_path, 'nodeset.tmp')
+    # TODO: add node sets to summary.
+    with open(node_set_file_path, 'w', encoding='latin1') as file_obj:
+        # Write node sets.
+        num_omitted = 0
+        for (name, node_ids) in part.node_sets.items():
+            node_set_ids = intersect1d(node_id_list, node_ids)
+            if len(node_set_ids) == 0:
+                num_omitted += 1
+                logger.warning("Node set '%s' was not written to output because none of "
+                               "its nodes and elements are set for output.", name)
+            else:
+                # noinspection PyTypeChecker
+                write_set_ids(file_obj=file_obj, kind='NSET', name=name,
+                              ids=node_set_ids)
+
+    logger.debug("Wrote %u node sets to the temporary file 'nodeset.tmp'.",
+                 len(part.node_sets) - num_omitted)
+    return node_set_file_path
 
 
 def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
