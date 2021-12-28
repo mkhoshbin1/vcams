@@ -4,12 +4,12 @@ The part is then output to abaqus with a uniform scale of 0.02 in all directions
 import vcams
 
 # Create a part.
-part = vcams.voxelpart.VoxelPart(size=(50, 75, 100), fill_value=1,
+part = vcams.voxelpart.VoxelPart(size=(50, 75, 100), base_material=1,
                                  voxel_size=(0.02, 0.02, 0.02),
                                  name='Filled 3D Part',
                                  description='A cubic 50*50*50 part filled with elements.')
 
-part.add_default_node_sets(dim='3D')
+part.add_bc(bc_type='LINEAR DISPLACEMENT', explicit_nodeset=False, simple_nodeset=True)
 
 # Output the part.
 part.output_abaqus_inp(file_name='complete_part_3d',

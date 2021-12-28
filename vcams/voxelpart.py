@@ -137,6 +137,15 @@ class VoxelPart:
         self.elem_sets = dict()
         self.node_sets = dict()
 
+        # Create variables for bcs and their sets.
+        self._bc_type = None
+        self._bc_nodeset_vertices = False
+        self._bc_nodeset_edges = False
+        self._bc_nodeset_faces = False
+        self._bc_nodeset_explicit = False
+        self._bc_nodeset_simple = False
+        self._bc_add_dummy_nodes = False  # TODO: doc.
+
         # Create and configure the logger.
         filemode = 'w' if overwrite_logs else 'a'
         log_level = logging.DEBUG if log_debug else logging.INFO
@@ -171,7 +180,6 @@ class VoxelPart:
                          material_elem_sets=material_elem_sets,
                          custom_elem_sets=custom_elem_sets,
                          write_assembly=True,
-                         add_dummy_node=True,
                          keep_temp_files=False)
 
     def return_material_elem_set(self, mat_code, num_padding=0):
@@ -253,14 +261,28 @@ class VoxelPart:
         logger.debug("Added custom node set '%s' with %u elements.",
                      name, len(self.node_sets[name]))
 
-    def add_default_node_sets(self, dim):
+    def add_bc(self, bc_type=None, vertices_nodeset=True, edges_nodeset=True, faces_nodeset=True,
+               explicit_nodeset=True, simple_nodeset=False):
         """Define default node sets in the VoxelPart. They are created according to TODO
 
         Args:
-            dim (str): Dimensionality of the part which affects the created node sets.
-                       Valid values are '2D' and '3D'.
+            bc_type (str): #TODO
         """
-        create_node_sets(part=self, dim=dim)
+
+        if bc_type is None:
+            self._bc_type = None
+        elif bc_type.upper() in ['NODESET ONLY', 'LINEAR DISPLACEMENT', 'PERIODIC']:
+            self._bc_type = bc_type.upper()
+        else:
+            raise ValueError('Invalid value for bc_type.')
+
+        if not any([vertices_nodeset, edges_nodeset, faces_nodeset]):
+            raise ValueError("At least one of vertices_nodeset, edges_nodeset and faces_nodeset must be set to True.")
+        self._bc_nodeset_vertices = vertices_nodeset
+        self._bc_nodeset_edges = edges_nodeset
+        self._bc_nodeset_faces = faces_nodeset
+        self._bc_nodeset_explicit = explicit_nodeset
+        self._bc_nodeset_simple = simple_nodeset
 
     def apply_mask(self, mask, value):
         """Use a boolean mask to change values of the :py:attr:`~data` attribute.
@@ -342,7 +364,8 @@ def from_config_file(file_path):
     if bc_type == '0':  # No BC.
         pass
     elif bc_type == '1':  # Sets only.
-        part.add_default_node_sets(dim=bc_dict['dim'])  # FIXME
+        part.add_bc(bc_type='NODESET ONLY', vertices_nodeset=True, edges_nodeset=True, faces_nodeset=True,
+                    explicit_nodeset=True, simple_nodeset=True)
     elif bc_type == '2':  # Periodic BC.
         raise NotImplementedError('Periodic BC has not been implemented.')  # TODO
     else:
