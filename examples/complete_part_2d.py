@@ -10,8 +10,7 @@ part = vcams.voxelpart.VoxelPart(size=(50, 100), base_material=1,
                                  description='A square 50*50 part filled with elements.',
                                  log_debug=True)
 
-# Define a
-part.add_default_node_sets(dim='2D')
+part.add_bc(bc_type='PERIODIC', explicit_nodeset=False, simple_nodeset=True)
 
 # Output the part.
 part.output_abaqus_inp(file_name='complete_part_2d',

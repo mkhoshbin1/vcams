@@ -2,23 +2,23 @@
 Currently, only Abaqus (TM) is supported."""
 import logging
 import os
-import time
 import shutil
+import time
 
 from numpy import savetxt, unravel_index, ravel_multi_index, array, unique, uint32, float64, \
-    union1d, any, zeros, append, intersect1d
+    union1d, any, zeros, append, intersect1d, insert, vstack
 from tabulate import tabulate
 
 from . import __version__, __website__
 from . import helper
+from .bc import create_bc
 
 logger = logging.getLogger(__name__)
 
 
 def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
                      scale, material_elem_sets,
-                     custom_elem_sets=True, add_dummy_node=True,
-                     write_assembly=True, keep_temp_files=False):
+                     custom_elem_sets=True, write_assembly=True, keep_temp_files=False):
     """Write a VoxelPart object to an Abaqus (TM) input file.
 
     Args:
@@ -60,11 +60,6 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
                                Some features such as constraints require this to be :py:obj:`True`.
                                Defaults to :py:obj:`True`.
 
-        add_dummy_node (bool): If set to :py:obj:`True`, a dummy node is added which can be used
-                               as a reference point for loading. The dummy node will be located
-                               at 10% distance to the furthest node of the part.
-                               Defaults to :py:obj:`True`.
-
         keep_temp_files (bool): If set to :py:obj:`True`, temporary files will not be deleted.
                                 Defaults to :py:obj:`False`.
     """
@@ -97,9 +92,13 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
                 raise ValueError('Material %i specified in material_elem_sets is not present in '
                                  'the model.' % mat)
 
-    dummy_node_id = 999999999  # Will only be used if add_dummy_node is True.
-    if add_dummy_node:
-        part.add_node_set(name='RP-NodeSet', ids=(dummy_node_id - 1,))  # ids is zero-based.
+    # Process BCs.
+    constraint_list = create_bc(part, dim)
+
+    # Add the dummy nodes as node sets.
+    # noinspection PyProtectedMember
+    for name, node_id in part._dummy_node_dict.items():
+        part.add_node_set(name=name, ids=node_id-1)  # ids is zero-based.
 
     # Write element sets.
     (elem_set_file_path, elem_id_list, elem_set_stats) = \
@@ -112,15 +111,17 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
                                                                folder_path=folder_path)
 
     # Write temporary node definition file.
-    (node_file_path, num_nodes, node_id_list) = write_node_def(part_data_shape=part.data.shape,
+    (node_file_path, num_nodes, node_id_list) = write_node_def(part=part,
                                                                node_id_list=node_id_list,
                                                                scale=scale, dim=dim,
-                                                               folder_path=folder_path,
-                                                               add_dummy_node=add_dummy_node,
-                                                               dummy_node_id=dummy_node_id)
+                                                               folder_path=folder_path)
 
     # Write node sets.
     node_set_file_path = write_node_set_def(part, node_id_list, folder_path)
+
+    # Write constraints.
+    if constraint_list:
+        constraints_file_path = write_constraints(folder_path, constraint_list)
 
     # Write the final input file.  #TODO: better logging.
     main_file_path = os.path.join(folder_path, file_name)
@@ -150,10 +151,6 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
         with open(elem_file_path, 'r') as elem_file:
             shutil.copyfileobj(elem_file, main_file)
 
-        # Write node sets.
-        with open(node_set_file_path, 'r') as node_set_file:
-            shutil.copyfileobj(node_set_file, main_file)
-
         # Write element sets.
         with open(elem_set_file_path, 'r') as elem_set_file:
             shutil.copyfileobj(elem_set_file, main_file)
@@ -171,10 +168,18 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
             main_file.write('*ASSEMBLY, NAME=Assembly\n\n')
 
             # Declare the instance.
-            main_file.write('*INSTANCE, NAME="%s", PART="%s"\n' % (part.name + '-Ins', part.name))
+            main_file.write('*INSTANCE, NAME="%s", PART="%s"\n' % (part.instance_name, part.name))
             main_file.write('*END INSTANCE\n**\n\n')
 
-            # TODO add constraints here.
+            # Write node sets.
+            with open(node_set_file_path, 'r') as node_set_file:
+                shutil.copyfileobj(node_set_file, main_file)
+
+            # Write constraints.
+            if constraint_list:
+                # noinspection PyUnboundLocalVariable
+                with open(constraints_file_path, 'r') as constraints_file:
+                    shutil.copyfileobj(constraints_file, main_file)
 
             # Declare the end of the assembly portion of the input file.
             main_file.write('*END ASSEMBLY\n**\n\n')
@@ -186,6 +191,8 @@ def write_abaqus_inp(part, file_name, folder_path, elem_code, dim,
         os.remove(elem_file_path)
         os.remove(node_set_file_path)
         os.remove(elem_set_file_path)
+        if constraint_list:
+            os.remove(constraints_file_path)
 
     elapsed_time = time.perf_counter() - begin_time
     logger.info("Finished exporting part '%s' to the Abaqus input file at '%s'.",
@@ -334,8 +341,7 @@ def write_elem_def(part_data_shape, elem_id_list, elem_type, dim, folder_path):
     return file_path, num_elems, node_id_list
 
 
-def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
-                   add_dummy_node=True, dummy_node_id=999999999):
+def write_node_def(part, node_id_list, scale, dim, folder_path):
     """Write the node definition portion of an Abaqus input file to a temporary file,
     which will be concatenated with other portions to form an input file.
 
@@ -345,8 +351,7 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
     Currently, only cartesian global coordinates are supported.
 
     Args:
-        part_data_shape (tuple): Shape of :py:attr:`VoxelPart.~data`
-                                 which can be obtained using its *shape()* method.
+        part (VoxelPart): Size and dummy nodes are taken from it. #TODO
 
         node_id_list (numpy.ndarray): A 1-D Numpy ndarray containing IDs of nodes which must be output.
                                       The function makes sure that it is unique and sorted.
@@ -363,15 +368,6 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
 
         folder_path (str): Path to the folder where the temporary node definition file will be placed.
 
-        add_dummy_node (bool): If set to :py:obj:`True`, a dummy node is added which can be used
-                               as a reference point for loading. The dummy node will be located
-                               at 10% distance to the furthest node of the part.
-                               Defaults to :py:obj:`True`.
-
-        dummy_node_id (int): ID of the dummy node. It's written as-is (no changes)
-                             and will only be used if *add_dummy_node* is set to :py:obj:`True`.
-                             Defaults to 999999999.
-
     Returns:
         tuple: The tuple *(file_path, num_nodes, node_id_list)* containing
         the path to the temporary element definition file,
@@ -386,14 +382,18 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
     if any(node_id_list < 0):
         raise ValueError('At least on element in node_id_list is negative' +
                          ' which will result in a non-positive ID in the input file.')
-    if max(node_id_list) >= 999999998:
-        raise RuntimeError(('At least one node has an ID greater than 999999999,' +
+    if max(node_id_list) >= 999999990:
+        raise RuntimeError(('At least one node has an ID greater than 999999990,' +
                             ' which is not supported by Abaqus (TM).'))
     num_real_nodes = node_id_list.size
 
     # Validate dim.
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
+
+    # Get dummy_node_dict from the part.
+    # noinspection PyProtectedMember
+    dummy_node_dict = part._dummy_node_dict
 
     # Set format string and number of columns in node_coordinates based on dim.
     if dim.upper() == '2D':
@@ -406,17 +406,14 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
         raise RuntimeError('Unexpected value for dim. This should have been caught earlier.')
 
     # Preallocate memory for node_coordinates.
-    # The dummy node is added at the end, so allocate accordingly.
-    if add_dummy_node:
-        node_table = zeros((num_real_nodes + 1, num_cols), dtype=float64, order='C')
-    else:
-        node_table = zeros((num_real_nodes, num_cols), dtype=float64, order='C')
+    # The dummy nodes are added at the end, so allocate accordingly.
+    node_table = zeros((num_real_nodes + len(dummy_node_dict), num_cols), dtype=float64, order='C')
 
     # Add node_id_list as the first column of node_table.
     node_table[:num_real_nodes, 0] = node_id_list + 1
 
     # Obtain Cartesian coordinates of each node by unraveling its index and multiplying it by scale.
-    node_array_shape = tuple(i + 1 for i in part_data_shape)
+    node_array_shape = tuple(i + 1 for i in part.size)
     raw_indices = unravel_index(node_id_list, node_array_shape, order='C')
 
     # Add node coordinates to node_table.
@@ -425,11 +422,20 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
     if dim.upper() == '3D':
         node_table[:num_real_nodes, 3] = raw_indices[2] * scale[2]
 
-    # Add the dummy node to the end of the table.
-    if add_dummy_node:
-        node_table[-1, :] = append(
-            array([dummy_node_id]), (node_table.max(axis=0, initial=-1) * 1.10)[1:])
-        node_id_list = append(node_id_list, dummy_node_id - 1)
+    if dummy_node_dict:
+        # Add the dummy node to the end of the table.
+        dummy_nodes_list = []
+        max_size = node_table.max(axis=0, initial=-1)
+        offset = 0.05
+        for name, node_id in dummy_node_dict.items():
+            if name == 'RP0-NodeSet':
+                dummy_nodes_list.append((insert((max_size * -0.05)[1:], 0, node_id, axis=None)))
+            else:
+                dummy_nodes_list.append((insert((max_size * (1 + offset))[1:], 0, node_id, axis=None)))
+                offset += 0.05
+        dummy_nodes_list_array = vstack(dummy_nodes_list)
+        node_table[-1 * len(dummy_node_dict):, :] = dummy_nodes_list_array[dummy_nodes_list_array[:,0].argsort()]
+        node_id_list = append(node_id_list, [i - 1 for i in dummy_node_dict.values()])
 
     # Write node_table to a temporary text file.
     file_path = os.path.join(folder_path, 'node_def.tmp')
@@ -443,7 +449,7 @@ def write_node_def(part_data_shape, node_id_list, scale, dim, folder_path,
     return file_path, num_real_nodes, node_id_list
 
 
-def write_set_ids(file_obj, kind, name, ids):
+def write_set_ids(file_obj, kind, name, ids, instance_name=None):
     """Write an element or node set to a file according to Abaqus (TM) input file syntax.
 
     Args:
@@ -487,7 +493,10 @@ def write_set_ids(file_obj, kind, name, ids):
     ids = ids + 1
 
     # Write the set header manually.
-    file_obj.write('*%s,%s="%s"\n' % (kind.upper(), kind.upper(), name))
+    if instance_name:
+        file_obj.write('*%s,%s="%s",INS="%s"\n' % (kind.upper(), kind.upper(), name, instance_name))
+    else:
+        file_obj.write('*%s,%s="%s"\n' % (kind.upper(), kind.upper(), name))
 
     # If there are 9 or fewer IDs, they are written manually.
     # Otherwise, they are written as chunks of 9 IDs, ensuring low line length.
@@ -599,11 +608,21 @@ def write_node_set_def(part, node_id_list, folder_path):
             else:
                 # noinspection PyTypeChecker
                 write_set_ids(file_obj=file_obj, kind='NSET', name=name,
-                              ids=node_set_ids)
+                              ids=node_set_ids, instance_name=part.instance_name)
 
     logger.debug("Wrote %u node sets to the temporary file 'nodeset.tmp'.",
                  len(part.node_sets) - num_omitted)
     return node_set_file_path
+
+
+def write_constraints(folder_path, constraint_list):
+    constraints_file_path = os.path.join(folder_path, 'constraints_def.tmp')
+    with open(constraints_file_path, 'w', encoding='latin1') as file_obj:
+        file_obj.write('**\n** Constraints\n')
+        for constraint_obj in constraint_list:
+            file_obj.write(repr(constraint_obj))
+        file_obj.write('** End Constraints\n\n')
+    return constraints_file_path
 
 
 def write_output_summary(part, dim, elem_type, num_nodes, num_elems,

@@ -11,7 +11,7 @@ from vcams.mask.shape import ShapeArray, Circle
 results_path = 'path\\to\\results\\directory'
 
 # Create a part.
-part = vcams.voxelpart.VoxelPart(size=(50, 50), fill_value=1,
+part = vcams.voxelpart.VoxelPart(size=(50, 50), base_material=1,
                                  voxel_size=(0.02, 0.02),
                                  name='Shape Circle 2D Part',
                                  description='A square 50*50 part created using a circle mask.')
