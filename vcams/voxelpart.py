@@ -8,7 +8,7 @@ from typing import Union
 import numpy as np
 
 from . import __version__, __website__
-from .bc import create_node_sets
+# from .bc import create_node_sets
 from .helper import is_name_valid, return_default_results_path, read_configuration, \
     write_to_logger_streams
 from .mask.function import mask_from_function
@@ -144,7 +144,7 @@ class VoxelPart:
         self._bc_nodeset_faces = False
         self._bc_nodeset_explicit = False
         self._bc_nodeset_simple = False
-        self._bc_add_dummy_nodes = False  # TODO: doc.
+        self._dummy_node_dict = dict()
 
         # Create and configure the logger.
         filemode = 'w' if overwrite_logs else 'a'
@@ -162,6 +162,18 @@ class VoxelPart:
         logger.info("A VoxelPart object named '%s' was created" +
                     " with %s elements and an initial element value of %u.",
                     name, '*'.join(str(s) for s in size), base_material)
+
+    @property
+    def instance_name(self):  # TODO: doc
+        return self.name + '-Ins'
+
+    @property
+    def size(self):  # TODO: doc, use everywhere in refactor
+        return self.data.shape
+
+    @property
+    def real_size(self):  # TODO: doc
+        return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])
 
     def output_abaqus_inp(self, file_name, elem_type, dim,
                           material_elem_sets, custom_elem_sets=True):
@@ -261,14 +273,31 @@ class VoxelPart:
         logger.debug("Added custom node set '%s' with %u elements.",
                      name, len(self.node_sets[name]))
 
+    def add_dummy_nodes(self, fixed=True, single_node=False, three_nodes=False):
+
+        if not single_node ^ three_nodes:
+            raise ValueError("Exactly one of single_node or three_nodes must be True.")
+
+        if fixed:
+            self._dummy_node_dict['RP0-NodeSet'] = 999999999  # TODO: change max nodes to reflect.
+        if single_node:
+            self._dummy_node_dict['RP1-NodeSet'] = 999999998
+        if three_nodes:
+            self._dummy_node_dict['RP1-NodeSet'] = 999999996
+            self._dummy_node_dict['RP2-NodeSet'] = 999999997
+            self._dummy_node_dict['RP3-NodeSet'] = 999999998
+
+
+
     def add_bc(self, bc_type=None, vertices_nodeset=True, edges_nodeset=True, faces_nodeset=True,
-               explicit_nodeset=True, simple_nodeset=False):
+               explicit_nodeset=False, simple_nodeset=False):
         """Define default node sets in the VoxelPart. They are created according to TODO
 
         Args:
             bc_type (str): #TODO
         """
 
+        # TODO: reconsider and simplify interface.
         if bc_type is None:
             self._bc_type = None
         elif bc_type.upper() in ['NODESET ONLY', 'LINEAR DISPLACEMENT', 'PERIODIC']:

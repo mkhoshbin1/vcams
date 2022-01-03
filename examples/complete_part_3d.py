@@ -9,7 +9,7 @@ part = vcams.voxelpart.VoxelPart(size=(50, 75, 100), base_material=1,
                                  name='Filled 3D Part',
                                  description='A cubic 50*50*50 part filled with elements.')
 
-part.add_bc(bc_type='LINEAR DISPLACEMENT', explicit_nodeset=False, simple_nodeset=True)
+part.add_bc(bc_type='PERIODIC', explicit_nodeset=False, simple_nodeset=True)
 
 # Output the part.
 part.output_abaqus_inp(file_name='complete_part_3d',

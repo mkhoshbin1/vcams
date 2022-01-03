@@ -2,24 +2,126 @@
 The BC and it's information is stored in the VoxelPart object and written to the output with it."""
 
 import logging
-from collections import namedtuple
+from abc import abstractmethod, ABC
+from typing import Union, List
+from dataclasses import dataclass
+
 from numpy import ravel_multi_index, array, arange, meshgrid, concatenate
+
+# from .voxelpart import VoxelPart
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class TieConstraint:
-    def __init__(self, dof, rp_set_name, slave_set_name, rp_set_coeff=1, slave_set_coeff=-1):
-        self.dof = dof
-        self.rp_set_name = rp_set_name
-        self.slave_set_name = slave_set_name
-        self.rp_set_coeff = rp_set_coeff
-        self.slave_set_coeff = slave_set_coeff
+    dof: int
+    rp_set_name: str
+    slave_set_name: str
+    rp_set_coeff: float = +1.0
+    slave_set_coeff: float = -1.0
 
-    def return_output_string(self):
+    def __repr__(self):
         return (f'*Equation\n2\n'
                 f'"{self.slave_set_name}", {self.dof}, {self.slave_set_coeff}\n'
                 f'"{self.rp_set_name}", {self.dof}, {self.rp_set_coeff}\n')
+
+
+@dataclass
+class Base3DPbcConstraint(ABC):
+    """#TODO"""
+    part_instance_name: str
+    dummy_names: Union[List[str], str]
+    dummy_coeffs: Union[List[float], float]
+    node1_id: int
+    node2_id: int
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+
+@dataclass
+class Pbc3DFaceConstraint(Base3DPbcConstraint):
+    """Implement: u_i^face_2 - u_i^face_1 = dir_length * u_i^dir_dummy_node
+    """
+    dummy_names: str
+    dummy_coeffs: float
+
+    def __repr__(self):
+        return ''.join((f'*Equation\n3\n'
+                        f'"{self.part_instance_name}".{self.node2_id + 1}, {dof}, 1.\n'
+                        f'"{self.part_instance_name}".{self.node1_id + 1}, {dof}, -1.\n'
+                        f'"{self.dummy_names}", {dof}, {self.dummy_coeffs}\n')
+                       for dof in (1, 2, 3))
+
+
+@dataclass
+class Pbc3DEdgeConstraint(Base3DPbcConstraint):
+    """Implement: node2_id - node1_id + dummy_coeffs[0]*dummy_names[0]+ dummy_coeffs[1]*dummy_names[1]
+    """
+
+    def __repr__(self):
+        return ''.join((f'*Equation\n4\n'
+                        f'"{self.part_instance_name}".{self.node2_id + 1}, {dof}, 1.\n'
+                        f'"{self.part_instance_name}".{self.node1_id + 1}, {dof}, -1.\n'
+                        f'"{self.dummy_names[0]}", {dof}, {self.dummy_coeffs[0]}\n'
+                        f'"{self.dummy_names[1]}", {dof}, {self.dummy_coeffs[1]}\n')
+                       for dof in (1, 2, 3))
+
+
+class Pbc3DVertexConstraint(Base3DPbcConstraint):
+    """Implement: node2_id - node1_id + dummy_coeffs[0]*dummy_names[0]
+    + dummy_coeffs[1]*dummy_names[1] + dummy_coeffs[2]*dummy_names[2]
+    """
+
+    def __repr__(self):
+        return ''.join((f'*Equation\n5\n'
+                        f'"{self.part_instance_name}".{self.node2_id + 1}, {dof}, 1.\n'
+                        f'"{self.part_instance_name}".{self.node1_id + 1}, {dof}, -1.\n'
+                        f'"{self.dummy_names[0]}", {dof}, {self.dummy_coeffs[0]}\n'
+                        f'"{self.dummy_names[1]}", {dof}, {self.dummy_coeffs[1]}\n'
+                        f'"{self.dummy_names[2]}", {dof}, {self.dummy_coeffs[2]}\n')
+                       for dof in (1, 2, 3))
+
+
+@dataclass
+class Pbc2DEdgeConstraint:
+    part_instance_name: str
+    dof: int
+    dummy_names: str
+    dummy_coeffs: float
+    node1_id: int
+    node2_id: int
+
+    def __post_init__(self):
+        if self.dof == 1:
+            self.aux_dof: int = 2
+        elif self.dof == 2:
+            self.aux_dof: int = 1
+        else:
+            raise ValueError('Invalid value for dof. Only 1 and 2 are allowed.')
+
+    def __repr__(self):
+        return (f'*Equation\n3\n'
+                f'"{self.part_instance_name}".{self.node2_id + 1}, {self.dof}, 1.\n'
+                f'"{self.part_instance_name}".{self.node1_id + 1}, {self.dof}, -1.\n'
+                f'"{self.dummy_names}", {self.dof}, {self.dummy_coeffs}\n'
+                f'*Equation\n2\n'
+                f'"{self.part_instance_name}".{self.node2_id + 1}, {self.aux_dof}, 1.\n'
+                f'"{self.part_instance_name}".{self.node1_id + 1}, {self.aux_dof}, -1.\n')
+
+
+class Pbc2DVertexConstraint(Base3DPbcConstraint):
+    """TODO"""
+
+    def __repr__(self):
+        return ''.join((f'*Equation\n4\n'
+                        f'"{self.part_instance_name}".{self.node2_id + 1}, {dof}, 1.\n'
+                        f'"{self.part_instance_name}".{self.node1_id + 1}, {dof}, -1.\n'
+                        f'"{self.dummy_names[0]}", {dof}, {self.dummy_coeffs[0]}\n'
+                        f'"{self.dummy_names[1]}", {dof}, {self.dummy_coeffs[1]}\n')
+                       for dof in (1, 2))
 
 
 # noinspection PyProtectedMember
@@ -37,36 +139,132 @@ def create_bc(part, dim):
         return
 
     elif bc_type.upper() == 'NODESET ONLY':
-        part._bc_add_dummy_nodes = True
         create_node_sets(part, dim, vertices=part._bc_nodeset_vertices,
                          edges=part._bc_nodeset_edges, faces=part._bc_nodeset_faces,
                          explicit_sets=part._bc_nodeset_explicit, simple_sets=part._bc_nodeset_simple)
-        return [], []
+        return []
 
     elif bc_type.upper() == 'LINEAR DISPLACEMENT':
-        part._bc_add_dummy_nodes = True
+        part.add_dummy_nodes(fixed=True, single_node=True)
         create_node_sets(part, dim, vertices=part._bc_nodeset_vertices,
                          edges=part._bc_nodeset_edges, faces=part._bc_nodeset_faces,
                          explicit_sets=part._bc_nodeset_explicit, simple_sets=True)
         if dim.upper() == '2D':
-            constraint_list = (TieConstraint(dof=1, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Edge11-NodeSet'),
-                               TieConstraint(dof=2, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Edge21-NodeSet'),
-                               TieConstraint(dof=1, rp_set_name='RP2-NodeSet', slave_set_name='Simple-Edge12-NodeSet'),
-                               TieConstraint(dof=2, rp_set_name='RP2-NodeSet', slave_set_name='Simple-Edge22-NodeSet'))
+            constraint_list = (TieConstraint(dof=1, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Edge11-NodeSet'),
+                               TieConstraint(dof=2, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Edge21-NodeSet'),
+                               TieConstraint(dof=1, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Edge12-NodeSet'),
+                               TieConstraint(dof=2, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Edge22-NodeSet'))
         else:  # dim.upper() == '3D'
-            constraint_list = (TieConstraint(dof=1, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face11-NodeSet'),
-                               TieConstraint(dof=2, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face21-NodeSet'),
-                               TieConstraint(dof=3, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face31-NodeSet'),
-                               TieConstraint(dof=1, rp_set_name='RP2-NodeSet', slave_set_name='Simple-Face12-NodeSet'),
-                               TieConstraint(dof=2, rp_set_name='RP2-NodeSet', slave_set_name='Simple-Face22-NodeSet'),
-                               TieConstraint(dof=3, rp_set_name='RP2-NodeSet', slave_set_name='Simple-Face32-NodeSet'))
+            constraint_list = (TieConstraint(dof=1, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Face11-NodeSet'),
+                               TieConstraint(dof=2, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Face21-NodeSet'),
+                               TieConstraint(dof=3, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Face31-NodeSet'),
+                               TieConstraint(dof=1, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face12-NodeSet'),
+                               TieConstraint(dof=2, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face22-NodeSet'),
+                               TieConstraint(dof=3, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face32-NodeSet'))
 
-        return constraint_list, bc_def_list
+        return constraint_list
 
     elif bc_type.upper() == 'PERIODIC':
-        raise NotImplementedError('PERIODIC')
+        # TODO: make sure it's suitable for pbc.
+        part.add_dummy_nodes(fixed=False, three_nodes=True)
+        create_node_sets(part, dim, vertices=True, edges=True, faces=True,
+                         explicit_sets=True, simple_sets=part._bc_nodeset_simple)
+        constraint_list = []
+        pl = part.real_size  # Length of the part.
+
+        if dim.upper() == '2D':
+            # Add constraints for the edges.
+            constraint_list += add_2d_pbc_constraints(part, 'edge', dof=2,
+                                                      dummy_names='RP2-NodeSet', dummy_coeffs=-pl[1],
+                                                      set_names=('Edge12-NodeSet', 'Edge34-NodeSet'))
+            constraint_list += add_2d_pbc_constraints(part, 'edge', dof=1,
+                                                      dummy_names='RP1-NodeSet', dummy_coeffs=-pl[0],
+                                                      set_names=('Edge14-NodeSet', 'Edge23-NodeSet'))
+            # Add constraints for the vertices.
+            constraint_list += add_2d_pbc_constraints(part, 'vertex', dof=None,
+                                                      dummy_names=('RP1-NodeSet', 'RP2-NodeSet'),
+                                                      dummy_coeffs=(-pl[0], -pl[0]),
+                                                      set_names=('Vertex1-NodeSet', 'Vertex3-NodeSet'))
+            constraint_list += add_2d_pbc_constraints(part, 'vertex', dof=None,
+                                                      dummy_names=('RP1-NodeSet', 'RP2-NodeSet'),
+                                                      dummy_coeffs=(+pl[0], -pl[0]),
+                                                      set_names=('Vertex2-NodeSet', 'Vertex4-NodeSet'))
+
+        else:
+            # Add constraints for the faces.
+            constraint_list += add_3d_pbc_constraints(part, 'face', 'RP1-NodeSet', -pl[0],
+                                                      ('Face11-NodeSet', 'Face12-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'face', 'RP2-NodeSet', -pl[1],
+                                                      ('Face21-NodeSet', 'Face22-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'face', 'RP3-NodeSet', -pl[2],
+                                                      ('Face31-NodeSet', 'Face32-NodeSet'))
+            # Add constraints for the edges.
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP2-NodeSet', 'RP3-NodeSet'), (-pl[1], -pl[2]),
+                                                      ('Edge12-NodeSet', 'Edge78-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP2-NodeSet', 'RP3-NodeSet'), (+pl[1], +pl[2]),
+                                                      ('Edge34-NodeSet', 'Edge56-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP2-NodeSet'), (+pl[0], +pl[1]),
+                                                      ('Edge15-NodeSet', 'Edge37-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP2-NodeSet'), (-pl[0], -pl[1]),
+                                                      ('Edge48-NodeSet', 'Edge26-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP3-NodeSet'), (+pl[0], +pl[2]),
+                                                      ('Edge14-NodeSet', 'Edge67-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP3-NodeSet'), (-pl[0], -pl[2]),
+                                                      ('Edge58-NodeSet', 'Edge23-NodeSet'))
+            # Add constraints for the faces.
+            dummy_names = ('RP1-NodeSet', 'RP2-NodeSet', 'RP3-NodeSet')
+            constraint_list += add_3d_pbc_constraints(part, 'vertex', dummy_names, (-pl[0], -pl[1], -pl[2]),
+                                                      ('Vertex1-NodeSet', 'Vertex7-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'vertex', dummy_names, (+pl[0], -pl[1], -pl[2]),
+                                                      ('Vertex2-NodeSet', 'Vertex8-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'vertex', dummy_names, (+pl[0], +pl[1], -pl[2]),
+                                                      ('Vertex3-NodeSet', 'Vertex5-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'vertex', dummy_names, (-pl[0], +pl[1], -pl[2]),
+                                                      ('Vertex4-NodeSet', 'Vertex6-NodeSet'))
+        return constraint_list
+
     else:
         raise ValueError('Invalid value for bc_type.')
+
+
+def add_2d_pbc_constraints(part, typ, dof, dummy_names, dummy_coeffs, set_names):
+    set1_ids = part.node_sets[set_names[0]]
+    set2_ids = part.node_sets[set_names[1]]
+    instance_name = part.instance_name
+    if len(set1_ids) != len(set2_ids):
+        raise ValueError("Sets '%s' and '%s' are of different lengths."
+                         "This should have been caught before calling this function.")
+    if typ.lower() == 'edge':
+        return [Pbc2DEdgeConstraint(instance_name, dof, dummy_names, dummy_coeffs, set1_ids[i], set2_ids[i])
+                for i in range(len(set1_ids))]
+    elif typ.lower() == 'vertex':
+        return [Pbc2DVertexConstraint(instance_name, dummy_names, dummy_coeffs, set1_ids[i], set2_ids[i])
+                for i in range(len(set1_ids))]
+    else:
+        raise ValueError("typ must be either 'edge' or 'vertex'.")
+
+
+
+
+
+
+def add_3d_pbc_constraints(part, typ, dummy_names, dummy_coeffs, set_names):
+    set1_ids = part.node_sets[set_names[0]]
+    set2_ids = part.node_sets[set_names[1]]
+    instance_name = part.instance_name
+    if len(set1_ids) != len(set2_ids):
+        raise ValueError("Sets '%s' and '%s' are of different lengths."
+                         "This should have been caught before calling this function.")
+    if typ.lower() == 'face':
+        constraint_class = Pbc3DFaceConstraint
+    elif typ.lower() == 'edge':
+        constraint_class = Pbc3DEdgeConstraint
+    elif typ.lower() == 'vertex':
+        constraint_class = Pbc3DVertexConstraint
+    else:
+        raise ValueError("typ must be one of 'face', 'edge', or 'vertex'.")
+    return [constraint_class(instance_name, dummy_names, dummy_coeffs, set1_ids[i], set2_ids[i])
+            for i in range(len(set1_ids))]
 
 
 def create_node_sets(part, dim, vertices=True, edges=True, faces=True, explicit_sets=False, simple_sets=True):
@@ -86,7 +284,6 @@ def create_node_sets(part, dim, vertices=True, edges=True, faces=True, explicit_
     """
 
     # TODO: use func for concatenation of edges and vertices and faces which correctly handles empties.
-
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
     if dim.upper() == '2D':
@@ -263,15 +460,15 @@ def create_node_sets(part, dim, vertices=True, edges=True, faces=True, explicit_
         for name, ids in simple_sets_dict.items():
             part.add_node_set(name=name, ids=ids)
 
-        # Define the individual node sets for vertices, edges and faces.
-        if explicit_sets:
-            # Define node sets for the vertices.
-            for name, ids in vertex_dict.items():
+    # Define the individual node sets for vertices, edges and faces.
+    if explicit_sets:
+        # Define node sets for the vertices.
+        for name, ids in vertex_dict.items():
+            part.add_node_set(name=name, ids=ids)
+        # Define node sets for the edges.
+        for name, ids in edge_dict.items():
+            part.add_node_set(name=name, ids=ids)
+        if faces:
+            # Define node sets for the faces.
+            for name, ids in face_dict.items():
                 part.add_node_set(name=name, ids=ids)
-            # Define node sets for the edges.
-            for name, ids in edge_dict.items():
-                part.add_node_set(name=name, ids=ids)
-            if faces:
-                # Define node sets for the faces.
-                for name, ids in face_dict.items():
-                    part.add_node_set(name=name, ids=ids)
