@@ -28,7 +28,7 @@ release = vcams_version  # TODO: check
 
 # -- General configuration ---------------------------------------------------
 
-# numfig = True  # Default values of numfig_format and numfig_secnum_depth are OK.
+numfig = True  # Default values of numfig_format and numfig_secnum_depth are OK.
 #
 # language = 'en'
 # math_number_all = True
@@ -77,7 +77,7 @@ exclude_patterns = []
 html_theme = 'sphinx_rtd_theme'
 
 #html_logo
-#html_favicon
+#html_favicon  #TODO
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
