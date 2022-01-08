@@ -9,3 +9,6 @@ After defining each example problem, modeling and analysis is performed using bo
 .. toctree::
    :caption: Contents:
    :maxdepth: 1
+
+   example1
+   example2

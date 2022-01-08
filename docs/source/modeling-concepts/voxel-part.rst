@@ -20,6 +20,7 @@ This means that all elements are rectangular or cuboid in shape, i.e. they are p
 Use of `NumPy <https://numpy.org/>`__ allows us to utilize the package's extremely optimized
 numerical facilities and provides compatibility with other useful mathematical libraries.
 
+.. _materials:
 
 Materials
 ---------
@@ -62,7 +63,7 @@ Any material code not requested for output will have its element not written to 
 This is typically elements with a material code of zero, but can be any material code that the user desires.
 A sample transformation between the *data* array and finite element mesh is shown in :numref:`voxelpart-data-to-mesh`.
 
-.. figure:: ../images/voxelpart-data-to-mesh.png
+.. figure:: /images/voxelpart-data-to-mesh.png
    :name: voxelpart-data-to-mesh
    :align: center
    :alt: Illustration of the *data* variable for a 5×5 model containing three different materials

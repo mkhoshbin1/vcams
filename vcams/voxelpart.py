@@ -404,3 +404,6 @@ def from_config_file(file_path):
 
     logger.info('Creation of the model from the configuration file completed successfully.')
     return part
+
+
+# TODO: 2D part with 3d size and voxel size.
