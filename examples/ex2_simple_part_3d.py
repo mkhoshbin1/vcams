@@ -3,7 +3,7 @@
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 100), base_material=1,
+part = VoxelPart(size=(50, 75, 100), base_material=1,
                  voxel_size=(0.02, 0.02, 0.02),
                  name='Ex2 Simple 3D Part',
                  description='Example 2: A simple 50*75*100 3D part filled with elements.',

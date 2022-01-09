@@ -9,6 +9,6 @@ The part is then output to abaqus in *3D* mode with *C3D8R* elements.
 The *Non-Empty* elements (which happens to be the whole model),
 are requested to be written to the output.
 
-The code can be found in the *examples* folder of the main library. It is also included below:
+The code can be found in the *examples* folder of the main repository. It is also included below:
 
 .. literalinclude:: /../../examples/ex2_simple_part_3d.py

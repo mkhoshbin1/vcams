@@ -9,6 +9,6 @@ The part is then output to abaqus in *2D* mode with *CPE4R* elements.
 The *Non-Empty* elements (which happens to be the whole model),
 are requested to be written to the output.
 
-The code can be found in the *examples* folder of the main library. It is also included below:
+The code can be found in the *examples* folder of the main repository. It is also included below:
 
 .. literalinclude:: /../../examples/ex1_simple_part_2d.py
