@@ -1,7 +1,10 @@
 Example 4: Manual Manipulation of the Structure (Single Elements)
 =================================================================
 
-In this example, a complete 2D part with a shape of 5×5 voxels is created
+This example illustrated manual modification of the *data* array of a VoxelPart instance.
+Unlike :doc:`Example 5 <example5>`, here we manipulate the elements one by one.
+
+First, , a complete 2D part with a shape of 5×5 voxels is created
 with a base material of 1 and a voxel size of 0.02 units in all directions.
 The parameter *log_debug* is set to *True* for demonstration purposes.
 
