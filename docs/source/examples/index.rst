@@ -14,3 +14,6 @@ After defining each example problem, modeling and analysis is performed using bo
    example2
    example4
    example5
+   example6
+   example7
+   example8

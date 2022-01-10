@@ -1,4 +1,4 @@
-Example 4: Manual Manipulation of the Structure (Whole Array)
+Example 5: Manual Manipulation of the Structure (Whole Array)
 =============================================================
 
 This example illustrated manual modification of the *data* array of a VoxelPart instance.
