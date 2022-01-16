@@ -7,4 +7,5 @@ Modeling Concepts
    :maxdepth: 2
 
    voxel-part
+   modeling-techniques
    element-node-sets

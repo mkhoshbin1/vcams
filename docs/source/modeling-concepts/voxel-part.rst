@@ -72,19 +72,8 @@ A sample transformation between the *data* array and finite element mesh is show
    The *data* variable for a 5×5 model containing three different materials
    and empty space and the resulting mesh. White cells signify empty space.
 
-
-Model Manipulation
-------------------
-Upon creation, one material code is assigned to all elements in the model.
-*Model Manipulation* refers to the methods using which the part's *data* array is changed to obtain the desired model.
-There are three (TODO) methods for manipulating a model:
-
-+ Manual changing of the values in the *data* array.
-  This can be as simple as changing the value of individual elements, or as complex as the user desires.
-  The *data* array is a NumPy array and any valid change that does not change its *dtype* is permitted.
-  Example X shows this method in practice. (TODO)
-+ Use of boolean masks for manipulating a model.
-  This is a simple and effective method which is covered in TODO.
+Changing the materials in a model is the backbone of all model manipulations.
+This is discussed in detail in :doc:`./modeling-techniques`
 
 
 
