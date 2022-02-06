@@ -409,3 +409,6 @@ def from_config_file(file_path):
 # TODO: 2D part with 3d size and voxel size.
 # TODO: Fix example 3
 # TODO: unconnected regions: https://stackoverflow.com/questions/46737409
+# TODO: add only some of the bc node sets.
+# TODO: nodeset -> nset
+# TODO: face, edge, vertex -> f, e, v
