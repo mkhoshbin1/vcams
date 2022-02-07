@@ -201,17 +201,17 @@ def create_bc(part, dim):
             # Add constraints for the edges.
             constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP2-NodeSet', 'RP3-NodeSet'), (-pl[1], -pl[2]),
                                                       ('Edge12-NodeSet', 'Edge78-NodeSet'))
-            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP2-NodeSet', 'RP3-NodeSet'), (+pl[1], +pl[2]),
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP2-NodeSet', 'RP3-NodeSet'), (+pl[1], -pl[2]),
                                                       ('Edge34-NodeSet', 'Edge56-NodeSet'))
-            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP2-NodeSet'), (+pl[0], +pl[1]),
-                                                      ('Edge15-NodeSet', 'Edge37-NodeSet'))
             constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP2-NodeSet'), (-pl[0], -pl[1]),
+                                                      ('Edge15-NodeSet', 'Edge37-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP2-NodeSet'), (-pl[0], +pl[1]),
                                                       ('Edge48-NodeSet', 'Edge26-NodeSet'))
-            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP3-NodeSet'), (+pl[0], +pl[2]),
-                                                      ('Edge14-NodeSet', 'Edge67-NodeSet'))
             constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP3-NodeSet'), (-pl[0], -pl[2]),
+                                                      ('Edge14-NodeSet', 'Edge67-NodeSet'))
+            constraint_list += add_3d_pbc_constraints(part, 'edge', ('RP1-NodeSet', 'RP3-NodeSet'), (-pl[0], +pl[2]),
                                                       ('Edge58-NodeSet', 'Edge23-NodeSet'))
-            # Add constraints for the faces.
+            # Add constraints for the vertices.
             dummy_names = ('RP1-NodeSet', 'RP2-NodeSet', 'RP3-NodeSet')
             constraint_list += add_3d_pbc_constraints(part, 'vertex', dummy_names, (-pl[0], -pl[1], -pl[2]),
                                                       ('Vertex1-NodeSet', 'Vertex7-NodeSet'))
