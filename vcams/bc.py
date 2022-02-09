@@ -86,7 +86,7 @@ class Pbc3DVertexConstraint(Base3DPbcConstraint):
 
 
 @dataclass
-class Pbc2DEdgeConstraint:
+class Pbc2DEdgeConstraint:  # TODO: add shear component similar to 3d and test.
     part_instance_name: str
     dof: int
     dummy_names: str
@@ -183,11 +183,11 @@ def create_bc(part, dim):
             # Add constraints for the vertices.
             constraint_list += add_2d_pbc_constraints(part, 'vertex', dof=None,
                                                       dummy_names=('RP1-NodeSet', 'RP2-NodeSet'),
-                                                      dummy_coeffs=(-pl[0], -pl[0]),
+                                                      dummy_coeffs=(-pl[0], -pl[1]),
                                                       set_names=('Vertex1-NodeSet', 'Vertex3-NodeSet'))
             constraint_list += add_2d_pbc_constraints(part, 'vertex', dof=None,
                                                       dummy_names=('RP1-NodeSet', 'RP2-NodeSet'),
-                                                      dummy_coeffs=(+pl[0], -pl[0]),
+                                                      dummy_coeffs=(+pl[0], -pl[1]),
                                                       set_names=('Vertex2-NodeSet', 'Vertex4-NodeSet'))
 
         else:

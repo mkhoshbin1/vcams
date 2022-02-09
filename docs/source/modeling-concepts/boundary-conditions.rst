@@ -91,11 +91,11 @@ and 1, 2, and 3 are used instead of x, y, and z.
 Periodic Boundary Conditions
 ----------------------------
 In this BC, opposing edges and faces have identical displacements.
-Implementation of a PBC requires three dummy nodes () and three equations for each node on the boundary.
+Implementation of a PBC requires three dummy nodes (TODO) and three equations for each node on the boundary.
 Assume the the size of the cubic model in the three directions
 to be :math:`L_1`, :math:`L_2`, and :math:`L_3`, respectively.
 Based on `this paper <https://doi.org/10.1016/j.cma.2020.113572>`__ [1]_,
-we can write the general 3D equations as
+for DOF values of :math:`i=1, 2, 3` we can write the general 3D equations as:
 
 .. math::
    :label: bc-eq-pbc
@@ -124,11 +124,77 @@ we can write the general 3D equations as
      \end{cases}
    \end{align}
 
+For 2D models, these can be written as:
 
+.. math::
+   :label: bc-eq-pbc2d
 
+   \begin{align}
+     \text{Edges}& \begin{cases}
+       u_1^{E_{34}} - u_1^{E_{12}} = 0 \\
+       u_2^{E_{34}} - u_2^{E_{12}} - L_2 u_2^{D_2} = 0 \\
+       u_1^{E_{23}} - u_1^{E_{14}} - L_1 u_1^{D_1} = 0 \\
+       u_2^{E_{23}} - u_2^{E_{14}} = 0
+     \end{cases}
+   \\[0.5ex]
+     \text{Vertices}& \begin{cases}
+       u_1^{V_3} - u_1^{V_1} - L_1 u_1^{D_1} - L_2 u_1^{D_2} = 0 \\
+       u_2^{V_3} - u_2^{V_1} - L_1 u_2^{D_1} - L_2 u_2^{D_2} = 0 \\
+       u_1^{V_4} - u_1^{V_2} + L_1 u_1^{D_1} - L_2 u_1^{D_2} = 0 \\
+       u_2^{V_4} - u_2^{V_2} + L_1 u_2^{D_1} - L_2 u_2^{D_2} = 0 \\
+     \end{cases}
+   \end{align}
 
+In the above equations, there are three dummy nodes that are used for applying the loading.
+The dummy nodes are used as to represent the coarse scale deformation gradient as formulated in Ref [1]_.
+Assuming that the deformation tensor :math:`\mathbf{U}` is an input,
+Ref [1]_ shows that translations imposed on the dummy nodes must be:
 
+.. math::
+   :label: bc-eq-pbc-loading1
 
+   \mathbf{u}_i^{D_j} = \mathbf{U} - \delta_{ij}
+
+or in matrix form:
+
+.. math::
+   :label: bc-eq-pbc-loading2
+
+   \begin{bmatrix}
+     u_1^{D_1} & u_2^{D_1} & u_3^{D_1} \\
+     u_1^{D_2} & u_2^{D_2} & u_3^{D_2} \\
+     u_1^{D_3} & u_2^{D_3} & u_3^{D_3}
+   \end{bmatrix}
+   =
+   \begin{bmatrix}
+     U_{11} & U_{12} & U_{13} \\
+     U_{21} & U_{22} & U_{23} \\
+     U_{31} & U_{32} & U_{33}
+   \end{bmatrix} - \mathbf{I}
+   =
+   \begin{bmatrix}
+     U_{11} - 1 & U_{12}     & U_{13} \\
+     U_{21}     & U_{22} - 1 & U_{23} \\
+     U_{31}     & U_{32}     & U_{33} - 1
+   \end{bmatrix}
+
+The strain tensor is symmetric and it follows that the applied deformation must be symmetric.
+Therefore, we can simplify the previous equation and obtain the translation vectors of each dummy node:
+
+.. math::
+   :label: bc-eq-pbc-loading3
+
+   \begin{cases}
+     \begin{alignat}{4}
+       \vec{u}^{D_1} = (&U_{11} - 1&,&\ U_{12}    &,&\ U_{13}    &)& \\
+       \vec{u}^{D_2} = (&U_{12}    &,&\ U_{22} - 1&,&\ U_{23}    &)& \\
+       \vec{u}^{D_3} = (&U_{13}    &,&\ U_{23}    &,&\ U_{33} - 1&)&
+     \end{alignat}
+   \end{cases}
+
+It is evident from Eq. :eq:`bc-eq-pbc-loading3` that only six independent values are necessary for applying
+the actual loading to a periodic boundary condition.
+Additionally, in order to prevent rigid body motion, the vertex :math:`V_1` must be fixed in space.
 
 
 

@@ -413,3 +413,5 @@ def from_config_file(file_path):
 # TODO: nodeset -> nset
 # TODO: face, edge, vertex -> f, e, v
 # TODO: add ddbc based on walters2021, eq 24. x is node coordinates.
+# TODO: 2d pbc edges does not have shear components.
+# TODO: add disp values for all bcs.
