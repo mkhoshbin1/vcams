@@ -1,3 +1,5 @@
+.. _predefined-shape:
+
 Geometric Shapes
 ================
 Geometric shapes are very useful in modeling structures.
