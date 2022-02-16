@@ -7,4 +7,5 @@ Welcome to VCAMS's documentation!
    :maxdepth: 2
 
    modeling-concepts/index.rst
+   api-reference/index
    examples/index.rst

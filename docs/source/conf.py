@@ -40,6 +40,7 @@ numfig = True  # Default values of numfig_format and numfig_secnum_depth are OK.
 # ones.
 extensions = ['sphinx.ext.autodoc' ,
               'sphinx.ext.napoleon',
+              'sphinx_autodoc_typehints',
               'sphinx.ext.mathjax' ,
               'matplotlib.sphinxext.plot_directive',
               'sphinx_rtd_theme']
@@ -55,6 +56,7 @@ autodoc_default_options = {
     'special-members': '__init__',
     'undoc-members': True,
     'exclude-members': '__weakref__'}
+# TODO: check options at https://pypi.org/project/sphinx-autodoc-typehints/
 
 # # Options for matplotlib.
 # plot_html_show_source_link = False
