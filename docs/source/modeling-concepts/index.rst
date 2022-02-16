@@ -10,3 +10,4 @@ Modeling Concepts
    modeling-techniques
    element-node-sets
    boundary-conditions
+   predefined-structures/index.rst

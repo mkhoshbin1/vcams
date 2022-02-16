@@ -35,10 +35,10 @@ must have the same data type for all of its elements which can consume a lot of 
 Practically speaking, most models will not have many elements.
 Therefore, when creating the voxel part the *dtype* parameter can be set to specify the data type of the *data* array.
 Users are advised to use the smallest data type necessary needs to make computations faster and less memory intensive.
-:numref:`material_code_table` shows valid dtype values and their respective ranges and memory consumption.
+:numref:`material-code-table` shows valid dtype values and their respective ranges and memory consumption.
 
 .. table:: Valid *dtype* values and their respective ranges and memory consumption.
-   :name:  material_code_table
+   :name:  material-code-table
    :align: center
    :widths: auto
 

@@ -31,6 +31,8 @@ There are three methods for manipulating a model:
   that creates a common complex structure.
   The function and classes and their examples are covered in TODO.
 
+.. _boolean-mask:
+
 Boolean Masks
 -------------
 A Boolean mask is an array of Boolean values (True/False) with the same shape as another array
