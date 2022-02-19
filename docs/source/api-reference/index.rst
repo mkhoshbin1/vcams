@@ -9,4 +9,5 @@ You should always consults the :ref:`examples` section and the source code for u
    :maxdepth: 4
 
 
-   helper-functions
+   helper-module
+   bc-module

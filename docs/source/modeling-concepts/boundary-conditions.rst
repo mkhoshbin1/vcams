@@ -54,6 +54,8 @@ D\ :subscript:`0` is always present and must be fixed in space to prevent rigid 
 and one or more D\ :subscript:`i` are used in equations that implement the desired BC.
 
 
+.. _boundary-conditions-lin-disp:
+
 Linear Displacement Boundary Conditions
 ---------------------------------------
 In this boundary condition, the faces or edges of the part undergo a uniform displacement
@@ -87,6 +89,8 @@ and 1, 2, and 3 are used instead of x, y, and z.
      \end{cases}
    \end{align}
 
+
+.. _boundary-conditions-pbc:
 
 Periodic Boundary Conditions
 ----------------------------

@@ -3,38 +3,54 @@ The BC and it's information is stored in the VoxelPart object and written to the
 
 import logging
 from abc import abstractmethod, ABC
-from typing import Union, List
+from typing import Union
 from dataclasses import dataclass
 
 from numpy import ravel_multi_index, array, arange, meshgrid, concatenate
-
-# from .voxelpart import VoxelPart
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class TieConstraint:
+    """Class for tying a master set (single node) and a slave set (multiple nodes).
+    The tie is defined using the \*EQUATION keyword with the coefficients set to +1 and -1."""
     dof: int
+    """Degree of freedom used in the constraint."""
     rp_set_name: str
+    """Name of the set containing only a single master node (AKA dummy node/reference point)."""
     slave_set_name: str
-    rp_set_coeff: float = +1.0
-    slave_set_coeff: float = -1.0
+    """Name of the set containing the slave nodes."""
 
     def __repr__(self):
         return (f'*Equation\n2\n'
-                f'"{self.slave_set_name}", {self.dof}, {self.slave_set_coeff}\n'
-                f'"{self.rp_set_name}", {self.dof}, {self.rp_set_coeff}\n')
+                f'"{self.slave_set_name}", {self.dof}, -1.0\n'
+                f'"{self.rp_set_name}", {self.dof}, +1.0\n')
 
 
 @dataclass
-class Base3DPbcConstraint(ABC):
-    """#TODO"""
+class BasePbcConstraint(ABC):
+    """Abstract base class for defining a constraint for a Periodic Boundary Condition (PBC).
+
+    Subclasses are created for 2D and 3D spaces and for faces, edges, and vertices.
+    This dataclass simply defines the required parameters and establishes a common interface.
+    tying a master set (single node) and a slave set (multiple nodes).
+    The tie is defined using the ``*EQUATION`` keyword with the coefficients set to +1 and -1.
+
+    Subclasses must redefine the ``__repr__()`` method to output
+    a complete statement based on the ``*EQUATION`` keyword
+    of *Abaqus Keywords Reference Guide*.
+    """
     part_instance_name: str
-    dummy_names: Union[List[str], str]
-    dummy_coeffs: Union[List[float], float]
+    """Name of the part instance that the nodes belong to."""
+    dummy_names: tuple[str]
+    """Name of the set containing the dummy node, or a tuple of the names."""
+    dummy_coeffs: tuple[float]
+    """Value of the coefficient for the dummy node, or a tuple of the coefficients."""
     node1_id: int
+    """ID of the first node used for the equation."""
     node2_id: int
+    """ID of the second node used for the equation."""
 
     @abstractmethod
     def __repr__(self):
@@ -42,11 +58,24 @@ class Base3DPbcConstraint(ABC):
 
 
 @dataclass
-class Pbc3DFaceConstraint(Base3DPbcConstraint):
-    """Implement: u_i^face_2 - u_i^face_1 = dir_length * u_i^dir_dummy_node
+class Pbc3DFaceConstraint(BasePbcConstraint):
+    """Class for defining the following 3D PBC constraint
+    between a dummy nodes and two corresponding nodes on the faces of a cuboid:
+
+    .. math::
+       u_i^{F_{j2}} - u_i^{F_{j1}} + C_j u_i^{D_j} = 0
+
+    where :math:`F_{j1}` and :math:`F_{j2}` are the two faces in the :math:`j` direction,
+    :math:`D_j` and :math:`C_j` are the dummy node and the coefficient used for that direction,
+    and the equation is written for all DOFs, i.e. :math:`i=1,2,3`
+    Note that :math:`C_j` is typically supplied as a negative value.
+
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`:
     """
     dummy_names: str
+    """Name of the set containing the dummy node :math:`D_j`."""
     dummy_coeffs: float
+    """Value of the coefficient :math:`C_j`."""
 
     def __repr__(self):
         return ''.join((f'*Equation\n3\n'
@@ -57,8 +86,23 @@ class Pbc3DFaceConstraint(Base3DPbcConstraint):
 
 
 @dataclass
-class Pbc3DEdgeConstraint(Base3DPbcConstraint):
-    """Implement: node2_id - node1_id + dummy_coeffs[0]*dummy_names[0]+ dummy_coeffs[1]*dummy_names[1]
+class Pbc3DEdgeConstraint(BasePbcConstraint):
+    """Class for defining the following 3D PBC constraint
+    between a dummy nodes and two corresponding nodes on the edges of a cuboid:
+
+    .. math::
+       u_i^{E2} - u_i^{E1} + C_1 u_i^{D_1} + C_2 u_i^{D_2} = 0
+
+    where :math:`E1` and :math:`E2` are two compatible edges,
+    :math:`D_1` and :math:`D_2` are the dummy nodes used for the edges,
+    :math:`C_1` and :math:`C_2` are the coefficients used those dummy nodes,
+    and the equation is written for all DOFs, i.e. :math:`i=1,2,3`.
+
+    The above equation is a generalization of the edge equations
+    in Eq. :eq:`bc-eq-pbc`. Compatible edges, dummy nodes,
+    and the value of coefficients must be taken from Eq. :eq:`bc-eq-pbc`.
+
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`:
     """
 
     def __repr__(self):
@@ -70,9 +114,22 @@ class Pbc3DEdgeConstraint(Base3DPbcConstraint):
                        for dof in (1, 2, 3))
 
 
-class Pbc3DVertexConstraint(Base3DPbcConstraint):
-    """Implement: node2_id - node1_id + dummy_coeffs[0]*dummy_names[0]
-    + dummy_coeffs[1]*dummy_names[1] + dummy_coeffs[2]*dummy_names[2]
+class Pbc3DVertexConstraint(BasePbcConstraint):
+    """Class for defining the following 3D PBC constraint
+    between a dummy nodes and two nodes on vertices of a cuboid:
+
+    .. math::
+       u_i^{V2} - u_i^{V1} + C_1 u_i^{D_1} + C_2 u_i^{D_2} + C_3 u_i^{D_3} = 0
+
+    where :math:`V1` and :math:`V2` are two compatible vertices,
+    :math:`D_j` and :math:`C_j` are the dummy nodes and coefficients
+    (all are used), and the equation is written for all DOFs, i.e. :math:`i=1,2,3`.
+
+    The above equation is a generalization of the vertex equations
+    in Eq. :eq:`bc-eq-pbc`. Compatible vertices and the value of coefficients
+    must be taken from Eq. :eq:`bc-eq-pbc`.
+
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`:
     """
 
     def __repr__(self):
@@ -86,7 +143,9 @@ class Pbc3DVertexConstraint(Base3DPbcConstraint):
 
 
 @dataclass
-class Pbc2DEdgeConstraint:  # TODO: add shear component similar to 3d and test.
+class Pbc2DEdgeConstraint:
+    # TODO: add shear component similar to 3d and test.
+    # TODO: document.
     part_instance_name: str
     dof: int
     dummy_names: str
@@ -112,8 +171,23 @@ class Pbc2DEdgeConstraint:  # TODO: add shear component similar to 3d and test.
                 f'"{self.part_instance_name}".{self.node1_id + 1}, {self.aux_dof}, -1.\n')
 
 
-class Pbc2DVertexConstraint(Base3DPbcConstraint):
-    """TODO"""
+class Pbc2DVertexConstraint(BasePbcConstraint):
+    """Class for defining the following 2D PBC constraint
+    between a dummy nodes and two nodes on vertices of a square:
+
+    .. math::
+       u_i^{V2} - u_i^{V1} + C_1 u_i^{D_1} + C_2 u_i^{D_2} = 0
+
+    where :math:`V1` and :math:`V2` are two compatible vertices,
+    :math:`D_j` and :math:`C_j` are the dummy nodes and coefficients
+    (all are used), and the equation is written for all DOFs, i.e. :math:`i=1,2`.
+
+    The above equation is a generalization of the vertex equations
+    in Eq. :eq:`bc-eq-pbc2d`. Compatible vertices and the value of coefficients
+    must be taken from Eq. :eq:`bc-eq-pbc2d`.
+
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`:
+    """
 
     def __repr__(self):
         return ''.join((f'*Equation\n4\n'
@@ -125,18 +199,31 @@ class Pbc2DVertexConstraint(Base3DPbcConstraint):
 
 
 # noinspection PyProtectedMember
-def create_bc(part, dim):
-    """TODO"""
+def create_bc(part, dim: str) -> list:
+    """Create a boundary condition (BC) for a VoxelPart object.
+
+    This function uses the VoxelPart object's *_bc_type* property and
+    (1) creates the relevant node sets using :func:`create_node_sets`
+    and, (2) returns a tuple of constraint objects to be written to output.
+
+    Args:
+        part (VoxelPart): The VoxelPart object (TODO) on which the operation is performed.
+        dim: Dimensionality of the intended output. Valid values are '2D' and '3D'.
+
+    Returns:
+        A list of constraint objects. The number and class of list contents
+        depends on the VoxelPart object's *_bc_type* property.
+    """
+    # TODO: add value of the bc.
 
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
 
-    bc_def_list = []
     bc_type = part._bc_type
     if bc_type is None:
         part._bc_add_dummy_nodes = False
         logger.info('No BCs have been created.')
-        return
+        return []
 
     elif bc_type.upper() == 'NODESET ONLY':
         create_node_sets(part, dim, vertices=part._bc_nodeset_vertices,
@@ -150,22 +237,21 @@ def create_bc(part, dim):
                          edges=part._bc_nodeset_edges, faces=part._bc_nodeset_faces,
                          explicit_sets=part._bc_nodeset_explicit, simple_sets=True)
         if dim.upper() == '2D':
-            constraint_list = (TieConstraint(dof=1, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Edge11-NodeSet'),
+            constraint_list = [TieConstraint(dof=1, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Edge11-NodeSet'),
                                TieConstraint(dof=2, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Edge21-NodeSet'),
                                TieConstraint(dof=1, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Edge12-NodeSet'),
-                               TieConstraint(dof=2, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Edge22-NodeSet'))
+                               TieConstraint(dof=2, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Edge22-NodeSet')]
         else:  # dim.upper() == '3D'
-            constraint_list = (TieConstraint(dof=1, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Face11-NodeSet'),
+            constraint_list = [TieConstraint(dof=1, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Face11-NodeSet'),
                                TieConstraint(dof=2, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Face21-NodeSet'),
                                TieConstraint(dof=3, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Face31-NodeSet'),
                                TieConstraint(dof=1, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face12-NodeSet'),
                                TieConstraint(dof=2, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face22-NodeSet'),
-                               TieConstraint(dof=3, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face32-NodeSet'))
+                               TieConstraint(dof=3, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face32-NodeSet')]
 
         return constraint_list
 
     elif bc_type.upper() == 'PERIODIC':
-        # TODO: make sure it's suitable for pbc.
         part.add_dummy_nodes(fixed=False, three_nodes=True)
         create_node_sets(part, dim, vertices=True, edges=True, faces=True,
                          explicit_sets=True, simple_sets=part._bc_nodeset_simple)
@@ -189,8 +275,7 @@ def create_bc(part, dim):
                                                       dummy_names=('RP1-NodeSet', 'RP2-NodeSet'),
                                                       dummy_coeffs=(+pl[0], -pl[1]),
                                                       set_names=('Vertex2-NodeSet', 'Vertex4-NodeSet'))
-
-        else:
+        else:  # dim.upper() == '3D'
             # Add constraints for the faces.
             constraint_list += add_3d_pbc_constraints(part, 'face', 'RP1-NodeSet', -pl[0],
                                                       ('Face11-NodeSet', 'Face12-NodeSet'))
@@ -227,7 +312,28 @@ def create_bc(part, dim):
         raise ValueError('Invalid value for bc_type.')
 
 
-def add_2d_pbc_constraints(part, typ, dof, dummy_names, dummy_coeffs, set_names):
+def add_2d_pbc_constraints(part, typ: str, dof: int,
+                           dummy_names: Union[str, tuple],
+                           dummy_coeffs: Union[float, tuple],
+                           set_names: tuple) -> list:
+    """Add an equation for a 2D PBC.
+    With the correct arguments, all the equations
+    in Eq. :eq:`bc-eq-pbc2d` can be implemented using this function.
+
+    Args:
+        part (VoxelPart): The VoxelPart object (TODO) on which the operation is performed.
+        typ: Type of the node sets to be constrained. Valid values are 'edge' and 'vertex'.
+        dummy_names: Tuple of the names of the sets containing the dummy nodes for the equation
+                     or in the case of ``typ==vertex``, a single string.
+        dummy_coeffs: Tuple of the values of the coefficients for the dummy nodes.
+                      or in the case of ``typ==vertex``, a single float.
+        set_names: Tuple of the names of the sets of the edges or vertices to be constrained.
+                   The sets must contain the same number of nodes
+                   and they must be in the same order.
+
+    Returns:
+        A list of constraint objects for the given parameters.
+    """
     set1_ids = part.node_sets[set_names[0]]
     set2_ids = part.node_sets[set_names[1]]
     instance_name = part.instance_name
@@ -244,11 +350,28 @@ def add_2d_pbc_constraints(part, typ, dof, dummy_names, dummy_coeffs, set_names)
         raise ValueError("typ must be either 'edge' or 'vertex'.")
 
 
+def add_3d_pbc_constraints(part, typ: str,
+                           dummy_names: Union[str, tuple],
+                           dummy_coeffs: Union[float, tuple],
+                           set_names: tuple) -> list:
+    """Add an equation for a 3D PBC.
+    With the correct arguments, all the equations
+    in Eq. :eq:`bc-eq-pbc` can be implemented using this function.
 
+    Args:
+        part (VoxelPart): The VoxelPart object (TODO) on which the operation is performed.
+        typ: Type of the node sets to be constrained. Valid values are 'face', 'edge', and 'vertex'.
+        dummy_names: Tuple of the names of the sets containing the dummy nodes for the equation
+                     or in the case of ``typ==vertex``, a single string.
+        dummy_coeffs: Tuple of the values of the coefficients for the dummy nodes.
+                      or in the case of ``typ==vertex``, a single float.
+        set_names: Tuple of the names of the sets of the edges or vertices to be constrained.
+                   The sets must contain the same number of nodes
+                   and they must be in the same order.
 
-
-
-def add_3d_pbc_constraints(part, typ, dummy_names, dummy_coeffs, set_names):
+    Returns:
+        A list of constraint objects for the given parameters.
+    """
     set1_ids = part.node_sets[set_names[0]]
     set2_ids = part.node_sets[set_names[1]]
     instance_name = part.instance_name
@@ -267,20 +390,24 @@ def add_3d_pbc_constraints(part, typ, dummy_names, dummy_coeffs, set_names):
             for i in range(len(set1_ids))]
 
 
-def create_node_sets(part, dim, vertices=True, edges=True, faces=True, explicit_sets=False, simple_sets=True):
-    """Define node sets in a VoxelPart. They are created according to TODO
+def create_node_sets(part, dim: str,
+                     vertices: bool = True,
+                     edges: bool = True, faces: bool = True,
+                     explicit_sets: bool = False,
+                     simple_sets: bool = True):
+    """Define node sets in a VoxelPart. They are created according to :numref:`bc-nodesets`:
 
     Args:
-        part (VoxelPart): The VoxelPart object on which the operation is performed.
-        dim (str): Dimensionality of the output part. Valid values are '2D' and '3D'.
-        vertices (bool): If :py:obj:`True`, node sets corresponding to the vertices in #TODO will be created.
-        edges (bool): If :py:obj:`True`, node sets corresponding to the edges in #TODO will be created.
-        faces (bool): If :py:obj:`True`, node sets corresponding to the faces in #TODO will be created.
-                      If dim is set to '2D', this variable will be automatically set to :py:obj:`False`.
-        explicit_sets (bool): If :py:obj:`True`, explicit node sets are created for vertices, edges, and faces.
-                            as described in #TODO. Defaults to :py:obj:`True`.
-        simple_sets (bool): If :py:obj:`True`, simplified node sets are created for complete faces
-                            as described in #TODO. Defaults to :py:obj:`True`.
+        part (VoxelPart): The VoxelPart object (TODO) on which the operation is performed.
+        dim: Dimensionality of the output part. Valid values are '2D' and '3D'.
+        vertices: If True, node sets for the vertices will be created.
+        edges (bool): If True, node sets for the edges will be created.
+        faces (bool): If True, node sets for the faces will be created.
+                      If dim is set to '2D', this variable will be automatically set to False.
+        explicit_sets (bool): If True, explicit node sets are created for vertices, edges, and faces.
+                            as described in the section titled :ref:`boundary-conditions-pbc`.
+        simple_sets (bool): If True, simplified node sets are created for complete faces
+                            as described in the section titled :ref:`boundary-conditions-lin-disp`.
     """
 
     # TODO: use func for concatenation of edges and vertices and faces which correctly handles empties.
