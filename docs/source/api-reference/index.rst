@@ -11,3 +11,4 @@ You should always consults the :ref:`examples` section and the source code for u
 
    helper-module
    bc-module
+   output-module
