@@ -8,7 +8,7 @@ You should always consults the :ref:`examples` section and the source code for u
    :caption: Contents:
    :maxdepth: 4
 
-
    helper-module
    bc-module
    output-module
+   mask/index.rst
