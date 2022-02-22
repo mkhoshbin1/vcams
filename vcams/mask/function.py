@@ -1,4 +1,4 @@
-"""Functions used for creating a boolean mask from a function."""
+"""Functions used for creating a boolean mask from a level set function."""
 from logging import getLogger
 from time import perf_counter
 from inspect import isclass
@@ -15,8 +15,9 @@ logger = getLogger(__name__)
 # TODO: the definition for level set is reversed. fix. see J. Liu et al. / Advances in Engineering Software 87 (2015) 13–29
 
 
-def mask_from_function(part, func: Union[Callable, BaseTpms], vectorized: bool = True,
+def mask_from_function(func: Union[Callable, BaseTpms], vectorized: bool = True,
                        do_log: bool = True,
+                       part=None,
                        mask_shape: tuple[int, int, int] = None,
                        voxel_size: tuple[float, float, float] = None, **kwargs) -> ndarray:
     """Create a boolean mask based on a function describing a surface.
@@ -43,10 +44,10 @@ def mask_from_function(part, func: Union[Callable, BaseTpms], vectorized: bool =
                     In any case, the functions called are always vectorized.
         do_log: If set to True, name of the function and elapsed time is
                 written to the log at the end of the operation.
-        voxel_size: A tuple containing three floats which determine the size of a voxel
-                    in the x, y, and z directions. Ignored if *part* is passed.
         mask_shape: A tuple containing three integers which determine
                     the shape of the returned boolean mask. Ignored if *part* is passed.
+        voxel_size: A tuple containing three floats which determine the size of a voxel
+                    in the x, y, and z directions. Ignored if *part* is passed.
         **kwargs: Any keyword arguments passed to this function are passed to *func*.
                   If any of them is a vector, care should be taken to ensure that the
                   function can accept them as vectors.

@@ -7,3 +7,4 @@ TODO
    :maxdepth: 4
 
    function-module
+   shape-module
