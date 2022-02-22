@@ -1,5 +1,5 @@
-Output Module
-================
+The Output Module
+=================
 .. automodule:: vcams.output
    :members:
    :undoc-members:

@@ -1,5 +1,5 @@
-BC Module
-================
+The BC Module
+=============
 .. automodule:: vcams.bc
    :members:
    :undoc-members:

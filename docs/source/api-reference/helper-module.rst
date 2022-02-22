@@ -1,5 +1,5 @@
-Helper Module
-================
+The Helper Module
+=================
 .. automodule:: vcams.helper
    :members:
    :undoc-members:

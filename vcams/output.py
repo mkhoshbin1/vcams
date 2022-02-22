@@ -113,7 +113,9 @@ def write_abaqus_inp(part, file_name: str, folder_path: str,
 
     # Write constraints.
     if constraint_list:
-        constraints_file_path = write_constraints(folder_path, constraint_list)
+        num_constraints, constraints_file_path = write_constraints(folder_path, constraint_list)
+    else:
+        num_constraints = 0
 
     # Write the final input file.  #TODO: better logging.
     main_file_path = os.path.join(folder_path, file_name)
@@ -186,7 +188,7 @@ def write_abaqus_inp(part, file_name: str, folder_path: str,
     logger.info("Finished exporting part '%s' to the Abaqus™ input file at '%s'.",
                 part.name, main_file_path)
 
-    write_output_summary(part, dim, elem_code, num_nodes, num_elems, elem_set_stats, elapsed_time)
+    write_output_summary(part, dim, elem_code, num_nodes, num_elems, elem_set_stats, num_constraints, elapsed_time)
 
 
 def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder_path: str) -> tuple[str, int, ndarray]:
@@ -513,7 +515,7 @@ def write_elem_set_def(part, material_elem_sets: tuple, folder_path: str,
     Returns:
         The tuple *(elem_set_file_path, elem_id_list, elem_set_stats)* containing
 
-          #. The path to the temporary elemset definition file;
+          #. The path to the temporary element set definition file;
           #. A ndarray containing a unique and sorted list of all element IDs in the sets
           #. A dictionary where the keys are names of the element sets
              and the values are the number of elements in that set.
@@ -555,7 +557,7 @@ def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
         folder_path: Path to the folder where the temporary nodeset definition file will be placed.
 
     Returns:
-        The path to the temporary set definition file.
+        The path to the temporary node set definition file.
     """
 
     logger.debug("Attempting to write node sets to the temporary file 'nodeset.tmp'.")
@@ -580,47 +582,45 @@ def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
     return node_set_file_path
 
 
-def write_constraints(folder_path, constraint_list):
-    """TODO
+def write_constraints(folder_path: str, constraint_list: tuple) -> tuple[int, str]:
+    """Write the node set portion of an Abaqus™ input file to a temporary file.
 
     Args:
-        folder_path:
-        constraint_list:
+        constraint_list: Tuple of constraint objects defined in :doc:`bc-module`.
+        Their `repr()` function is written to the file.
+        folder_path: Path to the folder where the temporary constraint definition file will be placed.
 
     Returns:
-
+        A tuple containing the number of constraints and the path to the temporary constraint definition file.
     """
+    # TODO: some kind of concatenation for optimization.
+    # TODO: buffer size for optimization.
+    logger.debug("Attempting to write constraints to the temporary file 'constraints_def.tmp'.")
     constraints_file_path = os.path.join(folder_path, 'constraints_def.tmp')
     with open(constraints_file_path, 'w', encoding='latin1') as file_obj:
         file_obj.write('**\n** Constraints\n')
         for constraint_obj in constraint_list:
             file_obj.write(repr(constraint_obj))
         file_obj.write('** End Constraints\n\n')
-    return constraints_file_path
+    num_constraints = repr(constraint_list[0]).count('*Equation') * len(constraint_list)
+    logger.debug("Wrote %u constraints to the temporary file 'constraints_def.tmp'.", num_constraints)
+    return num_constraints, constraints_file_path
 
 
-def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
-                         elem_set_stats, elapsed_time):
+def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_elems: int,
+                         elem_set_stats: dict, num_constraints: int, elapsed_time: float):
     """Write a summary of the output to the main log.
 
-    The log file is extracted from the root logger.
-
     Args:
-        part (VoxelPart): The VoxelPart object which is to be output.
-
-        dim (str): Dimensionality of the output part. Valid values are '2D' and '3D'.
-
-        elem_type (str): An uppercase string denoting the element code assigned to *all* elements.
-                         It must be a valid Abaqus element code such as 'CPE4R' or 'C3D8R'.
-                         No validation is performed by the function.
-
-        num_nodes (int): Number of nodes written to the output.
-
-        num_elems (int): Number of elements written to the output.
-
-        elem_set_stats (dict): Dictionary returned by :py:meth:`output.write_elem_set_def`.
-
-        elapsed_time (float): Elapsed time for the output process in seconds.
+        part (VoxelPart): The VoxelPart object (TODO) for which the operation is performed.
+        dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
+        elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
+                   See :func:`write_abaqus_inp` for complete description.
+        num_nodes: Number of nodes written to the output.
+        num_elems: Number of elements written to the output.
+        elem_set_stats: The dict object returned by :func:`write_elem_set_def`.
+        num_constraints: Number of constraint equations written to the output.
+        elapsed_time: Elapsed time for the output process in seconds.
     """
 
     # Prepare part summary.
@@ -628,9 +628,10 @@ def write_output_summary(part, dim, elem_type, num_nodes, num_elems,
         ('Part Name', part.name),
         ('Part   Dimensions', '*'.join(str(i) for i in part.data.shape)),
         ('Output Dimensions', dim.upper()),
-        ('Element Type', elem_type),
+        ('Element Type', elem_code),
         ('Number of Elements', num_elems),
         ('Number of Nodes', num_nodes),
+        ('Number of Constraint Equations', num_constraints),
         ('Total Output Time', time.strftime('%H:%M:%S', time.gmtime(elapsed_time)))
     )
 
