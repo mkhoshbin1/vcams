@@ -12,8 +12,9 @@ from vcams.mask.function import mask_from_function
 
 
 class Shape(ABC):
-    """Abstract base class describing a shape. All shapes must inherit from this class.
+    """Abstract base class describing a shape.
 
+    All shapes must inherit from this class.
     Subclasses define their dimensionality using the *dim* class attribute
     which can be either be '2D' or '3D',
     and define the level set function *func* describing the shape in 3D space.
