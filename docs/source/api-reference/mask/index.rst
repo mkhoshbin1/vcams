@@ -9,3 +9,4 @@ TODO
    function-module
    shape-module
    tpms-module
+   image-module
