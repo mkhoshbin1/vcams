@@ -1,4 +1,4 @@
-The BC Module
+The bc Module
 =============
 .. automodule:: vcams.bc
    :members:

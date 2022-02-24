@@ -1,4 +1,4 @@
-The Output Module
+The output Module
 =================
 .. automodule:: vcams.output
    :members:

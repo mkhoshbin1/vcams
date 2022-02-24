@@ -8,7 +8,8 @@ You should always consults the :ref:`examples` section and the source code for u
    :caption: Contents:
    :maxdepth: 4
 
-   helper-module
+   voxelpart-module
    bc-module
    output-module
+   helper-module
    mask/index.rst

@@ -24,71 +24,60 @@ logger = logging.getLogger(__name__)
 # TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 
 class VoxelPart:
-    def __init__(self, size, base_material=0, voxel_size=(1, 1, 1),
-                 dtype='uint8', name='unnamed', description='',
-                 results_path=None, overwrite_logs=True, log_debug=False):
+    def __init__(self, size: Union[tuple[int, int, int], tuple[int, int]],
+                 base_material: int = 0,
+                 voxel_size: Union[tuple[float, float, float], tuple[float, float]] = (1.0, 1.0, 1.0),
+                 dtype: str = 'uint8', name: str = 'unnamed', description: str = '',
+                 results_path: str = None, overwrite_logs: bool = True, log_debug: bool = False):
         """
         Args:
-            size (tuple): A tuple is the shape of (x,y,z) which determines
-                          size :py:attr:`~data`, representing size of the
-                          voxel mesh in the three dimensions.
-                          The three values must be integers and for 2D structures,
-                          size of the z dimension must be set to 1.
+            size: The tuple *(size_x, size_y, size_z)* which determines
+                  the number of voxel elements in the three dimensions.
 
-            base_material (int): The value used for filling :py:attr:`~data`.
-                                 It is passed to numpy.full.
-                                 Make sure it is within the range specified by *dtype* #TODO: link
-                                 Defaults to 0 which represents empty space.
+                  For 2D structures, *size_z* can be omitted,
+                  but some part of the program take it to be 1 for calculations.
 
-            voxel_size (tuple | numpy.ndarray): A tuple containing two or three floats which determine
-                                the size of a voxel in the x, y, and z directions.
-                                For example, if the tuple (0.02, 0.1, 1.5) is specified,
-                                each voxel will have those dimensions in the x, y, and z directions.
-                                If a part is 2D, the third value must be present but is not used.
-                                If it's not present, a value of 1.0 is assigned.
+                  This parameter determines the shape of the :attr:`data` attribute
+                  and therefore must contain integers.
 
-            dtype (str): Data type used for creation of :py:attr:`~data`.
-                         Because each number represents a material, data
-                         must be of unsigned integer type. The number of
-                         bytes can effectively determine the number materials
-                         available for modeling. The user is cautioned to choose
-                         the smallest possible value, because data type
-                         has a huge impact on object size.
-                         The following are available:
+            base_material: The value used for filling :attr:`data` when the object is created.
 
-                         ======== ============== =================
-                          Input    # Materials    numpy Equivalent
-                         ======== ============== =================
-                         'uint8'  255    + Empty numpy.uint8
-                         'uint16' 65,535 + Empty numpy.uint16
-                         'uint32' 2^32   + Empty numpy.uint32
-                         'uint64' 2^64   + Empty numpy.uint64
-                         ======== ============== =================
+                           Make sure it is within the range specified by the *dtype* parameter
+                           (See the :ref:`materials` section).
+                           Defaults to 0 which represents empty space.
 
-                         Defaults to 'uint8'.
+            voxel_size: A tuple containing two or three floats which determines the size
+                        of a voxel in the three directions.
 
-            name (str): Name of the voxel part which is used for exporting the part.
-                        Must be valid according to the documentation
-                        for :py:meth:`helper.is_name_valid`.
-                        Defaults to 'unnamed'.
+                        For example, if the tuple (0.02, 0.1, 1.5) is specified,
+                        each voxel will have those dimensions in the x, y, and z directions.
 
-            description (str): A short description of the part which is used
-                               when exporting the part to Abaqus (TM).
-                               Note that Abaqus only uses the first 80 characters
-                               of the string.
-                               Defaults to an empty string.
+                        If a part is 2D, the third value can be omitted and the program assigns 1.0
+                        as the rest of the library requires *voxel_size* to have three elements.
 
-            results_path (str): Path to the folder where the intermediate and final results
-                                and program logs will be stored.
-                                Defaults to :py:obj:`None` which automatically
-                                creates a suitable folder in the user's home directory.
+            dtype: Data type used for creation of :attr:`data`.
+                   Must be an unsigned integer type. Users are advised to study
+                   the :ref:`materials` section for a thorough explanation of this parameter.
 
-            overwrite_logs (bool): If set to :py:obj:`True`, and the log file already exists,
-                                   it will be overwritten. Otherwise, the file will be opened
-                                   in append mode. Defaults to :py:obj:`True`.
+                   Defaults to ``'uint8'`` which allows for 256 materials in the model.
 
-            log_debug (bool): If set to :py:obj:`True`, debug information will be logged.
-                              Defaults to :py:obj:`False`.
+            name: Name of the voxel part which is used in a variety of places, including when exporting the part.
+                        Must be valid according to the documentation :func:`.helper.is_name_valid`.
+
+                        Defaults to ``'unnamed'``.
+
+            description: A short description of the part which is used
+                         in a variety of places, including when exporting the part.
+                         Note that Abaqus™ only uses the first 80 characters of the string.
+                         Defaults to an empty string.
+
+            results_path: Path to the folder where the final results, temporary file, and log files will be stored.
+                          If set to *None* a suitable folder is automatically created in the user's home directory.
+
+            overwrite_logs: If set to True, and the log file already exists, it will be overwritten.
+                            Otherwise, the file will be opened in append mode.
+
+            log_debug: If set to True, debug information will be written to program log.
         """
 
         # Validate dtype. It seems that it can be passed as a string.
@@ -101,7 +90,7 @@ class VoxelPart:
         # makes it faster. numpy.ones is the same as numpy.fill.
         # Source: https://stackoverflow.com/questions/31498784.
         if base_material == 0:
-            self.data = np.zeros(shape=size, dtype=dtype.lower())
+            self.data = np.zeros(shape=size, dtype=dtype.lower())  #: data attribute.
         else:
             self.data = np.full(shape=size, fill_value=base_material, dtype=dtype.lower())
 

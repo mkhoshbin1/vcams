@@ -1,4 +1,4 @@
-The Mask Module
+The mask Module
 =================
 TODO
 

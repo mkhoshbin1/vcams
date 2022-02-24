@@ -1,4 +1,4 @@
-The Mask.Shape Module
+The mask.shape Module
 =====================
 .. automodule:: vcams.mask.shape
    :members:

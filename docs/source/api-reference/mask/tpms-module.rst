@@ -1,4 +1,4 @@
-The Mask.TPMS Module
+The mask.tpms Module
 =====================
 .. automodule:: vcams.mask.tpms
    :members:
