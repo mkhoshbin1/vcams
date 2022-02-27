@@ -1,5 +1,6 @@
 """Functions that define geometrical shapes which can be used to create boolean masks.
-They must be in the form of TODO."""
+They must be in the form of TODO.
+"""
 from itertools import count
 from abc import ABC, abstractmethod
 
@@ -20,9 +21,7 @@ class Shape(ABC):
     and define the level set function *func* describing the shape in 3D space.
     It must be compatible with :func:`vcams.mask.function.mask_from_function`.
     """
-
     # TODO: implement buffer zone.
-
     @property
     @abstractmethod
     def dim(self):
@@ -67,8 +66,8 @@ class Shape(ABC):
 
 class ShapeArray:
     """Class for an array of shapes.
-    The array may contain any number of shapes of any class as long as they have the same *dim* attribute."""
-
+    The array may contain any number of shapes of any class as long as they have the same *dim* attribute.
+    """
     def __init__(self, dim: str, part=None,
                  mask_shape: tuple[int, int, int] = None,
                  voxel_size: tuple[float, float, float] = None,
@@ -111,7 +110,8 @@ class ShapeArray:
     @property
     def mask(self):
         """The boolean mask representing the union (logical OR) of the shapes in ShapeArray.
-        This is guaranteed to be up-to-date."""
+        This is guaranteed to be up-to-date.
+        """
         if self._ignored_masks or (self._mask is None):
             self._calculate_mask(shape_id=self._ignored_masks)
         return self._mask
@@ -129,7 +129,8 @@ class ShapeArray:
 
     def add_shape(self, cls, **kwargs):
         """Add a shape to the ShapeArray using its class.
-         The arguments are passed as *\**kwargs* and the shape ID is set automatically."""
+         The arguments are passed as *\*\*kwargs* and the shape ID is set automatically.
+         """
         self._check_shape(cls)
         self.add_shape_obj(shape_obj=cls(id=-1, **kwargs))
 
@@ -177,7 +178,6 @@ class Circle(Shape):
     .. math::
        (x-a)^2 + (y-b)^2 - r^2 = 0
     """
-
     def __init__(self, id: int, a: float, b: float, r: float):
         """
         Args:
@@ -205,7 +205,6 @@ class Sphere(Shape):
     .. math::
        (x-a)^2 + (y-b)^2 + (z-c)^2 - r^2 = 0
     """
-
     def __init__(self, id, a: float, b: float, c: float, r: float):
         """
         Args:

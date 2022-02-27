@@ -1,7 +1,9 @@
-"""Functions used for outputting a VoxelPart for use in other programs.
+"""Functions used for outputting a *VoxelPart* for use in other programs.
 Currently, only Abaqus™ is supported.
 
-These functions are not meant to be directly used, but are called using the TODO method.
+These functions are not meant to be directly used.
+The main function (:func:`write_abaqus_inp`) is called by :meth:`.voxelpart.VoxelPart.output_abaqus_inp`
+and it uses the *VoxelPart*'s attributes for determining what is outputted.
 Refer to TODO for instructions on how to properly output a model.
 """
 
@@ -26,7 +28,8 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                      scale: tuple, material_elem_sets: Union[tuple, str],
                      custom_elem_sets: bool = True, keep_temp_files: bool = False):
     """Write a VoxelPart object to an Abaqus™ input file.
-    This is the main function called by TODO. It should not be directly used.
+    This is the main function called by :meth:`.voxelpart.VoxelPart.output_abaqus_inp`.
+    It should not be directly used.
 
     Only the elements selected by the *material_elem_sets* parameter are selected,
     and afterwards they are grouped into sets by the material code.
@@ -35,7 +38,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     It is not written to the output.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) for which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         file_name: Name of the file. Must be valid according to the documentation
                    for :func:`.helper.is_name_valid` and should not contain file extensions.
         elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
@@ -51,15 +54,14 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                each voxel will have those dimensions in the x, y, and z directions.
         material_elem_sets: One of the following:
 
-                              + *'All'* which outputs all materials in the VoxelPart.
-                              + *'Non-Empty'* which outputs all non-zero (=non-empty) materials in the VoxelPart.
-                              + A tuple of integer material codes corresponding
-                                to the materials that should be written to the output.
+                            + *'All'* which outputs all materials in the VoxelPart.
+                            + *'Non-Empty'* which outputs all non-zero (=non-empty) materials in the VoxelPart.
+                            + A tuple of integer material codes corresponding
+                              to the materials that should be written to the output.
 
         custom_elem_sets: If set to True, custom sets will be written to the output.
         keep_temp_files: If set to True, temporary files will not be deleted. Used for debugging.
     """
-
     logger.info("Attempting to output part '%s' to an Abaqus input file.", part.name)
     # TODO: recheck everything about BCs. especially sets and args.
     # TODO: add BC type to report.
@@ -207,7 +209,7 @@ def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder
     in rest of the columns in a specific order based on the element geometry.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) for which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         elem_id_list: A 1-D Numpy ndarray containing IDs of elements which must be output.
                       The function makes sure that it is unique and sorted.
                       Note that Abaqus only accepts element IDs that are positive and less than 999999999.
@@ -229,7 +231,6 @@ def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder
           #. The number of elements which have been written to the file; and
           #. A numpy ndarray containing a sorted list of node IDs that are present in the model.
     """
-
     logger.debug("Attempting to write element definitions to the temporary file 'elem_def.tmp'.")
     # Validate elem_id_list. Note that values are not checked.
     if len(elem_id_list) == 0:
@@ -335,7 +336,7 @@ def write_node_def(part, node_id_list: ndarray, scale: tuple, dim: str, folder_p
     The code uses a global cartesian coordinate system which is sufficient.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) for which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         node_id_list: A 1-D Numpy ndarray containing IDs of nodes which must be output.
               The function makes sure that it is unique and sorted.
               Note that Abaqus only accepts node IDs that are positive and less than 999999999
@@ -358,7 +359,6 @@ def write_node_def(part, node_id_list: ndarray, scale: tuple, dim: str, folder_p
           #. A numpy ndarray containing the IDs of the nodes written to file
              which has been updated by adding the dummy nodes
     """
-
     logger.debug("Attempting to write node definitions to the temporary file 'node_def.tmp'.")
     # Validate node_id_list.
     if len(node_id_list) == 0:
@@ -512,7 +512,7 @@ def write_elem_set_def(part, material_elem_sets: tuple, folder_path: str,
     This function also returns which elements must be output.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) for which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         material_elem_sets: A tuple containing integer values of the materials that should be output.
                             For each material *x*, a set named *'MAT-x'* is defined.
         custom_elem_sets: If set to True, the custom sets are defined and output.
@@ -526,7 +526,6 @@ def write_elem_set_def(part, material_elem_sets: tuple, folder_path: str,
           #. A dictionary where the keys are names of the element sets
              and the values are the number of elements in that set.
     """
-
     logger.debug("Attempting to write element sets to the temporary file 'elemset.tmp'.")
     elem_set_stats = dict()
     elem_id_list = array([], order='C', dtype='uint32')
@@ -557,7 +556,7 @@ def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
     """Write the node set portion of an Abaqus™ input file to a temporary file.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) for which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         node_id_list: A 1-D Numpy ndarray containing IDs of the nodes that have been written to the output.
                       It is used to determine which nodes from the node set should actually be defined in the output.
         folder_path: Path to the folder where the temporary nodeset definition file will be placed.
@@ -565,7 +564,6 @@ def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
     Returns:
         The path to the temporary node set definition file.
     """
-
     logger.debug("Attempting to write node sets to the temporary file 'nodeset.tmp'.")
     node_set_file_path = os.path.join(folder_path, 'nodeset.tmp')
     # TODO: add node sets to summary.
@@ -618,7 +616,7 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
     """Write a summary of the output to the main log.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) for which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
         elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
                    See :func:`write_abaqus_inp` for complete description.
@@ -628,7 +626,6 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
         num_constraints: Number of constraint equations written to the output.
         elapsed_time: Elapsed time for the output process in seconds.
     """
-
     # Prepare part summary.
     part_summary = (
         ('Part Name', part.name),

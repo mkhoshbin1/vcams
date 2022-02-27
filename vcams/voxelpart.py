@@ -8,7 +8,6 @@ import numpy as np
 from numpy import ndarray
 
 from . import __version__, __website__
-# from .bc import create_node_sets
 from .helper import is_name_valid, return_default_results_path, read_configuration
 from .mask.function import mask_from_function
 from .mask.shape import ShapeArray, Circle, Sphere
@@ -16,11 +15,6 @@ from .mask.tpms import tpms_dict
 from .output import write_abaqus_inp
 
 logger = logging.getLogger(__name__)
-
-
-# TODO: change size to shape.
-# TODO: add shape as a variable with a getter.
-# TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 
 class VoxelPart:
     def __init__(self, size: Union[tuple[int, int, int], tuple[int, int]],
@@ -133,7 +127,7 @@ class VoxelPart:
         and the values are and IDs of the elements in that set."""
 
         # Create variables for bcs and their sets.
-        self._bc_type= None
+        self._bc_type = None
         self._bc_nodeset_vertices = False
         self._bc_nodeset_edges = False
         self._bc_nodeset_faces = False
@@ -454,3 +448,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add setter for voxelpart.data so it doesn't have non-uint values.
 # TODO: add min and max values for voxel_size.
 # TODO: redo ndarray types. see https://stackoverflow.com/questions/35673895
+# TODO: change size to shape.
+# TODO: add shape as a variable with a getter.
+# TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.

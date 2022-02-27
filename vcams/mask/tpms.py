@@ -14,7 +14,6 @@ class BaseTpms(ABC):
     and the three attributes *name*, *tpms_id*, and *formula* which are used by PyQt
     for the GUI.
     """
-
     @property
     @abstractmethod
     def name(self):
@@ -48,9 +47,8 @@ class TpmsSchwarzP(BaseTpms):
     with the following equation:
 
     .. math::
-       \Phi = cos(\\frac{2\pi}{l}x) + cos(\\frac{2\pi}{l}y) + cos(\\frac{2\pi}{l}z) - c = 0
+       \\Phi = cos(\\frac{2\pi}{l}x) + cos(\\frac{2\pi}{l}y) + cos(\\frac{2\pi}{l}z) - c = 0
     """
-
     @staticmethod
     def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float) -> ndarray:  # noqa: E741
         """Function describing a Schwarz Primitive (P) triply periodic minimal surface.
@@ -85,7 +83,6 @@ class TpmsSchwarzD(BaseTpms):
                      +\\ &cos(\\frac{2\pi}{l}x) \\ sin(\\frac{2\pi}{l}y) \\ cos(\\frac{2\pi}{l}z)\\\\
                      +\\ &cos(\\frac{2\pi}{l}x) \\ cos(\\frac{2\pi}{l}y) \\ sin(\\frac{2\pi}{l}z) - c = 0
     """
-
     @staticmethod
     def func(x, y, z, l, c):  # noqa: E741
         """Function describing a Schwarz Diamond (D) triply periodic minimal surface.
@@ -125,7 +122,6 @@ class TpmsSchwarzG(BaseTpms):
                      +\\ &sin(\\frac{2\pi}{l}y) \\ cos(\\frac{2\pi}{l}z)\\\\
                      +\\ &sin(\\frac{2\pi}{l}z) \\ cos(\\frac{2\pi}{l}x) - c = 0
     """
-
     @staticmethod
     def func(x, y, z, l, c):  # noqa: E741
         """Function describing a Schwarz Gyroid (G) triply periodic minimal surface.

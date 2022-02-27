@@ -58,7 +58,6 @@ def mask_from_image(image_path: str, scale: float = 1.0,
     Returns:
         The binary mask derived from the image.
     """
-
     if scale <= 0.0:
         raise ValueError('scale must be positive.')
 
@@ -148,7 +147,6 @@ def resize_image(image: ndarray, scale: float) -> ndarray:
     Returns:
         The resized image which is of the same *dtype* as the input.
     """
-
     if scale == 1.0:
         logger.debug('Scale was equal to 1.0. No resizing was performed.')
         return image

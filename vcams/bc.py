@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TieConstraint:
     """Class for tying a master set (single node) and a slave set (multiple nodes).
-    The tie is defined using the \*EQUATION keyword with the coefficients set to +1 and -1."""
+    The tie is defined using the ``\*EQUATION`` keyword with the coefficients set to +1 and -1."""
     dof: int
     """Degree of freedom used in the constraint."""
     rp_set_name: str
@@ -131,7 +131,6 @@ class Pbc3DVertexConstraint(BasePbcConstraint):
 
     The parameters for creating an object are similar to :class:`BasePbcConstraint`:
     """
-
     def __repr__(self):
         return ''.join((f'*Equation\n5\n'
                         f'"{self.part_instance_name}".{self.node2_id + 1}, {dof}, 1.\n'
@@ -188,7 +187,6 @@ class Pbc2DVertexConstraint(BasePbcConstraint):
 
     The parameters for creating an object are similar to :class:`BasePbcConstraint`:
     """
-
     def __repr__(self):
         return ''.join((f'*Equation\n4\n'
                         f'"{self.part_instance_name}".{self.node2_id + 1}, {dof}, 1.\n'
@@ -207,7 +205,7 @@ def create_bc(part, dim: str) -> list:
     and, (2) returns a tuple of constraint objects to be written to output.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         dim: Dimensionality of the intended output. Valid values are '2D' and '3D'.
 
     Returns:
@@ -215,7 +213,6 @@ def create_bc(part, dim: str) -> list:
         depends on the VoxelPart object's *_bc_type* property.
     """
     # TODO: add value of the bc.
-
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
 
@@ -321,7 +318,7 @@ def add_2d_pbc_constraints(part, typ: str, dof: int,
     in Eq. :eq:`bc-eq-pbc2d` can be implemented using this function.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         typ: Type of the node sets to be constrained. Valid values are 'edge' and 'vertex'.
         dummy_names: Tuple of the names of the sets containing the dummy nodes for the equation
                      or in the case of ``typ==vertex``, a single string.
@@ -359,7 +356,7 @@ def add_3d_pbc_constraints(part, typ: str,
     in Eq. :eq:`bc-eq-pbc` can be implemented using this function.
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         typ: Type of the node sets to be constrained. Valid values are 'face', 'edge', and 'vertex'.
         dummy_names: Tuple of the names of the sets containing the dummy nodes for the equation
                      or in the case of ``typ==vertex``, a single string.
@@ -398,7 +395,7 @@ def create_node_sets(part, dim: str,
     """Define node sets in a VoxelPart. They are created according to :numref:`bc-nodesets`:
 
     Args:
-        part (VoxelPart): The VoxelPart object (TODO) on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         dim: Dimensionality of the output part. Valid values are '2D' and '3D'.
         vertices: If True, node sets for the vertices will be created.
         edges (bool): If True, node sets for the edges will be created.
@@ -409,7 +406,6 @@ def create_node_sets(part, dim: str,
         simple_sets (bool): If True, simplified node sets are created for complete faces
                             as described in the section titled :ref:`boundary-conditions-lin-disp`.
     """
-
     # TODO: use func for concatenation of edges and vertices and faces which correctly handles empties.
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
