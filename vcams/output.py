@@ -22,25 +22,29 @@ from .bc import create_bc
 logger = logging.getLogger(__name__)
 
 
-def write_abaqus_inp(part, file_name: str, folder_path: str,
-                     elem_code: str, dim: str,
+def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                      scale: tuple, material_elem_sets: Union[tuple, str],
                      custom_elem_sets: bool = True, keep_temp_files: bool = False):
     """Write a VoxelPart object to an Abaqus™ input file.
     This is the main function called by TODO. It should not be directly used.
 
+    Only the elements selected by the *material_elem_sets* parameter are selected,
+    and afterwards they are grouped into sets by the material code.
+    If *custom_elem_sets* is True, the custom element set are also included.
+    If an element is part of a custom element set but is not part of the selected materials,
+    It is not written to the output.
+
     Args:
         part (VoxelPart): The VoxelPart object (TODO) for which the operation is performed.
         file_name: Name of the file. Must be valid according to the documentation
                    for :func:`.helper.is_name_valid` and should not contain file extensions.
-        folder_path: Path to the folder where the Abaqus™ input file will be placed.
         elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
-                   It must be a valid Abaqus element code such as 'CPE4R' or 'C3D8R'.
+                   It must be a valid Abaqus element code such as *'CPE4R'* or *'C3D8R'*.
                    This parameter is not validated so care should be taken regarding validity and compatibility.
                    Currently, only 2D and 3D linear elements are supported.
                    To get around this, you can convert to quadratic elements after importing the model to Abaqus.
         dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
-             If a 3D part is set to be output as a 2D plate, only the first row will be printed.
+             If a 3D part is set to be output as a 2D plate, only the first planar section will be output.
         scale: A tuple containing two or three floats which are used to scale
                the pixels or voxels in the x, y, and z directions.
                For example, if the tuple ``(0.02, 0.1, 1.5)`` is specified,
@@ -61,6 +65,8 @@ def write_abaqus_inp(part, file_name: str, folder_path: str,
     # TODO: add BC type to report.
 
     begin_time = time.perf_counter()
+
+    folder_path = part.folder_path
 
     # Validate file_name and add file extension.
     if not helper.is_name_valid(file_name):
@@ -99,7 +105,7 @@ def write_abaqus_inp(part, file_name: str, folder_path: str,
     # Write temporary element definition file.
     (elem_file_path, num_elems, node_id_list) = write_elem_def(part=part,
                                                                elem_id_list=elem_id_list,
-                                                               elem_type=elem_code, dim=dim,
+                                                               elem_code=elem_code, dim=dim,
                                                                folder_path=folder_path)
 
     # Write temporary node definition file.
@@ -537,7 +543,7 @@ def write_elem_set_def(part, material_elem_sets: tuple, folder_path: str,
         # Write the the materials that should be output.
         # TODO: make sure all materials have at least one element.
         for mat_code in material_elem_sets:
-            (name, elem_ids) = part.return_material_elem_set(mat_code)
+            (name, elem_ids) = part._return_material_elem_set(mat_code)
             (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
                                                 name=name, ids=elem_ids)
             elem_id_list = union1d(elem_id_list, elem_ids)

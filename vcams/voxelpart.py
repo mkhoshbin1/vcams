@@ -1,16 +1,15 @@
 """The voxelpart package contains the main VoxelPart class and its methods."""
 import logging  # TODO: add function to close logger.
-import os
 import textwrap
 from pathlib import Path
 from typing import Union
 
 import numpy as np
+from numpy import ndarray
 
 from . import __version__, __website__
 # from .bc import create_node_sets
-from .helper import is_name_valid, return_default_results_path, read_configuration, \
-    write_to_logger_streams
+from .helper import is_name_valid, return_default_results_path, read_configuration
 from .mask.function import mask_from_function
 from .mask.shape import ShapeArray, Circle, Sphere
 from .mask.tpms import tpms_dict
@@ -62,9 +61,9 @@ class VoxelPart:
                    Defaults to ``'uint8'`` which allows for 256 materials in the model.
 
             name: Name of the voxel part which is used in a variety of places, including when exporting the part.
-                        Must be valid according to the documentation :func:`.helper.is_name_valid`.
+                  Must be valid according to the documentation :func:`.helper.is_name_valid`.
 
-                        Defaults to ``'unnamed'``.
+                  Defaults to ``'unnamed'``.
 
             description: A short description of the part which is used
                          in a variety of places, including when exporting the part.
@@ -80,11 +79,10 @@ class VoxelPart:
             log_debug: If set to True, debug information will be written to program log.
         """
 
-        # Validate dtype. It seems that it can be passed as a string.
-        # If any error is seen, it should be converted to the corresponding object.
+        # Validate dtype.
         if not dtype.lower() in ('uint8', 'uint16', 'uint32', 'uint64'):
-            raise ValueError('dtype can only be one of the following strings:' +
-                             " 'uint8', 'uint16', 'uint32', 'uint64'")
+            raise ValueError("dtype can only be one of the following strings: "
+                             "'uint8', 'uint16', 'uint32', 'uint64'")
 
         # It seems that numpy.zeros has a special implementation which
         # makes it faster. numpy.ones is the same as numpy.fill.
@@ -93,6 +91,7 @@ class VoxelPart:
             self.data = np.zeros(shape=size, dtype=dtype.lower())  #: data attribute.
         else:
             self.data = np.full(shape=size, fill_value=base_material, dtype=dtype.lower())
+            """TODO after adding property."""
 
         # Validate and set voxel_size. Make sure that it has three elements.
         voxel_size = np.array(voxel_size, dtype='float')  # This catches strings and such.
@@ -101,18 +100,20 @@ class VoxelPart:
                 voxel_size = np.append(voxel_size, 1.0)
             else:
                 raise ValueError('Invalid value for voxel_size.')
-        self.voxel_size = voxel_size  # TODO: Validate min and max. also check with gui.
+        self.voxel_size: ndarray = voxel_size
+        """A numpy array containing three floats which determines the size of a voxel in the three directions."""
 
         # Validate name.
         if not is_name_valid(name):
             raise ValueError('Invalid name. Check the documentation for validity criteria.')
-        self.name = name
+        self.name: str = name
+        """Name of the voxel part which is used in a variety of places, including when exporting the part."""
 
         # Validate description.
-        if not (isinstance(description,
-                           str) and description.isascii() and description.isprintable()):
+        if not (isinstance(description, str) and description.isascii() and description.isprintable()):
             raise ValueError('Invalid description.')
-        self.description = textwrap.fill(description, width=80)
+        self.description: str = textwrap.fill(description, width=80)
+        """A short description of the part which is used in a variety of places, including when exporting the part."""
 
         # Validate results_path.
         if results_path is None:  # TODO: rename to working_dir.
@@ -120,14 +121,19 @@ class VoxelPart:
         else:
             results_path = Path(results_path)
         results_path.mkdir(parents=True, exist_ok=True)
-        self.results_path = results_path
+        self.results_path: Path = results_path
+        """Path to the folder where the final results, temporary file, and log files will be stored."""
 
         # Create an empty dictionary for element and node sets.
-        self.elem_sets = dict()
-        self.node_sets = dict()
+        self.elem_sets: dict = dict()
+        """Dictionary in which keys are the names of the element sets
+        and the values are and IDs of the elements in that set."""
+        self.node_sets: dict = dict()
+        """Dictionary in which keys are the names of the node sets
+        and the values are and IDs of the elements in that set."""
 
         # Create variables for bcs and their sets.
-        self._bc_type = None
+        self._bc_type= None
         self._bc_nodeset_vertices = False
         self._bc_nodeset_edges = False
         self._bc_nodeset_faces = False
@@ -153,137 +159,132 @@ class VoxelPart:
                     name, '*'.join(str(s) for s in size), base_material)
 
     @property
-    def instance_name(self):  # TODO: doc
+    def instance_name(self):
+        """Name of the part instance which is name of the part + '-Ins'. Used for output to Abaqus™ input file."""
         return self.name + '-Ins'
 
     @property
-    def size(self):  # TODO: doc, use everywhere in refactor
+    def size(self):  # TODO: use everywhere in refactor
+        """Shape of the part's *data* property.
+        May have two or three elements depending on how the part was defined."""
         return self.data.shape
 
     @property
-    def real_size(self):  # TODO: doc
+    def real_size(self):
+        """Real size of the part which is ``part.size * voxel_size``."""
         return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])
 
-    def output_abaqus_inp(self, file_name, elem_type, dim,
-                          material_elem_sets, custom_elem_sets=True):
-        """Output the part to an Abaqus (TM) input file.
-        For a full list of parameters, see :py:meth:`output.write_abaqus_inp`.
-        Note that the parameter *scale* is not used in this function and
-        is equal to VoxelPart.voxel_size.
-        Similarly, *folder_path* is equal to self.results_path
+    def output_abaqus_inp(self, file_name: str, elem_code: str, dim: str,
+                          material_elem_sets: Union[str, tuple], custom_elem_sets: bool = True,
+                          keep_temp_files: bool = False):
+        """Output the part to an Abaqus™ input file.
+
+        Only the elements selected by the *material_elem_sets* parameter are selected,
+        and afterwards they are grouped into sets by the material code.
+        If *custom_elem_sets* is True, the custom element set are also included.
+        If an element is part of a custom element set but is not part of the selected materials,
+        It is not written to the output.
+
+        This function simply calls :func:`.output.write_abaqus_inp`, except for the
+        *scale* and *folder_path* parameters which are equal to :attr:`.VoxelPart.voxel_size`
+        and :attr:`.VoxelPart.results_path`, respectively.
+
+        Args:
+            file_name: Name of the file. Must be valid according to the documentation
+                       for :func:`.helper.is_name_valid` and should not contain file extensions.
+            elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
+                       It must be a valid Abaqus element code such as *'CPE4R'* or *'C3D8R'*.
+                       This parameter is not validated so care should be taken regarding validity and compatibility.
+                       Currently, only 2D and 3D linear elements are supported.
+                       To get around this, you can convert to quadratic elements after importing the model to Abaqus.
+            dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
+                 If a 3D part is set to be output as a 2D plate, only the first planar section will be output.
+            material_elem_sets: One of the following:
+
+                                  + *'All'* which outputs all materials in the VoxelPart.
+                                  + *'Non-Empty'* which outputs all non-zero (=non-empty) materials in the VoxelPart.
+                                  + A tuple of integer material codes corresponding
+                                    to the materials that should be written to the output.
+
+            custom_elem_sets: If set to True, custom element sets will be written to the output.
+            keep_temp_files: If set to True, temporary files will not be deleted. Used for debugging.
         """
 
         # Logging is done by the called function.
         write_abaqus_inp(self, file_name=file_name,
-                         folder_path=self.results_path,
-                         elem_code=elem_type, dim=dim,
+                         elem_code=elem_code, dim=dim,
                          scale=tuple(self.voxel_size),
                          material_elem_sets=material_elem_sets,
                          custom_elem_sets=custom_elem_sets,
-                         write_assembly=True,
-                         keep_temp_files=False)
+                         keep_temp_files=keep_temp_files)
 
-    def return_material_elem_set(self, mat_code, num_padding=0):
-        """Return the IDs of the elements in the part that correspond to the given material code
-        and a suitable name for the set.
-
-        The name is a string with 'MAT-' prepended to the material code.
-
-        Args:
-            mat_code (int): Integer specifying the material for which element IDs must be found.
-            num_padding (int): Number of padding zeros for the material name.
-                               Defaults to 0, which means no padding.
-
-        Returns:
-            tuple: A tuple where the first element is the material name,
-                   and the second element is numpy.ndarray A 1-D ndarray of element IDs.
-        """
-
-        name = 'MAT-{mat_code:0{num_padding}d}'.format(mat_code=mat_code, num_padding=num_padding)
-        # Source: https://stackoverflow.com/a/32413139/7180705
-        elem_ids = np.ravel_multi_index(multi_index=np.nonzero(self.data == mat_code),
-                                        dims=self.data.shape, mode='raise', order='C').astype(
-            'uint32')
-        return name, elem_ids
-
-    def add_custom_elem_set(self, name, ids, replace=True):
+    def add_custom_elem_set(self, name: str, ids: Union[tuple, ndarray], replace: bool = True):
         """Add a custom element set to the part.
 
         Args:
-            name (str): Name of the set. Must be valid according to the documentation
-                        for :py:meth:`helper.is_name_valid`.
+            name: Name of the set. Must be valid according to the documentation for :func:`.helper.is_name_valid`.
+            ids: A tuple or numpy array of integer element IDs to be added to the set.
+                 The IDs should start at zero (zero-based indexing), and the proper value is output later.
+                 The method converts it into a sorted, unique numpy array, but no other validation is performed.
+            replace: If set to True and a set with the same name already  exists, the new set replaces the old one.
+                     Otherwise, an error is raised.
 
-            ids (tuple): A tuple or numpy.ndarray of integer element IDs to
-                         be added to the set. Element IDs should start
-                         at zero (zero-based indexing), and the proper value is output later.
-                         It is passed to numpy.unique to ensure that it is sorted,
-                         unique, and a numpy ndarray, but is not validated in any other way.
-
-            replace (bool): If set to :py:obj:`True` and a set with the same name
-                            already  exists, the new set replaces the old one.
-                            Otherwise, an error is raised.
-                            Defaults to :py:obj:`True`.
+                     Defaults to True.
         """
-
         if not is_name_valid(name):
             raise ValueError('Invalid name. Check the documentation for validity criteria.')
         if name in self.elem_sets and not replace:
             raise RuntimeError("An element set with the name '%s' already exists." % name)
 
         self.elem_sets[name] = np.unique(ids).astype('uint32')
-        logger.debug("Added custom element set '%s' with %u elements.",
-                     name, len(self.elem_sets[name]))
+        logger.debug("Added custom element set '%s' with %u elements.", name, len(self.elem_sets[name]))
 
-    def add_node_set(self, name, ids, replace=True):
+    def add_node_set(self, name: str, ids: Union[tuple, ndarray], replace: bool = True):
         """Add a node set to the part.
 
+
         Args:
-            name (str): Name of the set. Must be valid according to the documentation
-                        for :py:meth:`helper.is_name_valid`.
+            name: Name of the set. Must be valid according to the documentation for :func:`.helper.is_name_valid`.
+            ids: A tuple or numpy array of integer node IDs to be added to the set.
+                 The IDs should start at zero (zero-based indexing), and the proper value is output later.
+                 The method converts it into a sorted, unique numpy array, but no other validation is performed.
+            replace: If set to True and a set with the same name already  exists, the new set replaces the old one.
+                     Otherwise, an error is raised.
 
-            ids (tuple): A tuple or numpy.ndarray of integer node IDs to
-                         be added to the set. Node IDs should start
-                         at zero (zero-based indexing), and the proper value is output later.
-                         It is passed to numpy.unique to ensure that it is sorted,
-                         unique, and a numpy ndarray, but is not validated in any other way.
-
-            replace (bool): If set to :py:obj:`True` and a set with the same name
-                            already  exists, the new set replaces the old one.
-                            Otherwise, an error is raised.
-                            Defaults to :py:obj:`True`.
+                     Defaults to True.
         """
-
         if not is_name_valid(name):
             raise ValueError('Invalid name. Check the documentation for validity criteria.')
         if name in self.node_sets and not replace:
             raise RuntimeError("A node set with the name '%s' already exists." % name)
-
         self.node_sets[name] = np.unique(ids).astype('uint32')
-        logger.debug("Added custom node set '%s' with %u elements.",
-                     name, len(self.node_sets[name]))
+        logger.debug("Added custom node set '%s' with %u elements.", name, len(self.node_sets[name]))
 
-    def add_dummy_nodes(self, fixed=True, single_node=False, three_nodes=False):
+    def add_bc(self, bc_type: Union[str, None] = None,
+               vertices_nodeset: bool = True, edges_nodeset: bool = True, faces_nodeset: bool = True,
+               explicit_nodeset: bool = False, simple_nodeset: bool = False):
+        """Define a boundary condition (BC) for the part.
+        Refer to the :ref:`boundary-conditions` section for a full explanation of the available BCs.
 
-        if not single_node ^ three_nodes:
-            raise ValueError("Exactly one of single_node or three_nodes must be True.")
-
-        if fixed:
-            self._dummy_node_dict['RP0-NodeSet'] = 999999999  # TODO: change max nodes to reflect.
-        if single_node:
-            self._dummy_node_dict['RP1-NodeSet'] = 999999998
-        if three_nodes:
-            self._dummy_node_dict['RP1-NodeSet'] = 999999996
-            self._dummy_node_dict['RP2-NodeSet'] = 999999997
-            self._dummy_node_dict['RP3-NodeSet'] = 999999998
-
-
-
-    def add_bc(self, bc_type=None, vertices_nodeset=True, edges_nodeset=True, faces_nodeset=True,
-               explicit_nodeset=False, simple_nodeset=False):
-        """Define default node sets in the VoxelPart. They are created according to TODO
+        The part must be a full square or cuboid. Also, if a BC is requested using *bc_type*,
+        all necessary node sets are also created.
+        For most use cases, that is the only parameter that must be specified.
 
         Args:
-            bc_type (str): #TODO
+            bc_type: Type of the BC to be defined. Valid values are:
+
+                     + None: No BCs will be defined.
+                     + 'Nodeset Only': Only the node sets will be defined according to the other parameters.
+                     + 'Linear Displacement': :ref:`boundary-conditions-lin-disp` will be created.
+                     + 'Periodic': :ref:`boundary-conditions-pbc` will be created.
+
+            vertices_nodeset: Add the individual vertices as node sets.
+            edges_nodeset: Add the individual edges as node sets.
+            faces_nodeset: Add the individual faces as node sets.
+            explicit_nodeset: Add the explicit node sets requested by *vertices_nodeset*,
+                              *edges_nodeset*, and *faces_nodeset*.
+            simple_nodeset: Add the simple node sets which are the full faces
+                            for the 3D models or the edges for the 2D models.
         """
 
         # TODO: reconsider and simplify interface.
@@ -302,35 +303,27 @@ class VoxelPart:
         self._bc_nodeset_explicit = explicit_nodeset
         self._bc_nodeset_simple = simple_nodeset
 
-    def apply_mask(self, mask, value):
-        """Use a boolean mask to change values of the :py:attr:`~data` attribute.
-
-        This function does some validations and then uses numpy.putmask().
+    def apply_mask(self, mask: ndarray, value: int):
+        """Use a boolean mask to select some elements of the part's :attr:`data` array
+        and change them to a *value*.
 
         Args:
-            mask (numpy.ndarray): Boolean mask to be used.
-
-            value (int): Integer value to be assigned to the elements
-                         of the :py:attr:`~data` attribute where
-                         the boolean mask is :py:obj:`True`.
+            mask: The Boolean mask to be used.
+            value: Integer value to be assigned to the elements of the :attr:`data` attribute
+                   where the boolean mask is True.
             """
-
         # Make sure mask is a boolean mask.
         if not mask.dtype == bool:
             raise ValueError("mask.dtype is not 'bool'.")
-
         # Make sure mask and self.data have the same shape.
         if mask.shape != self.data.shape:
             if self.data.ndim == 2 and mask.shape[2] == 1:
                 pass
             else:
                 raise ValueError('mask is not of the same shape as VoxelPart.data.')
-
         # Make sure mask and self.data have the same order (Fortran or C contiguity).
         if mask.flags.f_contiguous != self.data.flags.f_contiguous:
-            raise ValueError('mask is not of the same order (Fortran or C contiguity) as '
-                             'VoxelPart.data.')
-
+            raise ValueError('mask is not of the same order (Fortran or C contiguity) as VoxelPart.data.')
         # Make sure value is a nonzero integer within the bounds of self.data.dtype.
         if not float(value).is_integer():
             raise ValueError('value is not an integer.')
@@ -339,12 +332,65 @@ class VoxelPart:
         if value > np.iinfo(self.data.dtype).max:
             raise ValueError('value is larger than the maximum supported by self.data.dtype,' +
                              ' which is %d.' % np.iinfo(self.data.dtype).max)
-
         # Apply the mask to self.data.
         np.putmask(self.data, mask, value)
 
+    def _add_dummy_nodes(self, fixed: bool = False, single_node: bool = False, three_nodes: bool = False):
+        """Add the dummy nodes to the part.
+        See :ref:`the relevant section on BCs <boundary-conditions-nodeset_only>` for more information.
 
-def from_config_file(file_path):
+        Args:
+            fixed: If set to True, the dummy node for the fixed point is added with a node ID of 999999999.
+            single_node: If set to True, the dummy node for a single moving point is added
+                         with a node ID of 999999998.
+            three_nodes: If set to True, the dummy node for three moving points is added
+                         with a node IDs of 999999996, 999999997, and 999999998.
+        """
+        if not single_node ^ three_nodes:
+            raise ValueError("Exactly one of single_node or three_nodes must be True.")
+        if fixed:
+            self._dummy_node_dict['RP0-NodeSet'] = 999999999  # TODO: change max nodes to reflect.
+        if single_node:
+            self._dummy_node_dict['RP1-NodeSet'] = 999999998
+        if three_nodes:
+            self._dummy_node_dict['RP1-NodeSet'] = 999999996
+            self._dummy_node_dict['RP2-NodeSet'] = 999999997
+            self._dummy_node_dict['RP3-NodeSet'] = 999999998
+
+    def _return_material_elem_set(self, mat_code: int, num_padding: int = 0) -> tuple[str, ndarray]:
+        """Return the IDs of the elements in the part that correspond to the given material code
+        and a suitable name for the set.
+
+        The name is a string with 'MAT-' prepended to the material code.
+
+        Args:
+            mat_code: Integer specifying the material for which element IDs must be found.
+            num_padding: Number of padding zeros for the numerical portion of the material name.
+                         Defaults to 0, which means no padding.
+
+        Returns:
+            A tuple where the first element is the material name,
+            and the second element is a 1-D numpy array of element IDs.
+        """
+        name = 'MAT-{mat_code:0{num_padding}d}'.format(mat_code=mat_code, num_padding=num_padding)
+        # Source: https://stackoverflow.com/a/32413139/7180705
+        elem_ids = np.ravel_multi_index(multi_index=np.nonzero(self.data == mat_code),
+                                        dims=self.data.shape, mode='raise', order='C').astype('uint32')
+        return name, elem_ids
+
+
+def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
+    """Create a :class:`VoxelPart` object from a configuration file.
+
+    Args:
+        file_path: Full path to the configuration file. This file is usually created using the GUI
+                   and although you can create or edit one, it's not recommended.
+                   Scripts are much easier to work with and
+                   this function is meant only as a bridge between the library and its GUI.
+
+    Returns:
+        The :class:`VoxelPart` object created based on the configuration file.
+    """
     (part_creation_dict, part_manipulation_dict, bc_dict, output_dict) = \
         read_configuration(file_path)
 
@@ -404,3 +450,7 @@ def from_config_file(file_path):
 # TODO: add ddbc based on walters2021, eq 24. x is node coordinates.
 # TODO: 2d pbc edges does not have shear components.
 # TODO: add disp values for all bcs.
+# TODO: add number of materials to report.
+# TODO: add setter for voxelpart.data so it doesn't have non-uint values.
+# TODO: add min and max values for voxel_size.
+# TODO: redo ndarray types. see https://stackoverflow.com/questions/35673895

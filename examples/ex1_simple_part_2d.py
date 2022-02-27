@@ -11,5 +11,5 @@ part = VoxelPart(size=(50, 100), base_material=1,
 
 # Output the part.
 part.output_abaqus_inp(file_name='ex1_simple_part_2d',
-                       elem_type='CPE4R', dim='2D',
+                       elem_code='CPE4R', dim='2D',
                        material_elem_sets='Non-Empty')

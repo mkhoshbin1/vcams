@@ -232,7 +232,7 @@ def create_bc(part, dim: str) -> list:
         return []
 
     elif bc_type.upper() == 'LINEAR DISPLACEMENT':
-        part.add_dummy_nodes(fixed=True, single_node=True)
+        part._add_dummy_nodes(fixed=True, single_node=True)
         create_node_sets(part, dim, vertices=part._bc_nodeset_vertices,
                          edges=part._bc_nodeset_edges, faces=part._bc_nodeset_faces,
                          explicit_sets=part._bc_nodeset_explicit, simple_sets=True)
@@ -252,7 +252,7 @@ def create_bc(part, dim: str) -> list:
         return constraint_list
 
     elif bc_type.upper() == 'PERIODIC':
-        part.add_dummy_nodes(fixed=False, three_nodes=True)
+        part._add_dummy_nodes(fixed=False, three_nodes=True)
         create_node_sets(part, dim, vertices=True, edges=True, faces=True,
                          explicit_sets=True, simple_sets=part._bc_nodeset_simple)
         constraint_list = []

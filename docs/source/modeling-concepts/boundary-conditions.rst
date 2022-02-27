@@ -27,6 +27,9 @@ The default state of a VoxelPart instance contains an empty BC definition.
 In the GUI, the TODO option must be selected as shown in FigXXX TODO.
 This option is selected by default.
 
+
+.. _boundary-conditions-nodeset_only:
+
 Node Sets Only
 --------------
 This option creates node sets from the faces, edges, and vertices as shown in :numref:`bc-nodesets`.
