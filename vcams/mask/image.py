@@ -4,7 +4,9 @@ These functions offer a very specific set of features.
 Real images are rarely perfect and some trial and error
 with different image processing algorithms and parameters
 may be necessary.
+
 The author's experience with 2D microscopy images suggests a combination of the following:
+
   + Creating a special algorithm based on these functions.
     You can then apply the final binary mask to an empty part of an appropriate size.
   + Performing the image processing in a software such as Adobe Photoshop (TM), GIMP,
@@ -19,49 +21,43 @@ The author's experience with 2D microscopy images suggests a combination of the 
     If you think you shouldn't do this for your simulation, you probably shouldn't.
 """
 
-import logging
+from logging import getLogger
 from warnings import warn
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-from numpy import moveaxis, unique
+from numpy import moveaxis, unique, ndarray
 from skimage.filters import threshold_otsu
 from skimage.io import imread, ImageCollection
 from skimage.restoration import denoise_bilateral
 from skimage.transform import rescale
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
-def mask_from_image(image_path, scale=1.0, denoise=True, show_image=True):
+def mask_from_image(image_path: str, scale: float = 1.0,
+                    denoise: bool = True, show_image: bool = True) -> ndarray:
     """Return a boolean mask by thresholding an image.
 
     This function does the following in the given order:
-      1. Scale the image. skimage.transform.rescale() is used with anti_aliasing=True.
-      2. If specified, Denoise the image using skimage.restoration.denoise_bilateral().
-      3. Apply a threshold using skimage.filters.threshold_otsu().
+
+      1. Scale the image. ``skimage.transform.rescale()`` is used with ``anti_aliasing=True``.
+      2. If specified, Denoise the image using ``skimage.restoration.denoise_bilateral()``.
+      3. Apply a threshold using ``skimage.filters.threshold_otsu()``.
       4. If specified, show the opened image as grayscale and the final binary image.
 
     Args:
-        image_path (str): Full path to the image file. The image will be opened as a grayscale.
-
-        scale (float): Scale to be applied to the image. Note that a scale greater than 1.0
-                       will introduce fake precision by interpolating the data.
-                       If so, a warning is raised.
-                       Defaults to 1.0.
-
-        denoise (bool): If set to :py:obj:`True`, the image will be denoised using
-                        a Bilateral filter.
-                        Defaults to :py:obj:`True`.
-
-        show_image (bool): If set to :py:obj:`True`, the opened image and the final binary image
-                           will be shown side by side in a figure. The program may be paused
-                           while the window is open. Defaults to :py:obj:`True`.
+        image_path: Full path to the image file. The image will be opened as grayscale.
+        scale: Scale to be applied to the image. Note that a scale greater than 1.0
+               will introduce fake precision by interpolating the data and issues a warning.
+        denoise: If set to True, the image will be denoised using a Bilateral filter.
+        show_image: If set to True, the opened image and the final binary image
+                    will be shown side by side in a figure.
+                    The program may be paused while the window is open.
 
     Returns:
-        bool: The binary mask derived from the image.
+        The binary mask derived from the image.
     """
-
     if scale <= 0.0:
         raise ValueError('scale must be positive.')
 
@@ -107,6 +103,9 @@ def mask_from_image(image_path, scale=1.0, denoise=True, show_image=True):
 # https://scikit-image.org/docs/dev/api/skimage.io.html#imread-collection
 
 def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
+    """This is an experimental function."""
+    # TODO: test all.
+    # TODO: remove from docs exceptions.
     # TODO: add show_image.
 
     # Create an ImageCollection function which loads the images using
@@ -134,31 +133,28 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
     return full_image
 
 
-def resize_image(image, scale):
+def resize_image(image: ndarray, scale: float) -> ndarray:
     """Resize an image.
 
     Args:
-        image (numpy.ndarray): The image to be resized.
-                               If the input image is a boolean mask, nearest-neighbor
-                               interpolation will be used without anti-aliasing and
-                               the output will be will be cast to a boolean mask.
-                               Otherwise, a simple resizing operation with default
-                               parameters will be attempted.
+        image: The image to be resized.
+               If the input image is a boolean mask, nearest-neighbor interpolation
+               will be used without anti-aliasing and the output will be cast to a boolean mask.
+               Otherwise, a simple resizing operation with the default parameters
+               of ``skimage.transform.rescale()`` will be attempted.
+        scale: The scale to be applied. If equal to 1.0, the function logs the call and returns.
 
-        scale (float): The scale to be applied. If equal to 1.0, no scaling will be performed.
-
-    Returns: numpy.ndarray
-        The resized image.
+    Returns:
+        The resized image which is of the same *dtype* as the input.
     """
-
     if scale == 1.0:
         logger.debug('Scale was equal to 1.0. No resizing was performed.')
         return image
 
     if image.dtype == bool:
-        # For boolean images, interpolation order has to be 0, which means that
+        # For boolean images, interpolation order must be 0, which means that
         # the nearest-neighbor interpolation method will be used.
-        # Also, anti aliasing has to be turned off.
+        # Also, anti aliasing must be turned off.
         # See https://github.com/scikit-image/scikit-image/issues/4292
         # and https://github.com/scikit-image/scikit-image/issues/4998.
         image = rescale(image, scale, order=0, anti_aliasing=False)

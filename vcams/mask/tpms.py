@@ -1,150 +1,158 @@
-"""Functions that describe triply periodic minimal surfaces which
-can be used to create boolean masks."""
+"""Classes and functions that describe Triply Periodic Minimal Surfaces (TPMS)
+which can be used to create boolean masks."""
 
 from abc import ABC, abstractmethod
-from numpy import cos, pi, sin
+from numpy import cos, pi, sin, ndarray
 
 
 class BaseTpms(ABC):
-    """#TODO"""
+    """Abstract base class describing a Triply Periodic Minimal Surface (TPMS).
+    Note that the subclasses will be static.
 
+    All TPMS classes must inherit from this class.
+    Subclasses define the level set function *func* describing the shape in 3D space,
+    and the three attributes *name*, *tpms_id*, and *formula* which are used by PyQt
+    for the GUI.
+    """
     @property
     @abstractmethod
-    def tpms_id(self):
+    def name(self):
+        """Name of the TPMS which is used in the GUI."""
         pass
 
     @property
     @abstractmethod
-    def name(self):
+    def tpms_id(self):
+        """An integer id that is unique to this TPMS class and is used in the GUI."""
         pass
 
     @property
     @abstractmethod
     def formula(self):
+        """Formula of the TPMS which must be an inline latex math
+        compatible with PyQt and is used in the GUI."""
         pass
 
     @staticmethod
     @abstractmethod
     def func(*args):
+        """The level set function *func* describing the surface in 3D space.
+        It must be compatible with :func:`vcams.mask.function.mask_from_function`.
+        """
         pass
 
 
 class TpmsSchwarzP(BaseTpms):
-    """#TODO"""
-    tpms_id = 0
-    name = 'Schwarz Primitive (P)'
-    formula = r'$\Phi = cos(\frac{2\pi}{l} x) + cos(\frac{2\pi}{l} y) + cos(\frac{2\pi}{l} z) - c$'
+    """Static class describing a Schwarz Primitive (P) triply periodic minimal surface
+    with the following equation:
 
+    .. math::
+       \\Phi = cos(\\frac{2\pi}{l}x) + cos(\\frac{2\pi}{l}y) + cos(\\frac{2\pi}{l}z) - c = 0
+    """
     @staticmethod
-    def func(x, y, z, l, c):
+    def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float) -> ndarray:  # noqa: E741
+        """Function describing a Schwarz Primitive (P) triply periodic minimal surface.
+
+        Args:
+            x: A numpy 1D array of x-coordinates.
+            y: A numpy 1D array of y-coordinates.
+            z: A numpy 1D array of z-coordinates.
+            l: Length of the unit cell in all directions.
+            c: Constant C in the equation.
+
+        Returns:
+            An array of floats which may be negative, zero, or positive.
+            If scalar values are passed, a float is returned instead of an array.
+            See TODO for interpretation of the results.
+        """
         p = 2 * pi / l  # Period.
         return cos(p * x) + cos(p * y) + cos(p * z) - c
 
+    tpms_id: int = 0
+    name: str = 'Schwarz Primitive (P)'
+    formula: str = r'$\Phi = cos(\frac{2\pi}{l} x) + cos(\frac{2\pi}{l} y) + cos(\frac{2\pi}{l} z) - c$'
+
 
 class TpmsSchwarzD(BaseTpms):
-    """#TODO"""
-    tpms_id = 1
-    name = 'Schwarz Diamond (D)'
-    formula = (r'$\Phi = sin(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z)$'
-               r'$+ sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$' '\n'
-               r'$+ cos(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
-               r'$+ cos(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z) - c$')
+    """Static class describing a Schwarz Diamond (D) triply periodic minimal surface
+    with the following equation:
 
+    .. math::
+       \\Phi = \\enspace &sin(\\frac{2\pi}{l}x) \\ sin(\\frac{2\pi}{l}y) \\ sin(\\frac{2\pi}{l}z)\\\\
+                     +\\ &sin(\\frac{2\pi}{l}x) \\ cos(\\frac{2\pi}{l}y) \\ cos(\\frac{2\pi}{l}z)\\\\
+                     +\\ &cos(\\frac{2\pi}{l}x) \\ sin(\\frac{2\pi}{l}y) \\ cos(\\frac{2\pi}{l}z)\\\\
+                     +\\ &cos(\\frac{2\pi}{l}x) \\ cos(\\frac{2\pi}{l}y) \\ sin(\\frac{2\pi}{l}z) - c = 0
+    """
     @staticmethod
-    def func(x, y, z, l, c):
+    def func(x, y, z, l, c):  # noqa: E741
+        """Function describing a Schwarz Diamond (D) triply periodic minimal surface.
+
+        Args:
+            x: A numpy 1D array of x-coordinates.
+            y: A numpy 1D array of y-coordinates.
+            z: A numpy 1D array of z-coordinates.
+            l: Length of the unit cell in all directions.
+            c: Constant C in the equation.
+
+        Returns:
+            An array of floats which may be negative, zero, or positive.
+            If scalar values are passed, a float is returned instead of an array.
+            See TODO for interpretation of the results.
+        """
         p = 2 * pi / l  # Period.
         return (sin(p * x) * sin(p * y) * sin(p * z) +
                 sin(p * x) * cos(p * y) * cos(p * z) +
                 cos(p * x) * sin(p * y) * cos(p * z) +
                 cos(p * x) * cos(p * y) * sin(p * z) - c)
 
+    tpms_id: int = 1
+    name: str = 'Schwarz Diamond (D)'
+    formula: str = (r'$\Phi = sin(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z)$'
+                    r'$+ sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$' '\n'
+                    r'$+ cos(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
+                    r'$+ cos(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z) - c$')
+
 
 class TpmsSchwarzG(BaseTpms):
-    """#TODO"""
-    tpms_id = 2
-    name = 'Schwarz Gyroid (G)'
-    formula = (r'$\Phi = sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y)$'
-               r'$+ sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
-               r'$+ sin(\frac{2\pi}{l} z) cos(\frac{2\pi}{l} x) - c$')
+    """Static class describing a Schwarz Gyroid (G) triply periodic minimal surface
+    with the following equation:
 
+    .. math::
+       \\Phi = \\enspace &sin(\\frac{2\pi}{l}x) \\ cos(\\frac{2\pi}{l}y)\\\\
+                     +\\ &sin(\\frac{2\pi}{l}y) \\ cos(\\frac{2\pi}{l}z)\\\\
+                     +\\ &sin(\\frac{2\pi}{l}z) \\ cos(\\frac{2\pi}{l}x) - c = 0
+    """
     @staticmethod
-    def func(x, y, z, l, c):
+    def func(x, y, z, l, c):  # noqa: E741
+        """Function describing a Schwarz Gyroid (G) triply periodic minimal surface.
+
+        Args:
+            x: A numpy 1D array of x-coordinates.
+            y: A numpy 1D array of y-coordinates.
+            z: A numpy 1D array of z-coordinates.
+            l: Length of the unit cell in all directions.
+            c: Constant C in the equation.
+
+        Returns:
+            An array of floats which may be negative, zero, or positive.
+            If scalar values are passed, a float is returned instead of an array.
+            See TODO for interpretation of the results.
+        """
         p = 2 * pi / l  # Period.
         return (sin(p * x) * cos(p * y) +
                 sin(p * y) * cos(p * z) +
                 sin(p * z) * cos(p * x) - c)
 
-
-def schwarz_p(x, y, z, l, c):
-    """Function describing a Schwarz Primitive (P) triply periodic minimal surface.
-    See TODO for information regarding usage.
-    TODO: add equation.
-
-    Args:
-        x (numpy.ndarray): A numpy 1D array of x-coordinates.
-        y (numpy.ndarray): A numpy 1D array of y-coordinates.
-        z (numpy.ndarray): A numpy 1D array of z-coordinates.
-        l (float): Length of the unit cell in all directions.
-        c (float): Constant C in the equation.
-
-    Returns: numpy.ndarray
-        An array of values which may be negative, zero, or positive.
-        If scalar values are passed, a scalar is returned instead of an array.
-        See TODO for interpretation of the results.
-    """
-    p = 2 * pi / l  # Period.
-    return cos(p * x) + cos(p * y) + cos(p * z) - c
-
-
-def schwarz_d(x, y, z, l, c):
-    """Function describing a Schwarz Diamond (D) triply periodic minimal surface.
-    See TODO for information regarding usage.
-    TODO: add equation.
-
-    Args:
-        x (numpy.ndarray): A numpy 1D array of x-coordinates.
-        y (numpy.ndarray): A numpy 1D array of y-coordinates.
-        z (numpy.ndarray): A numpy 1D array of z-coordinates.
-        l (float): Length of the unit cell in all directions.
-        c (float): Constant C in the equation.
-
-    Returns: numpy.ndarray
-        An array of values which may be negative, zero, or positive.
-        If scalar values are passed, a scalar is returned instead of an array.
-        See TODO for interpretation of the results.
-    """
-    p = 2 * pi / l  # Period.
-    return (sin(p * x) * sin(p * y) * sin(p * z) +
-            sin(p * x) * cos(p * y) * cos(p * z) +
-            cos(p * x) * sin(p * y) * cos(p * z) +
-            cos(p * x) * cos(p * y) * sin(p * z) - c)
-
-
-def schwarz_g(x, y, z, l, c):
-    """Function describing a Schwarz Gyroid (G) triply periodic minimal surface.
-    See TODO for information regarding usage.
-    TODO: add equation.
-
-    Args:
-        x (numpy.ndarray): A numpy 1D array of x-coordinates.
-        y (numpy.ndarray): A numpy 1D array of y-coordinates.
-        z (numpy.ndarray): A numpy 1D array of z-coordinates.
-        l (float): Length of the unit cell in all directions.
-        c (float): Constant C in the equation.
-
-    Returns: numpy.ndarray
-        An array of values which may be negative, zero, or positive.
-        If scalar values are passed, a scalar is returned instead of an array.
-        See TODO for interpretation of the results.
-    """
-    p = 2 * pi / l  # Period.
-    return (sin(p * x) * cos(p * y) +
-            sin(p * y) * cos(p * z) +
-            sin(p * z) * cos(p * x) - c)
+    tpms_id: int = 2
+    name: str = 'Schwarz Gyroid (G)'
+    formula: str = (r'$\Phi = sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y)$'
+                    r'$+ sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
+                    r'$+ sin(\frac{2\pi}{l} z) cos(\frac{2\pi}{l} x) - c$')
 
 
 # Construct a dictionary of tpms ids and their respective classes.
-tpms_dict = dict()
+tpms_dict: dict = dict()
+"""A dictionary mapping tpms ids to their respective classes, used for the GUI."""
 for cls in (TpmsSchwarzP, TpmsSchwarzD, TpmsSchwarzG):
     if cls.tpms_id in tpms_dict.keys():
         raise RuntimeError(('Class %s has a non-unique tpms_id. ' % cls.__name__) +

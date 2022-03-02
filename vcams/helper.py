@@ -1,47 +1,49 @@
-"""Various helper functions."""
+"""Various helper functions used throughout the library."""
 import csv
 from configparser import ConfigParser
-import logging
 from io import StringIO
+from logging import getLogger
 from pathlib import Path
 
 from vcams.mask.tpms import tpms_dict
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
-def is_name_valid(name):
-    """ Check whether a string represents a valid name.
-    Abaqus (TM) has many rules for names (labels) in the input files.
+def is_name_valid(name: str) -> bool:
+    # noinspection GrazieInspection
+    """Check whether a string represents a valid name.
+    Abaqus™ has many rules for names (labels) in the input files.
     Here, The most strict combination is implemented here to ensure that
     a name is suitable for all purposes.
 
     This means that a name:
-      + Must be 1-38 characters. This is because some object names
-        in the abaqus scripting interface have a 38-character limit
-        for their names.
-      + May contain whitespace (If enclosed by whitespace).
-      + Must start with a letter.
-      + Must no begin or end with an underscore.
-      + Must no include the following characters: $&*~!()[]{}|;'`",.?/\
-      + Must not contains periods. This also means that any file names
-        cannot contain any extensions. They will be added automatically.
-      + Must be ASCII-compatible. This is checked by attempting str.decode('ascii')
-        and checking for :py:obj:`UnicodeDecodeError`.
+
+    + Must be 1-38 characters. This is because some object names
+      in the abaqus scripting interface have a 38-character limit
+      for their names.
+    + May contain whitespace (if enclosed by double quotation marks).
+    + Must start with a letter.
+    + Must not begin or end with an underscore.
+    + Must not include the following characters: ``$&*~!()[]{}|;'`",.?/\``
+    + Must not contain periods. This also means that any file names
+      cannot contain any extensions. They will be added automatically.
+    + Must be ASCII-compatible. This is checked by attempting :code:`str.decode('ascii')`
+      and checking for :obj:`UnicodeDecodeError`.
 
     For more information, refer to:
-      + "Labels" under "Input Syntax Rules" of the Abaqus Analysis User's Manual.
-      + The documentation for the InvalidNameError object under
-        "Standard Abaqus Scripting Interface exceptions" of
-        Abaqus Scripting User's Manual.
+
+    + *Labels* under the *Input Syntax Rules* section of the Abaqus Analysis User's Manual.
+    + The documentation for the *InvalidNameError* object under
+      the section *Standard Abaqus Scripting Interface Exceptions* of
+      Abaqus Scripting User's Manual.
 
     Args:
-        name (str): The string to be checked.
+        name: The string to be checked.
 
     Returns:
-        bool: :py:obj:`True` for a valid name.
+        Returns True for a valid name otherwise returns False.
     """
-
     # TODO: consider regex: ^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$
     forbidden_chars = "$&*~!()[]{}|;\'`\",.?/\\"
     if not isinstance(name, str):
@@ -63,20 +65,18 @@ def is_name_valid(name):
         return True
 
 
-def return_default_results_path(part_name=None):
-    """Return a suitable path in the user's Desktop
-       for storing the intermediate and final results of the program.
+def return_default_results_path(part_name: str = None) -> Path:
+    """Return a suitable path in the user's Desktop for storing the intermediate and final results of the program.
 
     Args:
-        part_name (str): Name of the part which is to be output
-                         which must be valid according to #TODO.
-                         If set to :py:obj:`None`, the folder will simply be named 'results'.
-                         Defaults to :py:obj:`None`.
+        part_name: Name of the part which is to be output
+                   which must be valid according to :func:`is_name_valid`.
+                   If set to *None*, the folder will be named :code:`results`.
+                   Defaults to *None*.
 
     Returns:
         A path object containing the full path of a suitable folder in the users Desktop.
     """
-
     parts = ['Desktop', 'VCAMS Working Directory']
     # Validate part_name.
     if part_name is None:
@@ -89,28 +89,26 @@ def return_default_results_path(part_name=None):
     return Path.home().joinpath(*parts)
 
 
-def write_to_logger_streams(msg):
-    """Write a message directly to all streams of the module's logger object.
+def write_to_logger_streams(msg: str):
+    """Write a message directly to all handlers of the module's root logger object.
 
     Args:
-        msg (str): The message that is written.
+        msg: The message that is written.
     """
     for handler in logger.root.handlers:
         handler.stream.writelines(msg)
 
 
-def read_configuration(file_path):
-    """Read a configuration file containing all the information used for creating a VoxelPart
-    and return the information as a list of dictionaries.
+def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
+    """Read a configuration file containing all the information used for creating
+    a :class:`~.voxelpart.VoxelPart` and return the information as a list of dictionaries.
 
     Args:
-        file_path (str): Path to the configuration file.
+        file_path: Path to the configuration file.
 
     Returns:
-        tuple: A tuple of the following dictionaries:
-               (part_creation_dict, part_manipulation_dict, bc_dict, output_dict)
+        A tuple of the following dictionaries (part_creation_dict, part_manipulation_dict, bc_dict, output_dict).
     """
-
     # Read the config file.
     logger.debug('Trying to read configuration file at %s' % file_path)
     config = ConfigParser()
@@ -232,7 +230,15 @@ def read_configuration(file_path):
     return part_creation_dict, part_manipulation_dict, bc_dict, output_dict
 
 
-def csv_string_to_list(csv_string):
+def csv_string_to_list(csv_string: str) -> list:
+    """Convert a csv string to a list. The csv dialect is sniffed using Python's *csv* module.
+
+    Args:
+        csv_string: A string of comma separated values created using Python's *csv* module.
+
+    Returns:
+        List of rows detected in the csv string.
+    """
     buffer_io = StringIO(csv_string)
     dialect = csv.Sniffer().sniff(buffer_io.readline())
     buffer_io.seek(0)
