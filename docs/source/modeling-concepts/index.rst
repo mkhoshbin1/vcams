@@ -10,4 +10,5 @@ Modeling Concepts
    modeling-techniques
    element-node-sets
    boundary-conditions
+   export
    predefined-structures/index.rst

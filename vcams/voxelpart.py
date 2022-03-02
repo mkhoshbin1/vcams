@@ -451,3 +451,4 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: change size to shape.
 # TODO: add shape as a variable with a getter.
 # TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
+# TODO: in docs change output to export.
