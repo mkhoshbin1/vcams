@@ -1,13 +1,13 @@
-"""Script for Example 6: Random 3D Model"""
+"""Script for Example A-4: Manual Manipulation of the Structure (Whole Array)"""
 
 from numpy import random
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 75, 100), base_material=1,
-                 voxel_size=(0.02, 0.02, 0.02),
-                 name='Ex6 Random 3D Part',
-                 description='Example 6: A 50*75*100 3D part filled with random elements.',
+part = VoxelPart(size=(5, 5), base_material=1,
+                 voxel_size=(0.02, 0.02),
+                 name='Ex A4 Manual Manipulation Whole',
+                 description='Example A-4: A 5*5 2D part filled with all elements replaced with a random array.',
                  log_debug=True)
 
 # Prepare the random number generator.
@@ -20,6 +20,6 @@ random_array = rng.integers(low=1, high=3, size=part.data.shape,
 part.data = random_array
 
 # Output the part.
-part.output_abaqus_inp(file_name='ex6_random_3d_part',
-                       elem_type='C3D8R', dim='3D',
+part.output_abaqus_inp(file_name='ex_a4_manual_manipulation_whole',
+                       elem_code='CPE4R', dim='2D',
                        material_elem_sets='Non-Empty')

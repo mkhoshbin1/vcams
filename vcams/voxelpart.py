@@ -55,7 +55,7 @@ class VoxelPart:
                    Defaults to ``'uint8'`` which allows for 256 materials in the model.
 
             name: Name of the voxel part which is used in a variety of places, including when exporting the part.
-                  Must be valid according to the documentation :func:`.helper.is_name_valid`.
+                  Must be valid according to the documentation for the :func:`.helper.is_name_valid` function.
 
                   Defaults to ``'unnamed'``.
 
@@ -185,14 +185,13 @@ class VoxelPart:
 
         Args:
             file_name: Name of the file. Must be valid according to the documentation
-                       for :func:`.helper.is_name_valid` and should not contain file extensions.
+                       for the :func:`.helper.is_name_valid` function and should not contain file extensions.
             elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
                        It must be a valid Abaqus element code such as *'CPE4R'* or *'C3D8R'*.
                        This parameter is not validated so care should be taken regarding validity and compatibility.
                        Currently, only 2D and 3D linear elements are supported.
                        To get around this, you can convert to quadratic elements after importing the model to Abaqus.
             dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
-                 If a 3D part is set to be output as a 2D plate, only the first planar section will be output.
             material_elem_sets: One of the following:
 
                                   + *'All'* which outputs all materials in the VoxelPart.

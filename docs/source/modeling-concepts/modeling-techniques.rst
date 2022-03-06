@@ -15,15 +15,15 @@ There are three methods for manipulating a model:
   The *data* array is a NumPy array and any valid change that does not change its *dtype* is permitted.
   The following examples show this method in practice:
 
-  - :doc:`/examples/example4`
-  - :doc:`/examples/example5`
-  - :doc:`/examples/example6`
+  - :doc:`/examples/example-a3`
+  - :doc:`/examples/example-a4`
+  - :doc:`/examples/example-a5`
 
 + Use of a custom boolean mask for manipulating a model.
   This is a simple and effective method which is covered in TODO.
 
-  - :doc:`/examples/example7`
-  - :doc:`/examples/example8`
+  - :doc:`/examples/example-a6`
+  - :doc:`/examples/example-a7`
 
 + Use of a pre-defined boolean mask created using the facilities provided by the library.
   This method is identical to the previous, more general, method.
@@ -31,7 +31,7 @@ There are three methods for manipulating a model:
   that creates a common complex structure.
   The function and classes and their examples are covered in TODO.
 
-.. _boolean-mask:
+.. _boolean-masks:
 
 Boolean Masks
 -------------

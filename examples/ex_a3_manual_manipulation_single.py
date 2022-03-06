@@ -1,12 +1,12 @@
-"""Script for Example 4: Manual Manipulation of the Structure (Single Elements)"""
+"""Script for Example A-3: Manual Manipulation of the Structure (Single Elements)"""
 
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
 part = VoxelPart(size=(5, 5), base_material=1,
                  voxel_size=(0.02, 0.02),
-                 name='Ex4 Manual Manipulation Single',
-                 description='Example 4: A 5*5 2D part filled with elements with two elements changed manually.',
+                 name='Ex A3 Manual Manipulation Single',
+                 description='Example A-3: A 5*5 2D part filled with elements with two elements changed manually.',
                  log_debug=True)
 
 # Manually change some elements. Note that NumPy uses zero-based indexing.
@@ -18,6 +18,6 @@ part.data[2, 1] = 2
 part.data[3, 2] = 0
 
 # Output the part.
-part.output_abaqus_inp(file_name='ex4_manual_manipulation_single',
-                       elem_type='CPE4R', dim='2D',
+part.output_abaqus_inp(file_name='ex_a3_manual_manipulation_single',
+                       elem_code='CPE4R', dim='2D',
                        material_elem_sets='Non-Empty')

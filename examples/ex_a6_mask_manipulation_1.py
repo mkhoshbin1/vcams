@@ -1,4 +1,4 @@
-"""Script for Example 7: Manipulation of the Structure Using Masks (I)"""
+"""Script for Example A-6: Manipulation of the Structure Using Masks (I)"""
 
 from numpy import array, rot90
 from vcams.voxelpart import VoxelPart
@@ -6,8 +6,8 @@ from vcams.voxelpart import VoxelPart
 # Create the part.
 part = VoxelPart(size=(5, 5), base_material=0,
                  voxel_size=(0.02, 0.02),
-                 name='Ex7 Mask Manipulation 1',
-                 description='Example 7: A 5*5 2D part create using three boolean masks.',
+                 name='Ex A6 Mask Manipulation 1',
+                 description='Example A-6: A 5*5 2D part create using three boolean masks.',
                  log_debug=True)
 
 # Create the three masks according to the images.
@@ -38,6 +38,6 @@ part.apply_mask(mask=rot90(mask2, -1), value=2)
 part.apply_mask(mask=rot90(mask3, -1), value=3)
 
 # Output the part.
-part.output_abaqus_inp(file_name='ex7_mask_manipulation_1',
-                       elem_type='CPE4R', dim='2D',
+part.output_abaqus_inp(file_name='ex_a6_mask_manipulation_1',
+                       elem_code='CPE4R', dim='2D',
                        material_elem_sets='Non-Empty')

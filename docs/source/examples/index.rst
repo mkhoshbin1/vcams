@@ -10,10 +10,11 @@ After defining each example problem, modeling and analysis is performed using bo
    :caption: Contents:
    :maxdepth: 1
 
-   example1
-   example2
-   example4
-   example5
-   example6
-   example7
-   example8
+   example-a1
+   example-a2
+   example-a3
+   example-a4
+   example-a5
+   example-a6
+   example-a7
+   example-a8

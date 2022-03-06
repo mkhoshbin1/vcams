@@ -45,6 +45,6 @@ The ShapeArray Class
 --------------------
 The TODO class is the recommended way for modeling shapes.
 It is defined based on the size and dimensions of a VoxelPart and can have any compatible shape added to it,
-and will calculate a :ref:`Boolean Mask <boolean-mask>` upon request.
+and will calculate a :ref:`Boolean Mask <boolean-masks>` upon request.
 
 Examples TODO show this class in action.
