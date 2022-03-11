@@ -18,3 +18,6 @@ After defining each example problem, modeling and analysis is performed using bo
    example-a6
    example-a7
    example-a8
+   example-b1
+   example-b2
+   example-b3
