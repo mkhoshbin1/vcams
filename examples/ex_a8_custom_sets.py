@@ -1,4 +1,4 @@
-"""Script for Example A-8: Custom Element and Node Sets"""
+"""Script for Example A-8: Custom Element and Node Sets."""
 
 from vcams.voxelpart import VoxelPart
 

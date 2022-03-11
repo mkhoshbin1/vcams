@@ -1,4 +1,4 @@
-"""Script for Example A-6: Manipulation of the Structure Using Masks (I)"""
+"""Script for Example A-6: Manipulation of the Structure Using Masks (I)."""
 
 from numpy import array, rot90
 from vcams.voxelpart import VoxelPart

@@ -1,4 +1,4 @@
-"""Script for Example A-7: Manipulation of the Structure Using Masks (II)"""
+"""Script for Example A-7: Manipulation of the Structure Using Masks (II)."""
 
 from numpy import random
 from vcams.voxelpart import VoxelPart

@@ -1,4 +1,4 @@
-"""Script for Example A-1: Simple Filled 2D Part"""
+"""Script for Example A-1: Simple Filled 2D Part."""
 
 from vcams.voxelpart import VoxelPart
 

@@ -1,4 +1,4 @@
-"""Script for Example A-4: Manual Manipulation of the Structure (Whole Array)"""
+"""Script for Example A-4: Manual Manipulation of the Structure (Whole Array)."""
 
 from numpy import random
 from vcams.voxelpart import VoxelPart

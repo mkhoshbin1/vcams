@@ -1,4 +1,4 @@
-"""Script for Example A-5: Random 3D Model"""
+"""Script for Example A-5: Random 3D Model."""
 
 from numpy import random
 from vcams.voxelpart import VoxelPart

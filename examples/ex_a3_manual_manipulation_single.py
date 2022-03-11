@@ -1,4 +1,4 @@
-"""Script for Example A-3: Manual Manipulation of the Structure (Single Elements)"""
+"""Script for Example A-3: Manual Manipulation of the Structure (Single Elements)."""
 
 from vcams.voxelpart import VoxelPart
 
