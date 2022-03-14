@@ -6,7 +6,7 @@ The shape is a circle, which means that the result will be identical
 to that of :doc:`Example C-1 <example-c1>`, but the procedure is more straightforward.
 
 This example paves the way for introducing shape arrays
-which is done in :doc:`Example C-4 <example-c3>`.
+which is done in :doc:`Example C-4 <example-c4>`.
 
 First, a 2D part with a shape of 50×50 voxels is created
 with a base material of 1 and a voxel size of 0.02 units in all directions.
