@@ -18,7 +18,7 @@ def sphere_func(x, y, z, a, b, c, r):
     return (x - a) ** 2 + (y - b) ** 2 + (z - c) ** 2 - r ** 2
 
 
-# Create a Boolean mask with the same shape and voxel_size as the part.
+# Create a Boolean mask based on the VoxelPart object.
 t = part.real_size[0] / 2
 sphere_mask = mask.function.mask_from_function(part=part, func=sphere_func,
                                                a=t, b=t, c=t, r=t)

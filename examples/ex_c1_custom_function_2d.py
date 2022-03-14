@@ -18,7 +18,7 @@ def circle_func(x, y, z, a, b, r):
     return (x - a) ** 2 + (y - b) ** 2 - r ** 2
 
 
-# Create a Boolean mask with the same shape and voxel_size as the part.
+# Create a Boolean mask based on the VoxelPart object.
 t = part.real_size[0] / 2
 circle_mask = mask.function.mask_from_function(part=part, func=circle_func,
                                                a=t, b=t, r=t)
