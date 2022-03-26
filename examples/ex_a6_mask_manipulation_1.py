@@ -32,7 +32,7 @@ mask3 = array(((0, 0, 0, 0, 0),
 
 # Apply the masks with their respective material codes.
 # The masks must be rotated -90 degrees to account for the
-# Different between Abaqus's XY direction and the defined array.
+# difference between Abaqus's XY direction and the defined array.
 part.apply_mask(mask=rot90(mask1, -1), value=1)
 part.apply_mask(mask=rot90(mask2, -1), value=2)
 part.apply_mask(mask=rot90(mask3, -1), value=3)

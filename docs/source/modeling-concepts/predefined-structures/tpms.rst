@@ -2,8 +2,8 @@
 
 Triply Periodic Minimal Surfaces
 ================================
-Triply Periodic Minimal Surfaces (TPMS) are a class of 3D minimal surfaces that
-are used for modeling various porous structures.
+`Triply Periodic Minimal Surfaces (TPMS) <https://en.wikipedia.org/wiki/Triply_periodic_minimal_surface>`__
+are a class of 3D minimal surfaces that are used for modeling various porous structures.
 Some of them can be described using level-set equations (similar to the ones accepted by TODO)
 and because of their usefulness, have been implemented in the library.
 

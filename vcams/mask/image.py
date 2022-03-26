@@ -36,7 +36,7 @@ logger = getLogger(__name__)
 
 
 def mask_from_image(image_path: str, scale: float = 1.0,
-                    denoise: bool = True, show_image: bool = True) -> ndarray:
+                    denoise: bool = True, show_image: bool = False) -> ndarray:
     """Return a boolean mask by thresholding an image.
 
     This function does the following in the given order:
@@ -84,6 +84,7 @@ def mask_from_image(image_path: str, scale: float = 1.0,
     # Show the image.
     if show_image:
         fig, axes = plt.subplots(ncols=2, figsize=(9, 4), sharey='all')
+        plt.get_current_fig_manager().set_window_title('Image Preview (Close to Continue)')
         ax = axes.ravel()
         ax[0] = plt.subplot(1, 2, 1)
         ax[1] = plt.subplot(1, 2, 2)
@@ -93,7 +94,7 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         ax[1].imshow(binary_image, cmap=ListedColormap(['black', 'white']))
         ax[1].set_title('Binary Image')
         ax[1].axis('off')
-        plt.show()
+        plt.show(block=True)
 
     # Return the binary mask.
     logger.info("Created a binary mask from the image at '%s'.", image_path)
@@ -110,7 +111,7 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
 
     # Create an ImageCollection function which loads the images using
     # the mask_from_image() function. No scaling is applied and denoising is done if requested.
-    image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=True,
+    image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=False,
                                  load_func=mask_from_image, scale=1.0, denoise=denoise,
                                  show_image=False)
 
@@ -127,7 +128,7 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
 
     full_image = moveaxis(image_coll.concatenate(), 0, -1)
     # TODO: test input with and without move axis.
-
+    # TODO: is scale passed? is it already done by now? either way, check for 1.0.
     # Apply the scale.
     full_image = resize_image(full_image, scale)
     return full_image

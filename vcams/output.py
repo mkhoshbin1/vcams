@@ -11,6 +11,7 @@ import logging
 import os
 import shutil
 import time
+from pathlib import Path
 from typing import Union, TextIO
 
 from numpy import savetxt, unravel_index, ravel_multi_index, array, unique, uint32, float64, \
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                      scale: tuple, material_elem_sets: Union[tuple, str],
-                     custom_elem_sets: bool = True, keep_temp_files: bool = False):
+                     custom_elem_sets: bool = True, keep_temp_files: bool = False) -> Path:
     """Write a VoxelPart object to an Abaqus™ input file.
     This is the main function called by :meth:`.voxelpart.VoxelPart.output_abaqus_inp`.
     It should not be directly used.
@@ -60,7 +61,10 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
 
         custom_elem_sets: If set to True, custom sets will be written to the output.
         keep_temp_files: If set to True, temporary files will not be deleted. Used for debugging.
-    """
+
+        Returns:
+            Path object pointing to final Abaqus™ input file.
+        """
     logger.info("Attempting to output part '%s' to an Abaqus input file.", part.name)
     # TODO: recheck everything about BCs. especially sets and args.
     # TODO: add BC type to report.
@@ -106,7 +110,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     # Add the dummy nodes as node sets.
     # noinspection PyProtectedMember
     for name, node_id in part._dummy_node_dict.items():
-        part.add_node_set(name=name, ids=node_id-1)  # ids is zero-based.
+        part.add_node_set(name=name, ids=node_id - 1)  # ids is zero-based.
 
     # Write element sets.
     (elem_set_file_path, elem_id_list, elem_set_stats) = \
@@ -134,6 +138,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
         num_constraints = 0
 
     # Write the final input file.  #TODO: better logging.
+    # TODO: use Path for everything.
     main_file_path = os.path.join(folder_path, file_name)
     logger.debug("Assembling temporary files to the main input file at '%s'.", main_file_path)
     with open(main_file_path, 'w', encoding='latin1') as main_file:
@@ -205,6 +210,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                 part.name, main_file_path)
 
     write_output_summary(part, dim, elem_code, num_nodes, num_elems, elem_set_stats, num_constraints, elapsed_time)
+    return Path(main_file_path)
 
 
 def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder_path: str) -> tuple[str, int, ndarray]:

@@ -25,3 +25,6 @@ After defining each example problem, modeling and analysis is performed using bo
    example-c2
    example-c3
    example-c4
+   example-c5
+   example-c6
+   example-c7
