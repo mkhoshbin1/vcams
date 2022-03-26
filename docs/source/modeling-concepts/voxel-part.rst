@@ -5,12 +5,23 @@ The Voxel Part
 
 Definition
 ----------
-The voxel part is the main object [1]_ used creating a part.
+The voxel part is the main object [1]_ used when creating a part.
 It describes a cuboid part made of voxels and includes various
 properties and methods that can be used to describe and manipulate a part.
 
-TODO: different properties ie name, size, etc.
+A *VoxelPart* object has a number of different
+properties (variables), some of which are specified when it is created.
+Some of these properties are as follows:
 
++ **name**: Name of the voxel part.
++ **description**: A short description of the part.
++ **data**: See the next section.
++ **size**: Size of the part’s data property in the three directions.
++ **voxel_size**: The size of a voxel in the three directions.
++ **real_size**: Real size of a part. Calculated based on the above properties.
+
+For a complete list, refer to the documentation
+for the :class:`~vcams.voxelpart.VoxelPart` class.
 
 Underlying Data Structure
 -------------------------
@@ -74,9 +85,6 @@ A sample transformation between the *data* array and finite element mesh is show
 
 Changing the materials in a model is the backbone of all model manipulations.
 This is discussed in detail in :doc:`./modeling-techniques`
-
-
-
 
 
 

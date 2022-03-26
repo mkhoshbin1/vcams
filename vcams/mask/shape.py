@@ -12,7 +12,7 @@ from numpy import logical_or, ndarray
 from vcams.mask.function import mask_from_function
 
 
-class Shape(ABC):
+class BaseShape(ABC):
     """Abstract base class describing a shape.
 
     All shapes must inherit from this class.
@@ -172,7 +172,7 @@ class ShapeArray:
                 % (shape.dim, self.dim))
 
 
-class Circle(Shape):
+class Circle(BaseShape):
     """Class describing a 2D Circle with the formula:
 
     .. math::
@@ -199,7 +199,7 @@ class Circle(Shape):
         return (x - self.a) ** 2 + (y - self.b) ** 2 - self.r ** 2
 
 
-class Sphere(Shape):
+class Sphere(BaseShape):
     """Class describing a 3D Sphere with the formula:
 
     .. math::

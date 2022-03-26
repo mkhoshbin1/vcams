@@ -1,25 +1,4 @@
-"""Masks created from images to be used for manipulating VoxelPart objects.
-
-These functions offer a very specific set of features.
-Real images are rarely perfect and some trial and error
-with different image processing algorithms and parameters
-may be necessary.
-
-The author's experience with 2D microscopy images suggests a combination of the following:
-
-  + Creating a special algorithm based on these functions.
-    You can then apply the final binary mask to an empty part of an appropriate size.
-  + Performing the image processing in a software such as Adobe Photoshop (TM), GIMP,
-    or ImageJ/FIJI. These software include a large number of filters and their GUIs
-    facilitate thresholding. The final binary image can then be input as a binary mask.
-  + Manually retouching the image to make features more distinguishable.
-    This may be unavoidable for microscopy images of very poor quality,
-    but the retouching must be limited to fixing glares and obvious noises.
-    Utmost care must be taken to preserve the image's integrity,
-    especially for edges of objects or phases.
-    Furthermore, some simulations are more sensitive to these kinds of changes.
-    If you think you shouldn't do this for your simulation, you probably shouldn't.
-"""
+"""Functions used for creating a boolean mask from one or a sequence of images."""
 
 from logging import getLogger
 from warnings import warn
@@ -104,11 +83,24 @@ def mask_from_image(image_path: str, scale: float = 1.0,
 # https://scikit-image.org/docs/dev/api/skimage.io.html#imread-collection
 
 def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
-    """This is an experimental function."""
-    # TODO: test all.
-    # TODO: remove from docs exceptions.
-    # TODO: add show_image.
+    """Return a boolean mask by opening and thresholding an image sequence.
 
+    This function opens all images using the :func:`mask_from_image` function,
+    applies the scale, and returns the final 3D binary mask.
+
+    Note that the images are initially opened with a scale of 1.0
+    meaning that this function may require a lot of RAM.
+
+    Args:
+        load_pattern: A pattern describing the path of all images in the sequence.
+                      Use the *?* symbol as a placeholder for a single character.
+        scale: Scale to be applied to the image. Note that a scale greater than 1.0
+               will introduce fake precision by interpolating the data and issues a warning.
+        denoise: If set to True, the image will be denoised using a Bilateral filter.
+
+    Returns:
+        The binary mask derived from the image sequence.
+    """
     # Create an ImageCollection function which loads the images using
     # the mask_from_image() function. No scaling is applied and denoising is done if requested.
     image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=False,

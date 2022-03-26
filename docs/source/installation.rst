@@ -1,3 +1,5 @@
+.. _installation:
+
 Installation
 ============
 The software can be used as both a plugin to the Abaqus software or as a library for developing Abaqus scripts. Installation for either mode is very straightforward.

@@ -5,7 +5,7 @@ for creating a Boolean mask which is then used to manipulate the part.
 
 A :class:`~vcams.mask.shape.ShapeArray` object contains
 a number of shape objects which can be of different classes,
-but must all be subclasses of the :class:`~vcams.mask.shape.Shape` class
+but must all be subclasses of the :class:`~vcams.mask.shape.BaseShape` class
 and be of the same dimensionality (2D/3D).
 
 Here, a 2D *ShapeArray* is defined based on the *VoxelPart* object
