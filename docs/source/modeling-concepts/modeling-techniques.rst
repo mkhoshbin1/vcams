@@ -21,8 +21,23 @@ The :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method
 takes a Boolean mask and a *value* parameter and,
 sets the elements selected by the mask to the *value* parameter.
 
+It should be noted that applying a Boolean mask is not a one-time operation
+but can be done as many times as necessary.
+:numref:`mask-combine-to-mesh` shows an empty *data* array that has
+three Boolean masks applied to it in succession,
+finally resulting in the complex multi-material mesh shown previously in :numref:`voxelpart-data-to-mesh`.
+This procedure is demonstrated in :doc:`Example A-6 </examples/example-a6>`
+
+.. figure:: /images/mask-combine-to-mesh.png
+   :name: mask-combine-to-mesh
+   :align: center
+   :alt: Illustration of three Boolean masks being combined to create a complex multi-material structure.
+
+   Three Boolean masks being combined to create a complex multi-material structure.
+
 Use of Boolean masks allows for creating highly complex structure.
 Refer to the :ref:`examples` section for a large number of different use cases.
+
 
 Model Manipulation
 ------------------

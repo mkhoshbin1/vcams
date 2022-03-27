@@ -23,8 +23,8 @@ Some of these properties are as follows:
 For a complete list, refer to the documentation
 for the :class:`~vcams.voxelpart.VoxelPart` class.
 
-Underlying Data Structure
--------------------------
+The Underlying Data Structure
+-----------------------------
 The main property (variable) in the *VoxelPart* class is named *data*.
 It is a 2D or 3D numpy array which describes a square or cuboid grid of elements.
 This means that all elements are rectangular or cuboid in shape, i.e. they are pixels or voxels.

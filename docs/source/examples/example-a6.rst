@@ -3,7 +3,7 @@ Example A-6: Manipulation of the Structure Using Masks (I)
 In this example, a 2D part is created based on the *data* variable
 described in the :ref:`materials` section.
 That *data* variable is the result of applying multiple Boolean masks
-as described in the :ref:`boolean-masks` section.
+as described in the :ref:`boolean-masks` section and shown in :numref:`mask-combine-to-mesh`.
 The procedure is followed in this example.
 
 First, a 2D part with a shape of 5×5 voxels is created
