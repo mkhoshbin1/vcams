@@ -17,7 +17,7 @@ In NumPy, a Boolean mask can be used for selecting some elements
 which can then be used for manipulate the array.
 
 VCAMS offers a special function for applying a Boolean mask to a VoxelPart instance.
-The :func:`~vcams.mask.function.mask_from_function` function
+The :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method
 takes a Boolean mask and a *value* parameter and,
 sets the elements selected by the mask to the *value* parameter.
 

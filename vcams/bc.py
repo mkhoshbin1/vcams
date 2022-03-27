@@ -1,5 +1,10 @@
 """Functions used for creating boundary conditions.
-The BC and it's information is stored in the VoxelPart object and written to the output with it."""
+The BC and it's information is stored in
+the :class:`~vcams.voxelpart.VoxelPart` object and written to the output with it.
+
+See the :ref:`boundary-conditions` section for a complete explanation
+of the basic concepts.
+"""
 
 import logging
 from abc import abstractmethod, ABC

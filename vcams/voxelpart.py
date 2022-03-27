@@ -1,4 +1,8 @@
-"""The voxelpart package contains the main VoxelPart class and its methods."""
+"""The voxelpart package contains the main VoxelPart class and its methods.
+
+See the :ref:`voxel-part` section for a complete explanation
+of the basic concepts.
+"""
 import logging  # TODO: add function to close logger.
 import textwrap
 from pathlib import Path

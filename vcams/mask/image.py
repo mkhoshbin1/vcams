@@ -1,4 +1,11 @@
-"""Functions used for creating a boolean mask from one or a sequence of images."""
+"""Functions used for creating a boolean mask from one or a sequence of images.
+
+These resulting mask can then be used
+for manipulating a :class:`~vcams.voxelpart.VoxelPart` object
+using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
+See the :ref:`predefined-image` section for a complete explanation
+of the basic concepts.
+"""
 
 from logging import getLogger
 from warnings import warn
@@ -127,7 +134,7 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
 
 
 def resize_image(image: ndarray, scale: float) -> ndarray:
-    """Resize an image.
+    """Resize an image. This function is not intended for standalone use.
 
     Args:
         image: The image to be resized.

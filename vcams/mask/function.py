@@ -1,4 +1,11 @@
-"""Functions used for creating a boolean mask from a level set function."""
+"""Functions used for creating a boolean mask from a level set function.
+
+These resulting mask can then be used
+for manipulating :class:`~vcams.voxelpart.VoxelPart` object
+using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
+See the :ref:`modeling-techniques` section for a complete explanation
+of the basic concepts.
+"""
 from logging import getLogger
 from time import perf_counter
 from inspect import isclass
@@ -13,7 +20,6 @@ logger = getLogger(__name__)
 
 
 # TODO: the definition for level set is reversed. fix. see J. Liu et al. / Advances in Engineering Software 87 (2015) 13–29
-
 
 def mask_from_function(func: Union[Callable, BaseTpms], vectorized: bool = True,
                        do_log: bool = True,

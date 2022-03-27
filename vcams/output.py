@@ -1,10 +1,11 @@
-"""Functions used for outputting a *VoxelPart* for use in other programs.
-Currently, only Abaqus™ is supported.
+"""Functions used for exported a :class:`~vcams.voxelpart.VoxelPart` object
+for use in other programs. Currently, only Abaqus™ is supported.
 
 These functions are not meant to be directly used.
-The main function (:func:`write_abaqus_inp`) is called by :meth:`.voxelpart.VoxelPart.output_abaqus_inp`
-and it uses the *VoxelPart*'s attributes for determining what is outputted.
-Refer to TODO for instructions on how to properly output a model.
+The main function (:func:`~write_abaqus_inp`) is called
+by a part's :meth:`~.voxelpart.VoxelPart.output_abaqus_inp` method
+and it uses the *VoxelPart*'s attributes for determining what is exported.
+Refer to the :ref:`export` section for instructions on how to properly output a model.
 """
 
 import logging
