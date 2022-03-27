@@ -1,24 +1,10 @@
-"""Masks created from images to be used for manipulating VoxelPart objects.
+"""Functions used for creating a boolean mask from one or a sequence of images.
 
-These functions offer a very specific set of features.
-Real images are rarely perfect and some trial and error
-with different image processing algorithms and parameters
-may be necessary.
-
-The author's experience with 2D microscopy images suggests a combination of the following:
-
-  + Creating a special algorithm based on these functions.
-    You can then apply the final binary mask to an empty part of an appropriate size.
-  + Performing the image processing in a software such as Adobe Photoshop (TM), GIMP,
-    or ImageJ/FIJI. These software include a large number of filters and their GUIs
-    facilitate thresholding. The final binary image can then be input as a binary mask.
-  + Manually retouching the image to make features more distinguishable.
-    This may be unavoidable for microscopy images of very poor quality,
-    but the retouching must be limited to fixing glares and obvious noises.
-    Utmost care must be taken to preserve the image's integrity,
-    especially for edges of objects or phases.
-    Furthermore, some simulations are more sensitive to these kinds of changes.
-    If you think you shouldn't do this for your simulation, you probably shouldn't.
+These resulting mask can then be used
+for manipulating a :class:`~vcams.voxelpart.VoxelPart` object
+using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
+See the :ref:`predefined-image` section for a complete explanation
+of the basic concepts.
 """
 
 from logging import getLogger
@@ -36,7 +22,7 @@ logger = getLogger(__name__)
 
 
 def mask_from_image(image_path: str, scale: float = 1.0,
-                    denoise: bool = True, show_image: bool = True) -> ndarray:
+                    denoise: bool = True, show_image: bool = False) -> ndarray:
     """Return a boolean mask by thresholding an image.
 
     This function does the following in the given order:
@@ -84,6 +70,7 @@ def mask_from_image(image_path: str, scale: float = 1.0,
     # Show the image.
     if show_image:
         fig, axes = plt.subplots(ncols=2, figsize=(9, 4), sharey='all')
+        plt.get_current_fig_manager().set_window_title('Image Preview (Close to Continue)')
         ax = axes.ravel()
         ax[0] = plt.subplot(1, 2, 1)
         ax[1] = plt.subplot(1, 2, 2)
@@ -93,7 +80,7 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         ax[1].imshow(binary_image, cmap=ListedColormap(['black', 'white']))
         ax[1].set_title('Binary Image')
         ax[1].axis('off')
-        plt.show()
+        plt.show(block=True)
 
     # Return the binary mask.
     logger.info("Created a binary mask from the image at '%s'.", image_path)
@@ -103,14 +90,27 @@ def mask_from_image(image_path: str, scale: float = 1.0,
 # https://scikit-image.org/docs/dev/api/skimage.io.html#imread-collection
 
 def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
-    """This is an experimental function."""
-    # TODO: test all.
-    # TODO: remove from docs exceptions.
-    # TODO: add show_image.
+    """Return a boolean mask by opening and thresholding an image sequence.
 
+    This function opens all images using the :func:`mask_from_image` function,
+    applies the scale, and returns the final 3D binary mask.
+
+    Note that the images are initially opened with a scale of 1.0
+    meaning that this function may require a lot of RAM.
+
+    Args:
+        load_pattern: A pattern describing the path of all images in the sequence.
+                      Use the *?* symbol as a placeholder for a single character.
+        scale: Scale to be applied to the image. Note that a scale greater than 1.0
+               will introduce fake precision by interpolating the data and issues a warning.
+        denoise: If set to True, the image will be denoised using a Bilateral filter.
+
+    Returns:
+        The binary mask derived from the image sequence.
+    """
     # Create an ImageCollection function which loads the images using
     # the mask_from_image() function. No scaling is applied and denoising is done if requested.
-    image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=True,
+    image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=False,
                                  load_func=mask_from_image, scale=1.0, denoise=denoise,
                                  show_image=False)
 
@@ -127,14 +127,14 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
 
     full_image = moveaxis(image_coll.concatenate(), 0, -1)
     # TODO: test input with and without move axis.
-
+    # TODO: is scale passed? is it already done by now? either way, check for 1.0.
     # Apply the scale.
     full_image = resize_image(full_image, scale)
     return full_image
 
 
 def resize_image(image: ndarray, scale: float) -> ndarray:
-    """Resize an image.
+    """Resize an image. This function is not intended for standalone use.
 
     Args:
         image: The image to be resized.

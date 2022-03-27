@@ -2,18 +2,17 @@
 
 Example Problems
 =======================
-This section contains example problems outlining usage of various parts of the VCAMS library and its accompanying GUI.
+This section contains example problems demonstrating the various parts
+of the VCAMS library and its accompanying GUI.
 
-After defining each example problem, modeling and analysis is performed using both the GUI and the API and for most examples experimental data is provided to validate the results.
+It is highly recommended that users study the section of the documentation
+relevant to the example for a thorough explanation of the concepts
+and then practice using these examples.
 
 .. toctree::
-   :caption: Contents:
-   :maxdepth: 1
+   :caption: List of Examples:
+   :maxdepth: 2
 
-   example1
-   example2
-   example4
-   example5
-   example6
-   example7
-   example8
+   example-a
+   example-b
+   example-c

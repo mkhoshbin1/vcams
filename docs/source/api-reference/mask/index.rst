@@ -1,10 +1,17 @@
 The mask Module
-=================
-TODO
+===============
+This module contains various masks that can be used for
+manipulating :class:`~vcams.voxelpart.VoxelPart` objects.
+
+Typically, a mask is created using a function or a class method
+and is then applied to the part using its
+:meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
+See the :ref:`modeling-techniques` section for a complete explanation
+of the basic concepts.
 
 .. toctree::
-   :caption: Contents:
-   :maxdepth: 4
+   :caption: Submodules:
+   :maxdepth: 1
 
    function-module
    shape-module

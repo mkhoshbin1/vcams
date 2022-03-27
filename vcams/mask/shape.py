@@ -1,10 +1,13 @@
-"""Functions that define geometrical shapes which can be used to create boolean masks.
-They must be in the form of TODO.
+"""Classes defining geometrical shapes which can be used to create boolean masks.
+
+These resulting mask can then be used
+for manipulating :class:`~vcams.voxelpart.VoxelPart` object
+using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
+See the :ref:`predefined-shape` section for a complete explanation
+of the basic concepts.
 """
 from itertools import count
 from abc import ABC, abstractmethod
-
-# TODO: doc all using https://realpython.com/documenting-python-code/#class-docstrings
 from typing import Union
 
 from numpy import logical_or, ndarray
@@ -12,7 +15,7 @@ from numpy import logical_or, ndarray
 from vcams.mask.function import mask_from_function
 
 
-class Shape(ABC):
+class BaseShape(ABC):
     """Abstract base class describing a shape.
 
     All shapes must inherit from this class.
@@ -172,7 +175,7 @@ class ShapeArray:
                 % (shape.dim, self.dim))
 
 
-class Circle(Shape):
+class Circle(BaseShape):
     """Class describing a 2D Circle with the formula:
 
     .. math::
@@ -199,7 +202,7 @@ class Circle(Shape):
         return (x - self.a) ** 2 + (y - self.b) ** 2 - self.r ** 2
 
 
-class Sphere(Shape):
+class Sphere(BaseShape):
     """Class describing a 3D Sphere with the formula:
 
     .. math::

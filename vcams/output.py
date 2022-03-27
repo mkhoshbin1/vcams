@@ -1,16 +1,18 @@
-"""Functions used for outputting a *VoxelPart* for use in other programs.
-Currently, only Abaqus™ is supported.
+"""Functions used for exported a :class:`~vcams.voxelpart.VoxelPart` object
+for use in other programs. Currently, only Abaqus™ is supported.
 
 These functions are not meant to be directly used.
-The main function (:func:`write_abaqus_inp`) is called by :meth:`.voxelpart.VoxelPart.output_abaqus_inp`
-and it uses the *VoxelPart*'s attributes for determining what is outputted.
-Refer to TODO for instructions on how to properly output a model.
+The main function (:func:`~write_abaqus_inp`) is called
+by a part's :meth:`~.voxelpart.VoxelPart.output_abaqus_inp` method
+and it uses the *VoxelPart*'s attributes for determining what is exported.
+Refer to the :ref:`export` section for instructions on how to properly output a model.
 """
 
 import logging
 import os
 import shutil
 import time
+from pathlib import Path
 from typing import Union, TextIO
 
 from numpy import savetxt, unravel_index, ravel_multi_index, array, unique, uint32, float64, \
@@ -26,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                      scale: tuple, material_elem_sets: Union[tuple, str],
-                     custom_elem_sets: bool = True, keep_temp_files: bool = False):
+                     custom_elem_sets: bool = True, keep_temp_files: bool = False) -> Path:
     """Write a VoxelPart object to an Abaqus™ input file.
     This is the main function called by :meth:`.voxelpart.VoxelPart.output_abaqus_inp`.
     It should not be directly used.
@@ -40,14 +42,13 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     Args:
         part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         file_name: Name of the file. Must be valid according to the documentation
-                   for :func:`.helper.is_name_valid` and should not contain file extensions.
+                   for the :func:`.helper.is_name_valid` function and should not contain file extensions.
         elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
                    It must be a valid Abaqus element code such as *'CPE4R'* or *'C3D8R'*.
                    This parameter is not validated so care should be taken regarding validity and compatibility.
                    Currently, only 2D and 3D linear elements are supported.
                    To get around this, you can convert to quadratic elements after importing the model to Abaqus.
         dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
-             If a 3D part is set to be output as a 2D plate, only the first planar section will be output.
         scale: A tuple containing two or three floats which are used to scale
                the pixels or voxels in the x, y, and z directions.
                For example, if the tuple ``(0.02, 0.1, 1.5)`` is specified,
@@ -61,14 +62,26 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
 
         custom_elem_sets: If set to True, custom sets will be written to the output.
         keep_temp_files: If set to True, temporary files will not be deleted. Used for debugging.
-    """
+
+        Returns:
+            Path object pointing to final Abaqus™ input file.
+        """
     logger.info("Attempting to output part '%s' to an Abaqus input file.", part.name)
     # TODO: recheck everything about BCs. especially sets and args.
     # TODO: add BC type to report.
 
     begin_time = time.perf_counter()
 
-    folder_path = part.folder_path
+    folder_path = part.results_path
+
+    # Validate dim.
+    if dim.upper() not in ['2D', '3D']:
+        raise ValueError("dim can only be one of '2D' or '3D'.")
+    if dim == '2D' and len(part.size) == 3:
+        raise ValueError('Attempted to export a 3D part as a 2D part.'
+                         'This is not supported due to unnecessary complexity.'
+                         'Please create a new 2D VoxelPart object with the slice of VoxelPart.data'
+                         'That is desired and export that VoxelPart. ')
 
     # Validate file_name and add file extension.
     if not helper.is_name_valid(file_name):
@@ -98,7 +111,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     # Add the dummy nodes as node sets.
     # noinspection PyProtectedMember
     for name, node_id in part._dummy_node_dict.items():
-        part.add_node_set(name=name, ids=node_id-1)  # ids is zero-based.
+        part.add_node_set(name=name, ids=node_id - 1)  # ids is zero-based.
 
     # Write element sets.
     (elem_set_file_path, elem_id_list, elem_set_stats) = \
@@ -126,6 +139,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
         num_constraints = 0
 
     # Write the final input file.  #TODO: better logging.
+    # TODO: use Path for everything.
     main_file_path = os.path.join(folder_path, file_name)
     logger.debug("Assembling temporary files to the main input file at '%s'.", main_file_path)
     with open(main_file_path, 'w', encoding='latin1') as main_file:
@@ -197,6 +211,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                 part.name, main_file_path)
 
     write_output_summary(part, dim, elem_code, num_nodes, num_elems, elem_set_stats, num_constraints, elapsed_time)
+    return Path(main_file_path)
 
 
 def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder_path: str) -> tuple[str, int, ndarray]:
@@ -221,7 +236,6 @@ def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder
                    Currently, only 2D and 3D linear elements are supported.
                    To get around this, you can convert to quadratic elements after importing the model to Abaqus.
         dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
-             If a 3D part is set to be output as a 2D plate, only the first row will be printed.
         folder_path: Path to the folder where the temporary element definition file will be placed.
 
     Returns:
@@ -348,7 +362,6 @@ def write_node_def(part, node_id_list: ndarray, scale: tuple, dim: str, folder_p
                For example, if the tuple ``(0.02, 0.1, 1.5)`` is specified,
                each voxel will have those dimensions in the x, y, and z directions.
         dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
-             If a 3D part is set to be output as a 2D plate, only the first row will be printed.
         folder_path: Path to the folder where the temporary node definition file will be placed.
 
     Returns:
@@ -441,7 +454,8 @@ def write_set_ids(file_obj: TextIO, kind: str, name: str, ids: ndarray,
         file_obj: The file object in which the set is written. It must be opened in text mode.
         kind: The kind of set that is to be output.
               Valid values are *'ELSET'* for an element set and *'NSET'* for a node set.
-        name: Name of the set. Must be valid according to the documentation for :func:`.helper.is_name_valid`.
+        name: Name of the set. Must be valid
+              according to the documentation for the :func:`.helper.is_name_valid` function.
         ids: A 1-D Numpy ndarray containing zero-based IDs of nodes or elements which form the set.
              The function makes sure that it is unique and sorted.
              Note that Abaqus only accepts IDs that are positive and less than 999999999.
@@ -542,7 +556,7 @@ def write_elem_set_def(part, material_elem_sets: tuple, folder_path: str,
         # Write the the materials that should be output.
         # TODO: make sure all materials have at least one element.
         for mat_code in material_elem_sets:
-            (name, elem_ids) = part._return_material_elem_set(mat_code)
+            (name, elem_ids) = part._return_material_elem_set(mat_code)  # noqa: W0212
             (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
                                                 name=name, ids=elem_ids)
             elem_id_list = union1d(elem_id_list, elem_ids)
@@ -586,7 +600,7 @@ def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
     return node_set_file_path
 
 
-def write_constraints(folder_path: str, constraint_list: tuple) -> tuple[int, str]:
+def write_constraints(folder_path: str, constraint_list: list) -> tuple[int, str]:
     """Write the node set portion of an Abaqus™ input file to a temporary file.
 
     Args:

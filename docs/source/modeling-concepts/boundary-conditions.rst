@@ -56,6 +56,8 @@ are used for applying the actual BCs. These and are placed along the diagonal an
 D\ :subscript:`0` is always present and must be fixed in space to prevent rigid body motion
 and one or more D\ :subscript:`i` are used in equations that implement the desired BC.
 
+:doc:`Example B-1 </examples/example-b1>` shows a part in which the node sets are created.
+
 
 .. _boundary-conditions-lin-disp:
 
@@ -92,6 +94,8 @@ and 1, 2, and 3 are used instead of x, y, and z.
      \end{cases}
    \end{align}
 
+The procedure for applying a linear displacement BC
+is demonstrated in :doc:`Example B-2 </examples/example-b2>`.
 
 .. _boundary-conditions-pbc:
 
@@ -202,6 +206,10 @@ Therefore, we can simplify the previous equation and obtain the translation vect
 It is evident from Eq. :eq:`bc-eq-pbc-loading3` that only six independent values are necessary for applying
 the actual loading to a periodic boundary condition.
 Additionally, in order to prevent rigid body motion, the vertex :math:`V_1` must be fixed in space.
+
+The procedure for applying a linear displacement BC
+is demonstrated in :doc:`Example B-3 </examples/example-b3>`.
+It is recommended that the users reproduce that example as an exercise.
 
 
 

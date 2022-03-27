@@ -1,6 +1,12 @@
-"""Classes and functions that describe Triply Periodic Minimal Surfaces (TPMS)
-which can be used to create boolean masks."""
+"""Classes defining Triply Periodic Minimal Surfaces (TPMS)
+which can be used to create boolean masks.
 
+These resulting mask can then be used
+for manipulating :class:`~vcams.voxelpart.VoxelPart` object
+using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
+See the :ref:`predefined-tpms` section for a complete explanation
+of the basic concepts.
+"""
 from abc import ABC, abstractmethod
 from numpy import cos, pi, sin, ndarray
 

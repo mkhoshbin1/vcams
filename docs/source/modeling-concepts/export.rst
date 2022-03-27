@@ -19,8 +19,8 @@ In the scripts, after a *VoxelPart* is created and all manipulations have been d
 it can be exported using its :meth:`~.voxelpart.VoxelPart.output_abaqus_inp` method.
 contains a complete list and explanation of its parameters, but some of them are explained below.
 
-When using the GUI, exporting the model is part of the workflow.
-This is explained in section TODO of the GUI's documentation.
+When using the graphical user interface (GUI), exporting the model is part of the workflow.
+This is explained in :ref:`the relevant section <gui-output>` of the GUI's documentation.
 
 
 .. _export_abq_elem_code:

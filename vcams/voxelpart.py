@@ -1,4 +1,8 @@
-"""The voxelpart package contains the main VoxelPart class and its methods."""
+"""The voxelpart package contains the main VoxelPart class and its methods.
+
+See the :ref:`voxel-part` section for a complete explanation
+of the basic concepts.
+"""
 import logging  # TODO: add function to close logger.
 import textwrap
 from pathlib import Path
@@ -16,12 +20,14 @@ from .output import write_abaqus_inp
 
 logger = logging.getLogger(__name__)
 
+
 class VoxelPart:
     def __init__(self, size: Union[tuple[int, int, int], tuple[int, int]],
                  base_material: int = 0,
                  voxel_size: Union[tuple[float, float, float], tuple[float, float]] = (1.0, 1.0, 1.0),
                  dtype: str = 'uint8', name: str = 'unnamed', description: str = '',
-                 results_path: str = None, overwrite_logs: bool = True, log_debug: bool = False):
+                 results_path: Union[str, Path] = None,
+                 overwrite_logs: bool = True, log_debug: bool = False):
         """
         Args:
             size: The tuple *(size_x, size_y, size_z)* which determines
@@ -55,7 +61,7 @@ class VoxelPart:
                    Defaults to ``'uint8'`` which allows for 256 materials in the model.
 
             name: Name of the voxel part which is used in a variety of places, including when exporting the part.
-                  Must be valid according to the documentation :func:`.helper.is_name_valid`.
+                  Must be valid according to the documentation for the :func:`.helper.is_name_valid` function.
 
                   Defaults to ``'unnamed'``.
 
@@ -170,7 +176,7 @@ class VoxelPart:
 
     def output_abaqus_inp(self, file_name: str, elem_code: str, dim: str,
                           material_elem_sets: Union[str, tuple], custom_elem_sets: bool = True,
-                          keep_temp_files: bool = False):
+                          keep_temp_files: bool = False) -> Path:
         """Output the part to an Abaqus™ input file.
 
         Only the elements selected by the *material_elem_sets* parameter are selected,
@@ -185,14 +191,13 @@ class VoxelPart:
 
         Args:
             file_name: Name of the file. Must be valid according to the documentation
-                       for :func:`.helper.is_name_valid` and should not contain file extensions.
+                       for the :func:`.helper.is_name_valid` function and should not contain file extensions.
             elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
                        It must be a valid Abaqus element code such as *'CPE4R'* or *'C3D8R'*.
                        This parameter is not validated so care should be taken regarding validity and compatibility.
                        Currently, only 2D and 3D linear elements are supported.
                        To get around this, you can convert to quadratic elements after importing the model to Abaqus.
             dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
-                 If a 3D part is set to be output as a 2D plate, only the first planar section will be output.
             material_elem_sets: One of the following:
 
                                   + *'All'* which outputs all materials in the VoxelPart.
@@ -202,15 +207,17 @@ class VoxelPart:
 
             custom_elem_sets: If set to True, custom element sets will be written to the output.
             keep_temp_files: If set to True, temporary files will not be deleted. Used for debugging.
-        """
 
+        Returns:
+            Path object pointing to final Abaqus™ input file.
+        """
         # Logging is done by the called function.
-        write_abaqus_inp(self, file_name=file_name,
-                         elem_code=elem_code, dim=dim,
-                         scale=tuple(self.voxel_size),
-                         material_elem_sets=material_elem_sets,
-                         custom_elem_sets=custom_elem_sets,
-                         keep_temp_files=keep_temp_files)
+        return write_abaqus_inp(self, file_name=file_name,
+                                elem_code=elem_code, dim=dim,
+                                scale=tuple(self.voxel_size),
+                                material_elem_sets=material_elem_sets,
+                                custom_elem_sets=custom_elem_sets,
+                                keep_temp_files=keep_temp_files)
 
     def add_custom_elem_set(self, name: str, ids: Union[tuple, ndarray], replace: bool = True):
         """Add a custom element set to the part.
@@ -434,7 +441,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
     logger.info('Creation of the model from the configuration file completed successfully.')
     return part
 
-
 # TODO: 2D part with 3d size and voxel size.
 # TODO: Fix example 3
 # TODO: unconnected regions: https://stackoverflow.com/questions/46737409
@@ -452,3 +458,4 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add shape as a variable with a getter.
 # TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 # TODO: in docs change output to export.
+# TODO: add real size to log.
