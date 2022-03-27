@@ -136,16 +136,18 @@ def export_settings(main_obj, file_path_str):
         if config['Modeling']['modeling_mode'] == '0':  # No further action.
             QMessageBox.critical(main_obj, 'Invalid Data!',
                                  'No modeling mode is selected in the Model Manipulations section.')
-        elif config['Modeling']['modeling_mode'] == '1':  # TPMS
+        elif config['Modeling']['modeling_mode'] == '1':  # No Further Manipulation.
+            pass
+        elif config['Modeling']['modeling_mode'] == '2':  # TPMS
             config['Modeling']['tpms_type'] = str(main_obj.select_tpms_combo.currentIndex())
             config['Modeling']['tpms_length'] = return_field_value(main_obj.tpms_length_field)
             config['Modeling']['tpms_constant'] = return_field_value(main_obj.tpms_constant_field)
             config['Modeling']['tpms_fill_value'] = \
                 return_field_value(main_obj.tpms_fill_value_field)
-        elif config['Modeling']['modeling_mode'] == '2':  # Planar Composite (Circular Inclusions)
+        elif config['Modeling']['modeling_mode'] == '3':  # Planar Composite (Circular Inclusions)
             config['Modeling']['modeling_circle_table'] = \
                 main_obj.modeling_circle_table.return_csv_string(for_excel=False)
-        elif config['Modeling']['modeling_mode'] == '3':  # Spatial Composite (Spherical Inclusions)
+        elif config['Modeling']['modeling_mode'] == '4':  # Spatial Composite (Spherical Inclusions)
             config['Modeling']['modeling_sphere_table'] = \
                 main_obj.modeling_sphere_table.return_csv_string(for_excel=False)
         else:
@@ -222,15 +224,17 @@ def import_settings(main_obj, file_path_str):
         modeling_mode = str(main_obj.modeling_mode_combo.currentIndex())
         if modeling_mode == '0':  # No further action.
             raise ValueError('Field "modeling_mode" is set to 0, which is invalid.')
-        elif modeling_mode == '1':  # TPMS
+        elif modeling_mode == '1':  # No Further Manipulation.
+            pass
+        elif modeling_mode == '2':  # TPMS
             set_field_value(main_obj.select_tpms_combo, 'tpms_type', modeling,
                             combo_index_mode=True)
             set_field_value(main_obj.tpms_length_field, 'tpms_length', modeling)
             set_field_value(main_obj.tpms_constant_field, 'tpms_constant', modeling)
             set_field_value(main_obj.tpms_fill_value_field, 'tpms_fill_value', modeling)
-        elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
+        elif modeling_mode == '3':  # Planar Composite (Circular Inclusions)
             set_field_value(main_obj.modeling_circle_table, 'modeling_circle_table', modeling)
-        elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
+        elif modeling_mode == '4':  # Spatial Composite (Spherical Inclusions)
             set_field_value(main_obj.modeling_sphere_table, 'modeling_sphere_table', modeling)
         else:
             raise ValueError(

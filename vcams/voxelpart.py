@@ -399,22 +399,24 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
     logger.info('The model is being created from a configuration file loaded from %s' % file_path)
 
     modeling_mode = part_manipulation_dict['modeling_mode']
-    if modeling_mode == '0':  # No further action.
+    if modeling_mode == '0':  # This is technical invalid, but consider it to be '1'.
         pass
-    elif modeling_mode == '1':  # TPMS
+    if modeling_mode == '1':  # No Further Manipulation.
+        pass
+    elif modeling_mode == '2':  # TPMS
         boolean_mask = mask_from_function(mask_shape=part.data.shape,
                                           func=tpms_dict[part_manipulation_dict['tpms_type']],
                                           voxel_size=part.voxel_size,
                                           l=part_manipulation_dict['tpms_length'],
                                           c=part_manipulation_dict['tpms_constant'])
         part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['tpms_fill_value'])
-    elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
+    elif modeling_mode == '3':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:
             circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))
             part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape,
                                                            voxel_size=part.voxel_size),
                             value=int(row[3]))
-    elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
+    elif modeling_mode == '4':  # Spatial Composite (Spherical Inclusions)
         for row in part_manipulation_dict['sphere_list']:
             circle_obj = Sphere(id=0, a=float(row[0]), b=float(row[1]),
                                 c=float(row[2]), r=float(row[3]))

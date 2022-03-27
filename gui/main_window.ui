@@ -33,7 +33,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="welcome_page">
        <property name="geometry">
@@ -496,9 +496,10 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>4</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
+          <widget class="QWidget" name="modeling_nothing"/>
           <widget class="QWidget" name="modeling_tpms">
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>

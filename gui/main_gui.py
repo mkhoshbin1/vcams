@@ -30,16 +30,21 @@ ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'descriptio
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form will be used to model a structure after you select '
                                    'the modeling mode.'),
+                      ModelingMode('No Further Manipulation',
+                                   0, 1,
+                                   'This option does noting.\n'
+                                   'The model will completely consist of the elements '
+                                   'with the base material specified in the previous tab.'),
                       ModelingMode('Triply Periodic Minimal Surface (TPMS)',
-                                   3, 1,
+                                   3, 2,
                                    'This form is used to model a triply periodic minimal '
                                    'surface (TPMS) in the 3D space:'),
                       ModelingMode('Planar Particle Reinforced Composite (Circular Inclusions)',
-                                   2, 2,
+                                   2, 3,
                                    'This form is used to model a planar particle reinforced '
                                    'composite with circular particles:'),
                       ModelingMode('Spatial Particle Reinforced Composite (Spherical Inclusions)',
-                                   3, 3,
+                                   3, 4,
                                    'This form is used to model a spatial particle reinforced '
                                    'composite with spherical particles:'),
                       # ModelingMode('Image Processing (Single Image)',
