@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 # noinspection PyUnresolvedReferences
 from PyQt5 import uic
-from PyQt5.QtCore import Qt, QRegularExpression, QUrl, QCoreApplication
+from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
     QImage, QPixmap, QDesktopServices
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
@@ -165,10 +165,10 @@ class MainWindow(QMainWindow):
         self.bc_type_button_group.setExclusive(True)
         self.bc_type_button_group.addButton(self.no_bc_radio, 0)
         self.bc_type_button_group.addButton(self.bc_set_only_radio, 1)
-        self.bc_type_button_group.addButton(self.periodic_bc_radio, 2)
-        self.no_bc_radio.toggled.connect(self.toggle_bc_type)
-        self.bc_set_only_radio.toggled.connect(self.toggle_bc_type)
-        self.periodic_bc_radio.toggled.connect(self.toggle_bc_type)
+        self.bc_type_button_group.addButton(self.lin_disp_radio, 2)
+        self.bc_type_button_group.addButton(self.periodic_bc_radio, 3)
+        self.bc_type_button_group.buttonClicked.connect(self.toggle_bc_type)
+
         # strain
         strain_validator = QDoubleValidator(-1e+6, 1e+6, 8)
         self.strain11_field.setValidator(strain_validator)
@@ -243,7 +243,24 @@ class MainWindow(QMainWindow):
         self.output_mats_select_field.setEnabled(self.output_mats_select_radio.isChecked())
 
     def toggle_bc_type(self):
-        self.strain_group_box.setEnabled(self.periodic_bc_radio.isChecked())
+        if self.lin_disp_radio.isChecked():  # Linear Displacement Boundary Conditions.
+            self.strain_group_box.setEnabled(True)
+            self.strain11_field.setEnabled(True)
+            self.strain22_field.setEnabled(True)
+            self.strain33_field.setEnabled(True)
+            self.strain12_field.setEnabled(False)
+            self.strain13_field.setEnabled(False)
+            self.strain23_field.setEnabled(False)
+        elif self.periodic_bc_radio.isChecked():  # Periodic Boundary Conditions.
+            self.strain_group_box.setEnabled(True)
+            self.strain11_field.setEnabled(True)
+            self.strain22_field.setEnabled(True)
+            self.strain33_field.setEnabled(True)
+            self.strain12_field.setEnabled(True)
+            self.strain13_field.setEnabled(True)
+            self.strain23_field.setEnabled(True)
+        else:
+            self.strain_group_box.setEnabled(False)
 
     def tpms_type_changed(self):
         tpms_type = self.select_tpms_combo.currentData()

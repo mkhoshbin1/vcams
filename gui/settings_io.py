@@ -156,7 +156,11 @@ def export_settings(main_obj, file_path_str):
         # Tab: Boundary Conditions
         config['BC'] = {}
         config['BC']['bc_type'] = str(main_obj.bc_type_button_group.checkedId())
-        if config['BC']['bc_type'] == '2':  # Periodic Boundary Condition.
+        if config['BC']['bc_type'] == '2':  # Linear Displacement Boundary Conditions.
+            config['BC']['strain11'] = return_field_value(main_obj.strain11_field)
+            config['BC']['strain22'] = return_field_value(main_obj.strain22_field)
+            config['BC']['strain33'] = return_field_value(main_obj.strain33_field)
+        elif config['BC']['bc_type'] == '3':  # Periodic Boundary Condition.
             config['BC']['strain11'] = return_field_value(main_obj.strain11_field)
             config['BC']['strain22'] = return_field_value(main_obj.strain22_field)
             config['BC']['strain33'] = return_field_value(main_obj.strain33_field)
@@ -248,7 +252,11 @@ def import_settings(main_obj, file_path_str):
     try:
         set_field_value(main_obj.bc_type_button_group, 'bc_type', bc)
         selected_bc_type = str(main_obj.bc_type_button_group.checkedId())
-        if selected_bc_type == '2':  # Periodic Boundary Condition.
+        if selected_bc_type == '2':  # Linear Displacement Boundary Conditions.
+            set_field_value(main_obj.strain11_field, 'strain11', bc)
+            set_field_value(main_obj.strain22_field, 'strain22', bc)
+            set_field_value(main_obj.strain33_field, 'strain33', bc)
+        elif selected_bc_type == '3':  # Periodic Boundary Conditions.
             set_field_value(main_obj.strain11_field, 'strain11', bc)
             set_field_value(main_obj.strain22_field, 'strain22', bc)
             set_field_value(main_obj.strain33_field, 'strain33', bc)

@@ -33,7 +33,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="welcome_page">
        <property name="geometry">
@@ -763,6 +763,13 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
               </widget>
              </item>
              <item>
+              <widget class="QRadioButton" name="lin_disp_radio">
+               <property name="text">
+                <string>Linear Displacement Boundary Conditions</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QRadioButton" name="periodic_bc_radio">
                <property name="text">
                 <string>Periodic Boundary Conditions</string>
@@ -784,10 +791,10 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
              <property name="fieldGrowthPolicy">
               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
              </property>
-             <item row="0" column="0">
+             <item row="2" column="0">
               <widget class="QLabel" name="strain11_label">
                <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;11&lt;sub&gt;</string>
+                <string>U&lt;sub&gt;11&lt;sub&gt;</string>
                </property>
                <property name="textFormat">
                 <enum>Qt::AutoText</enum>
@@ -797,93 +804,129 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <widget class="QLineEdit" name="strain11_field">
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="strain22Label">
-               <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;22&lt;sub&gt;</string>
-               </property>
-               <property name="buddy">
-                <cstring>strain22_field</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="strain22_field">
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="strain33_label">
-               <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;33&lt;sub&gt;</string>
-               </property>
-               <property name="buddy">
-                <cstring>strain33_field</cstring>
-               </property>
-              </widget>
-             </item>
              <item row="2" column="1">
-              <widget class="QLineEdit" name="strain33_field">
+              <widget class="QLineEdit" name="strain11_field">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="text">
                 <string>0</string>
                </property>
               </widget>
              </item>
              <item row="3" column="0">
-              <widget class="QLabel" name="strain12_label">
+              <widget class="QLabel" name="strain22Label">
                <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;12&lt;sub&gt;</string>
+                <string>U&lt;sub&gt;22&lt;sub&gt;</string>
                </property>
                <property name="buddy">
-                <cstring>strain12_field</cstring>
+                <cstring>strain22_field</cstring>
                </property>
               </widget>
              </item>
              <item row="3" column="1">
-              <widget class="QLineEdit" name="strain12_field">
+              <widget class="QLineEdit" name="strain22_field">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="text">
                 <string>0</string>
                </property>
               </widget>
              </item>
              <item row="4" column="0">
-              <widget class="QLabel" name="strain13_label">
+              <widget class="QLabel" name="strain33_label">
                <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;13&lt;sub&gt;</string>
+                <string>U&lt;sub&gt;33&lt;sub&gt;</string>
                </property>
                <property name="buddy">
-                <cstring>strain13_field</cstring>
+                <cstring>strain33_field</cstring>
                </property>
               </widget>
              </item>
              <item row="4" column="1">
-              <widget class="QLineEdit" name="strain13_field">
+              <widget class="QLineEdit" name="strain33_field">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="text">
                 <string>0</string>
                </property>
               </widget>
              </item>
              <item row="5" column="0">
+              <widget class="QLabel" name="strain12_label">
+               <property name="text">
+                <string>U&lt;sub&gt;12&lt;sub&gt;</string>
+               </property>
+               <property name="buddy">
+                <cstring>strain12_field</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QLineEdit" name="strain12_field">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0">
+              <widget class="QLabel" name="strain13_label">
+               <property name="text">
+                <string>U&lt;sub&gt;13&lt;sub&gt;</string>
+               </property>
+               <property name="buddy">
+                <cstring>strain13_field</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QLineEdit" name="strain13_field">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="0">
               <widget class="QLabel" name="strain23_label">
                <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;23&lt;sub&gt;</string>
+                <string>U&lt;sub&gt;23&lt;sub&gt;</string>
                </property>
                <property name="buddy">
                 <cstring>strain23_field</cstring>
                </property>
               </widget>
              </item>
-             <item row="5" column="1">
+             <item row="7" column="1">
               <widget class="QLineEdit" name="strain23_field">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="text">
                 <string>0</string>
                </property>
@@ -892,20 +935,14 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </layout>
            </widget>
           </item>
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Note: It is vital that the &quot;Boundary Conditions&quot; section of the documentation be studied before using any BCs.</string>
+            </property>
+           </widget>
+          </item>
          </layout>
-        </item>
-        <item>
-         <widget class="QLabel" name="bc_image_label">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap>resources/bc_2d.png</pixmap>
-          </property>
-          <property name="scaledContents">
-           <bool>false</bool>
-          </property>
-         </widget>
         </item>
        </layout>
       </widget>
