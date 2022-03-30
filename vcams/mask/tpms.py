@@ -113,9 +113,9 @@ class TpmsSchwarzD(BaseTpms):
 
     tpms_id: int = 1
     name: str = 'Schwarz Diamond (D)'
-    formula: str = (r'$\Phi = sin(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z)$'
+    formula: str = (r'$\Phi = sin(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z)$' '\n'
                     r'$+ sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$' '\n'
-                    r'$+ cos(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
+                    r'$+ cos(\frac{2\pi}{l} x) sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$' '\n'
                     r'$+ cos(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y) sin(\frac{2\pi}{l} z) - c$')
 
 
@@ -151,8 +151,8 @@ class TpmsSchwarzG(BaseTpms):
 
     tpms_id: int = 2
     name: str = 'Schwarz Gyroid (G)'
-    formula: str = (r'$\Phi = sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y)$'
-                    r'$+ sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$'
+    formula: str = (r'$\Phi = sin(\frac{2\pi}{l} x) cos(\frac{2\pi}{l} y)$' '\n'
+                    r'$+ sin(\frac{2\pi}{l} y) cos(\frac{2\pi}{l} z)$' '\n'
                     r'$+ sin(\frac{2\pi}{l} z) cos(\frac{2\pi}{l} x) - c$')
 
 

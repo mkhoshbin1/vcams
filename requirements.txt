@@ -1,5 +1,5 @@
-numpy~=1.21.2
-tabulate~=0.8.9
-scikit-image~=0.19.0
-matplotlib~=3.5.0
-PyQt5~=5.15.4
+numpy
+tabulate
+scikit-image
+matplotlib
+PyQt5

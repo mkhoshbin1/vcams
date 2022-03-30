@@ -19,7 +19,7 @@ __deprecated__ = False
 gui_footer_notice = ('%s\nVCAMS is a free and open source software published under'
                      'the GNU AGPLv3 license.\n' % __copyright__)
 about_vcams = ('<h1>VCAMS v%s</h1>'
-               '<font size="+1"><p align="justify">VCAMS (Voxel-Based Computer-Aided'
+               '<font size="+1"><p align="justify">VCAMS (Voxel-Based Computer-Aided '
                'Modeling of Complex Structures) is a free and open source '
                'software for creating complex FEA models using voxels. It can be used '
                'and extended by anyone in accordance with the GNU AGPLv3 license.</p>'

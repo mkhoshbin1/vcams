@@ -6,11 +6,12 @@
 
 ..\venv\Scripts\Activate.ps1
 
-pyinstaller --onefile --clean --windowed `
+pyinstaller --onefile --clean --console `
     --add-data 'main_window.ui;.' `
     --icon=".\resources\icon.ico" `
     --splash=".\resources\splash.png" `
     --paths .. `
+    --collect-submodules numpy `
     --name VCAMS `
     main_gui.py
 #    VCAMS.spec

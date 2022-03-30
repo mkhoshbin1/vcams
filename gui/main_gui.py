@@ -11,7 +11,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
-    QImage, QPixmap, QDesktopServices
+    QImage, QPixmap, QDesktopServices, QFontMetrics
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
@@ -106,6 +106,16 @@ class MainWindow(QMainWindow):
         uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
         # Update the footer notice.
         self.footer_label.setText(gui_footer_notice)
+
+        # Adjust the size of some text fields.
+        # src: https://stackoverflow.com/a/8638114/7180705
+        metrics = QFontMetrics(self.font())
+        # self.model_size_field.setFixedWidth(metrics.boundingRect('M'*40).width())
+        # self.working_dir_field.setFixedWidth(metrics.boundingRect('M'*40).width())
+        # self.part_description_field.setFixedWidth(metrics.boundingRect('M'*50).width())
+        # self.file_name_field.setFixedWidth(metrics.boundingRect('M'*20).width())
+        # self.elem_code_field.setFixedWidth(metrics.boundingRect('M'*20).width())
+        # self.output_mats_select_field.setFixedWidth(metrics.boundingRect('M'*40).width())
 
         # Connect signals for the menu.
         self.action_import_settings.triggered.connect(self.import_config)
@@ -313,7 +323,11 @@ class MainWindow(QMainWindow):
                 msg_2 = f'{required_memory:0.2f} KB of RAM.'
             else:
                 msg_2 = f'{required_memory:0.2f} MB of RAM.'
-            self.model_size_field.setText(msg_1 + msg_2)
+            if num_elems > 999999999:
+                self.model_size_field.setText(
+                    f"Error: The model contains {num_elems:,} elements which exceeds the 999999999 element limit.")
+            else:
+                self.model_size_field.setText(msg_1 + msg_2)
 
     def determine_validity_visually(self):
         if not self.sender().hasAcceptableInput():
