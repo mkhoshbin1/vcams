@@ -131,3 +131,4 @@ dmypy.json
 
 .idea/*
 *.exe
+/gui/main_gui_resources.py

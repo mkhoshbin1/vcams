@@ -15,14 +15,15 @@ from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValid
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
-from custom_table import IntDelegate, RadiusFloatDelegate, PositionFloatDelegate
-from settings_io import export_settings, import_settings
-
 from vcams import __name__ as vcams_name
 from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
 from vcams.helper import return_default_results_path
 from vcams.mask.tpms import tpms_dict
 from vcams.voxelpart import from_config_file
+
+from custom_table import IntDelegate, RadiusFloatDelegate, PositionFloatDelegate
+from settings_io import export_settings, import_settings
+import main_gui_resources
 
 logger = logging.getLogger(vcams_name)
 

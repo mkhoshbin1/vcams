@@ -8,6 +8,8 @@
 
 ..\venv\Scripts\Activate.ps1
 
+pyrcc5 ./gui/resources/main_gui_resources.qrc -o main_gui_resources
+
 pyinstaller --onefile --clean --noupx `
     --add-data 'main_window.ui;.' `
     --add-data 'resources\main_gui_resources.qrc;.\resources\' `
@@ -17,13 +19,4 @@ pyinstaller --onefile --clean --noupx `
     --name VCAMS `
     main_gui.py
 
-#    VCAMS.spec
-# 
-#    --hidden-import scipy `
-#    --hidden-import skimage `
-#    --hidden-import uarray `
-#    --collect-submodules numpy `
-#    --collect-submodules scipy `
-#    --collect-submodules skimage `
-#    --collect-submodules uarray `
 pause
