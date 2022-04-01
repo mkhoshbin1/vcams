@@ -13,7 +13,13 @@ from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
     QImage, QPixmap, QDesktopServices, QFontMetrics
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
-    QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
+    QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory, QSplashScreen
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    app.setStyle(QStyleFactory.create('fusion'))
+    splash_object = QSplashScreen(QPixmap(r"D:\Repositories\vcams\gui\resources\splash.png"))
+    splash_object.show()
 
 from vcams import __name__ as vcams_name
 from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
@@ -484,8 +490,7 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    app.setStyle(QStyleFactory.create('fusion'))
     main = MainWindow()
     main.show()
+    splash_object.close()
     sys.exit(app.exec_())

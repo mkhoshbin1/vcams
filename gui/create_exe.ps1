@@ -7,14 +7,12 @@
 # Use --console and run the executable in cmd when debugging.
 
 ..\venv\Scripts\Activate.ps1
+pyrcc5 .\resources\main_gui_resources.qrc -o main_gui_resources.py
 
-pyrcc5 ./gui/resources/main_gui_resources.qrc -o main_gui_resources
-
-pyinstaller --onefile --clean --noupx `
+pyinstaller --onedir --clean --noupx --windowed `
     --add-data 'main_window.ui;.' `
     --add-data 'resources\main_gui_resources.qrc;.\resources\' `
     --icon=".\resources\icon.ico" `
-    --splash=".\resources\splash.png" `
     --paths .. `
     --name VCAMS `
     main_gui.py
