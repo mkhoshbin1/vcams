@@ -1,26 +1,28 @@
+# noqa: E402
+
+from gui_helper import splash_update_text, splash_close
+
+splash_update_text("Loading standard Python libraries...")
 import logging
 import sys
 from collections import namedtuple
-import logging
 from pathlib import Path
 
+splash_update_text("Loading matplotlib...")
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+splash_update_text("Loading PyQt5...")
 # noinspection PyUnresolvedReferences
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
     QImage, QPixmap, QDesktopServices, QFontMetrics
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
-    QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory, QSplashScreen
+    QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    app.setStyle(QStyleFactory.create('fusion'))
-    splash_object = QSplashScreen(QPixmap(r"D:\Repositories\vcams\gui\resources\splash.png"))
-    splash_object.show()
-
+splash_update_text("Loading the VCAMS library...")
 from vcams import __name__ as vcams_name
 from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
 from vcams.helper import return_default_results_path
@@ -490,7 +492,10 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    app.setStyle(QStyleFactory.create('fusion'))
     main = MainWindow()
+    splash_update_text('Program initialized.')
+    splash_close()
     main.show()
-    splash_object.close()
     sys.exit(app.exec_())
