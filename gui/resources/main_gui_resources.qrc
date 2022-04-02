@@ -1,5 +1,6 @@
 <RCC>
   <qresource>
+    <file>icon.ico</file>
     <file>transparent_logo.png</file>
   </qresource>
 </RCC>

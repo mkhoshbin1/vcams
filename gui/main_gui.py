@@ -18,12 +18,12 @@ splash_update_text("Loading PyQt5...")
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
-    QImage, QPixmap, QDesktopServices, QFontMetrics
+    QImage, QPixmap, QDesktopServices, QFontMetrics, QIcon
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
 splash_update_text("Loading the VCAMS library...")
-from vcams import __name__ as vcams_name
+from vcams import __name__ as vcams_name, __version__ as vcams_version
 from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
 from vcams.helper import return_default_results_path
 from vcams.mask.tpms import tpms_dict
@@ -113,6 +113,12 @@ class MainWindow(QMainWindow):
 
         # Load the UI Page.
         uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
+        # Set the window title.
+        self.setWindowTitle('VCAMS GUI v%s' % vcams_version)
+        # Set the window icon.
+        self.setWindowIcon(QIcon(':/icon.ico'))
+        # Make the window size fixed.
+        self.setFixedSize(self.size())
         # Update the footer notice.
         self.footer_label.setText(gui_footer_notice)
 
@@ -495,7 +501,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle(QStyleFactory.create('fusion'))
     main = MainWindow()
-    splash_update_text('Program initialized.')
+    splash_update_text('Program initialized successfully.')
     splash_close()
     main.show()
     sys.exit(app.exec_())
