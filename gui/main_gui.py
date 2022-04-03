@@ -119,6 +119,14 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(':/icon.ico'))
         # Make the window size fixed.
         self.setFixedSize(self.size())
+
+        # Set and configure the logo on the welcome page.
+        logo_size = int(1.1 * self.welcome_page.frameGeometry().width())
+        logo_pixmap = QPixmap(':/transparent_logo.png').scaledToWidth(logo_size, mode=Qt.SmoothTransformation)
+        self.logo_label.setPixmap(logo_pixmap)
+        self.logo_label.setAlignment(Qt.AlignCenter)
+        self.logo_label.setTextInteractionFlags(Qt.NoTextInteraction)
+
         # Update the footer notice.
         self.footer_label.setText(gui_footer_notice)
 

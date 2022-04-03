@@ -49,50 +49,14 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_6">
         <item>
-         <widget class="QLabel" name="logo_label">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>750</width>
-            <height>300</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>1500</width>
-            <height>600</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="resources/main_gui_resources.qrc">:/transparent_logo.png</pixmap>
-          </property>
-          <property name="scaledContents">
-           <bool>true</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignHCenter|Qt::AlignTop</set>
-          </property>
-          <property name="textInteractionFlags">
-           <set>Qt::NoTextInteraction</set>
-          </property>
-         </widget>
+         <widget class="QLabel" name="logo_label"/>
         </item>
         <item>
          <widget class="QLabel" name="welcome_label">
           <property name="text">
            <string>&lt;h2&gt;Welcome to VCAMS!&lt;/h2&gt;
-&lt;font size=&quot;+1&quot;&gt;&lt;p align=&quot;justify&quot;&gt;Using this GUI you can create very complex models and export them to the Abaqus™ FEA software.&lt;/p&gt;
+&lt;font size=&quot;+1&quot;&gt;&lt;p align=&quot;justify&quot;&gt;Using this GUI you can create complex models
+for the Abaqus™ FEA software.&lt;/p&gt;
 &lt;p align=&quot;justify&quot;&gt;If you need access to the library's full functionality, you can install and use its API.&lt;br&gt;
 Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&gt;</string>
           </property>
