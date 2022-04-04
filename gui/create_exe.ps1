@@ -9,6 +9,8 @@
 ..\venv\Scripts\Activate.ps1
 pyrcc5 .\resources\main_gui_resources.qrc -o main_gui_resources.py
 
+$exe_name = python create_versionfile.py
+
 # pyinstaller --onedir --clean --noupx --windowed `
 #     --add-data 'main_window.ui;.' `
 #     --add-data 'resources\main_gui_resources.qrc;.\resources\' `
@@ -23,16 +25,18 @@ pyi-makespec --onefile --noupx --windowed `
     --add-data 'main_window.ui;.' `
     --add-data 'resources\main_gui_resources.qrc;.\resources\' `
     --hidden-import=pyi_splash `
-    --icon=".\resources\icon.ico" `
-    --splash=".\resources\splash.png" `
+    --icon='.\resources\icon.ico' `
+    --splash='.\resources\splash.png' `
+    --version='versionfile.txt' `
     --paths .. `
-    --name VCAMS `
+    --name "$exe_name" `
     main_gui.py
 
-(Get-Content VCAMS.spec) -Replace 'text_pos=None', 'text_pos=(25, 440)' |
-Set-Content VCAMS.spec
+(Get-Content "$exe_name.spec") -Replace 'text_pos=None', 'text_pos=(25, 440)' |
+Set-Content "$exe_name.spec"
 
-pyinstaller --clean VCAMS.spec
+pyinstaller --clean --noconfirm "$exe_name.spec"
+
 
 
 pause

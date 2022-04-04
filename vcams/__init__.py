@@ -2,7 +2,7 @@ __author__ = 'Mohammadreza Khoshbin'
 __copyright__ = 'Copyright © 2013-2021, Mohammadreza Khoshbin'
 __credits__ = ['Mohammadreza Khoshbin']
 __license__ = 'AGPLv3'
-__version__ = "3.0.8"
+__version__ = '3.0.8'
 __maintainer__ = 'Mohammadreza Khoshbin'
 __email__ = 'm.khoshbin@live.com'
 __status__ = 'Production'
@@ -28,6 +28,8 @@ about_vcams = ('<h1>VCAMS v%s</h1>'
                'software\'s code and documentation (including examples) '
                'in the Help menu.</p></font>'
                '<p align="center">%s</p>' % (__version__, __copyright__))
+gui_name = 'VCAMS GUI'
+gui_file_name = gui_name + ' v' + __version__
 
 # Import the modules. Although general guidelines are against polluting the namespace,
 # it's done to improve usability for less experienced users.

@@ -5,3 +5,4 @@ imagecodecs
 matplotlib
 PyQt5
 pyinstaller
+pyinstaller_versionfile
