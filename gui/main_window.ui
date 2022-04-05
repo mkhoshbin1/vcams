@@ -1110,7 +1110,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="action_import_settings"/>
     <addaction name="action_export_settings"/>
@@ -1119,13 +1119,13 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
    </widget>
    <widget class="QMenu" name="menuRun">
     <property name="title">
-     <string>Run</string>
+     <string>&amp;Run</string>
     </property>
     <addaction name="action_create_model"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="action_docs"/>
     <addaction name="action_code"/>
@@ -1138,22 +1138,22 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </widget>
   <action name="action_import_settings">
    <property name="text">
-    <string>Import Model Settings</string>
+    <string>&amp;Import Model Settings</string>
    </property>
   </action>
   <action name="action_export_settings">
    <property name="text">
-    <string>Export Model Settings</string>
+    <string>&amp;Export Model Settings</string>
    </property>
   </action>
   <action name="action_exit">
    <property name="text">
-    <string>Exit</string>
+    <string>E&amp;xit</string>
    </property>
   </action>
   <action name="action_docs">
    <property name="text">
-    <string>Documentation</string>
+    <string>&amp;Documentation</string>
    </property>
    <property name="toolTip">
     <string>View VCAMS software's online documentation.</string>
@@ -1161,7 +1161,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </action>
   <action name="action_code">
    <property name="text">
-    <string>Source Code</string>
+    <string>&amp;Source Code</string>
    </property>
    <property name="toolTip">
     <string>Open VCAMS software's GitHub repository.</string>
@@ -1169,7 +1169,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </action>
   <action name="action_about">
    <property name="text">
-    <string>About VCAMS</string>
+    <string>&amp;About VCAMS</string>
    </property>
    <property name="toolTip">
     <string>About VCAMS</string>
@@ -1177,7 +1177,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </action>
   <action name="action_create_model">
    <property name="text">
-    <string>Create Model</string>
+    <string>&amp;Create Model</string>
    </property>
    <property name="toolTip">
     <string>Create a model based on the current settings.</string>
