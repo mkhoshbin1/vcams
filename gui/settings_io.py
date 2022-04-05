@@ -157,17 +157,6 @@ def export_settings(main_obj, file_path_str):
         # Tab: Boundary Conditions
         config['BC'] = {}
         config['BC']['bc_type'] = str(main_obj.bc_type_button_group.checkedId())
-        if config['BC']['bc_type'] == '2':  # Linear Displacement Boundary Conditions.
-            config['BC']['strain11'] = return_field_value(main_obj.strain11_field)
-            config['BC']['strain22'] = return_field_value(main_obj.strain22_field)
-            config['BC']['strain33'] = return_field_value(main_obj.strain33_field)
-        elif config['BC']['bc_type'] == '3':  # Periodic Boundary Condition.
-            config['BC']['strain11'] = return_field_value(main_obj.strain11_field)
-            config['BC']['strain22'] = return_field_value(main_obj.strain22_field)
-            config['BC']['strain33'] = return_field_value(main_obj.strain33_field)
-            config['BC']['strain12'] = return_field_value(main_obj.strain12_field)
-            config['BC']['strain13'] = return_field_value(main_obj.strain13_field)
-            config['BC']['strain23'] = return_field_value(main_obj.strain23_field)
 
         # Tab: Output.
         config['Output'] = {}
@@ -253,18 +242,6 @@ def import_settings(main_obj, file_path_str):
     bc = config['BC']
     try:
         set_field_value(main_obj.bc_type_button_group, 'bc_type', bc)
-        selected_bc_type = str(main_obj.bc_type_button_group.checkedId())
-        if selected_bc_type == '2':  # Linear Displacement Boundary Conditions.
-            set_field_value(main_obj.strain11_field, 'strain11', bc)
-            set_field_value(main_obj.strain22_field, 'strain22', bc)
-            set_field_value(main_obj.strain33_field, 'strain33', bc)
-        elif selected_bc_type == '3':  # Periodic Boundary Conditions.
-            set_field_value(main_obj.strain11_field, 'strain11', bc)
-            set_field_value(main_obj.strain22_field, 'strain22', bc)
-            set_field_value(main_obj.strain33_field, 'strain33', bc)
-            set_field_value(main_obj.strain12_field, 'strain12', bc)
-            set_field_value(main_obj.strain13_field, 'strain13', bc)
-            set_field_value(main_obj.strain23_field, 'strain23', bc)
     except ValueError as err:
         main_obj.main_toolbox.setCurrentWidget(main_obj.bc_page)
         QMessageBox.critical(main_obj, 'Import Failed!', str(err))

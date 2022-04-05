@@ -150,9 +150,9 @@ class VoxelPart:
                             datefmt='%Y-%m-%d %H:%M:%S')
 
         # Log creation of the object.
-        logger.info('\n**Created using VCAMS v%s.'
-                    '\n**VCAMS is a free and open source program available at: %s'
-                    '\n**Author: Mohammadreza Khoshbin (www.mkhoshbin.com)\n',
+        logger.info('\n** Created using VCAMS v%s.'
+                    '\n** VCAMS is a free and open source program available at: %s'
+                    '\n** Author: Mohammadreza Khoshbin (www.mkhoshbin.com)\n',
                     __version__, __website__)
         logger.info("A VoxelPart object named '%s' was created" +
                     " with %s elements and an initial element value of %u.",

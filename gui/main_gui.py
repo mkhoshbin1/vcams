@@ -18,7 +18,7 @@ splash_update_text("Loading PyQt5...")
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
-    QImage, QPixmap, QDesktopServices, QFontMetrics, QIcon
+    QImage, QPixmap, QDesktopServices, QFontMetrics, QIcon, QFont
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
@@ -276,6 +276,7 @@ class MainWindow(QMainWindow):
         self.run_export_button.clicked.connect(self.export_config)
         self.run_create_model_button.clicked.connect(self.create_model)
         self.run_open_dir_button.clicked.connect(self.open_working_dir)
+        self.log_field.setFont(QFont('Courier', 10, QFont.Monospace))
 
         # Set the Welcome tab to be shown.
         self.main_toolbox.setCurrentIndex(0)
@@ -518,10 +519,9 @@ class MainWindow(QMainWindow):
         export_settings(main_obj=self, file_path_str=default_path)
         try:
             self.main_toolbox.setCurrentWidget(self.run_page)
-            gui_logging_handler = QTextEditLogger(self.log_field)
+            gui_logging_handler = QTextEditLogger(self.log_field)  # TODO: is this ever closed?
             gui_logging_handler.setFormatter(
-                logging.Formatter(
-                    fmt='%(asctime)s - %(levelname) 5s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+                logging.Formatter(fmt='%(asctime)s - %(levelname) 5s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
             logger.addHandler(gui_logging_handler)
             from_config_file(file_path=default_path)  # TODO: show a QProgressDialog.
         except Exception as err:
