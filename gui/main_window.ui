@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author>Mohammadreza Khoshbin</author>
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
@@ -33,15 +34,15 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="welcome_page">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>772</width>
-         <height>440</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -265,13 +266,19 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             <item>
              <widget class="QLineEdit" name="part_size_x_field">
               <property name="enabled">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
               </property>
               <property name="text">
                <string>N/A</string>
@@ -290,13 +297,19 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             <item>
              <widget class="QLineEdit" name="part_size_y_field">
               <property name="enabled">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
               </property>
               <property name="text">
                <string>N/A</string>
@@ -315,13 +328,19 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             <item>
              <widget class="QLineEdit" name="part_size_z_field">
               <property name="enabled">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
               </property>
               <property name="text">
                <string>N/A</string>
@@ -388,6 +407,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <widget class="QLineEdit" name="model_size_field">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
             </property>
             <property name="text">
              <string>Waiting for parameters...</string>
@@ -526,7 +548,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>4</number>
+           <number>5</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
           <widget class="QWidget" name="modeling_nothing"/>
@@ -548,6 +570,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
                 </property>
                </widget>
               </item>
@@ -573,6 +598,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
                </widget>
               </item>
               <item row="3" column="0">
@@ -589,6 +617,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
                 </property>
                </widget>
               </item>
@@ -614,6 +645,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
                </widget>
               </item>
              </layout>
@@ -624,6 +658,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <layout class="QVBoxLayout" name="verticalLayout_4">
             <item>
              <widget class="CustomTableWidget" name="modeling_circle_table">
+              <property name="focusPolicy">
+               <enum>Qt::ClickFocus</enum>
+              </property>
               <property name="contextMenuPolicy">
                <enum>Qt::ActionsContextMenu</enum>
               </property>
@@ -686,6 +723,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <layout class="QVBoxLayout" name="verticalLayout_7">
             <item>
              <widget class="CustomTableWidget" name="modeling_sphere_table">
+              <property name="focusPolicy">
+               <enum>Qt::ClickFocus</enum>
+              </property>
               <property name="contextMenuPolicy">
                <enum>Qt::ActionsContextMenu</enum>
               </property>
@@ -1155,6 +1195,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         </item>
         <item>
          <widget class="QPlainTextEdit" name="log_field">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="documentTitle">
            <string/>
           </property>

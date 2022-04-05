@@ -37,6 +37,6 @@ Set-Content "$exe_name.spec"
 
 pyinstaller --clean --noconfirm "$exe_name.spec"
 
-
+Remove-Item 'main_gui_resources.py', 'versionfile.txt', "$exe_name.spec"
 
 pause

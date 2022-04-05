@@ -152,6 +152,9 @@ class MainWindow(QMainWindow):
         # Code and signals for tab: Basic Modeling Information.
         # part_name
         self.part_name = 'unnamed'
+        self.part_name_field.setFixedWidth(self.num_voxels_y_field.pos().x()
+                                           + self.num_voxels_y_field.frameGeometry().width()
+                                           - self.num_voxels_x_field.pos().x())
         self.part_name_field.setText(self.part_name)
         part_name_regex = r"^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`\",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$"
         self.part_name_field.setValidator(QRegularExpressionValidator(
@@ -160,7 +163,7 @@ class MainWindow(QMainWindow):
         self.part_name_field.textChanged.connect(self.determine_validity_visually)
         self.part_name_field.textChanged.connect(self.part_name_changed)
         # dim_combo
-        self.dim_combo.currentTextChanged.connect(self.modeling_mode_changed)
+        self.dim_combo.currentTextChanged.connect(self.dim_changed)
         # num_voxels
         num_voxels_validator = QIntValidator(1, 999999999, self)
         self.num_voxels_x_field.setValidator(num_voxels_validator)
@@ -249,6 +252,8 @@ class MainWindow(QMainWindow):
         self.modeling_sphere_table.setItemDelegateForColumn(3, RadiusFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(4, IntDelegate(self))
 
+        self.dim_changed()
+
         # Modeling: Single Image
         # TODO
 
@@ -300,6 +305,19 @@ class MainWindow(QMainWindow):
         self.tpms_formula_real_label.setPixmap(
             mathtex_to_qpixmap(tpms_type.formula, self.formula_font_size))
 
+    def dim_changed(self):
+        self.modeling_mode_changed()
+        self.calculate_part_size()
+        if self.dim_combo.currentText() == '2D':
+            self.num_voxels_z_field.setEnabled(False)
+            self.voxel_size_z_field.setEnabled(False)
+        elif self.dim_combo.currentText() == '3D':
+            self.num_voxels_z_field.setEnabled(True)
+            self.voxel_size_z_field.setEnabled(True)
+        else:
+            raise RuntimeError('Invalid value in for self.dim_combo.currentText(). '
+                               'This is a GUI error. Please contact the author.')
+
     def modeling_mode_changed(self):
         modeling_mode = self.modeling_mode_combo.currentData()
         self.modeling_stacked_widget.setCurrentIndex(modeling_mode.page_id)
@@ -319,38 +337,53 @@ class MainWindow(QMainWindow):
     def calculate_part_size(self):
         # For part_size fields.
         num_mats_combo_size_list = [1, 2, 4, 8]  # In bytes.
-        if (self.num_voxels_x_field.hasAcceptableInput() and
-                self.voxel_size_x_field.hasAcceptableInput()):
+        if self.num_voxels_x_field.hasAcceptableInput() and self.voxel_size_x_field.hasAcceptableInput():
             self.part_size_x_field.setText(str(int(self.num_voxels_x_field.text())
                                                * float(self.voxel_size_x_field.text())))
-        if (self.num_voxels_y_field.hasAcceptableInput() and
-                self.voxel_size_y_field.hasAcceptableInput()):
+        else:
+            self.part_size_x_field.setText('N/A')
+        if self.num_voxels_y_field.hasAcceptableInput() and self.voxel_size_y_field.hasAcceptableInput():
             self.part_size_y_field.setText(str(int(self.num_voxels_y_field.text())
                                                * float(self.voxel_size_y_field.text())))
-        if (self.num_voxels_z_field.hasAcceptableInput() and
-                self.voxel_size_z_field.hasAcceptableInput()):
+        else:
+            self.part_size_y_field.setText('N/A')
+        if self.num_voxels_z_field.hasAcceptableInput() and self.voxel_size_z_field.hasAcceptableInput():
             self.part_size_z_field.setText(str(int(self.num_voxels_z_field.text())
                                                * float(self.voxel_size_z_field.text())))
+        else:
+            self.part_size_z_field.setText('N/A')
         # For model_size_field.
-        if (self.num_voxels_x_field.hasAcceptableInput() and
-                self.num_voxels_y_field.hasAcceptableInput() and
-                self.num_voxels_z_field.hasAcceptableInput()):
-            num_elems = (int(self.num_voxels_x_field.text()) * int(self.num_voxels_y_field.text())
-                         * int(self.num_voxels_z_field.text()))
-            required_memory = (num_elems *
-                               num_mats_combo_size_list[self.num_mats_combo.currentIndex()]
-                               / 2 ** 20)  # In Megabytes.
-            msg_1 = f'The model contains {num_elems:,} elements and consumes '
-            if required_memory < 1:
-                required_memory = required_memory * 2 ** 10
-                msg_2 = f'{required_memory:0.2f} KB of RAM.'
+        if self.dim_combo.currentText() == '2D':
+            if self.num_voxels_x_field.hasAcceptableInput() and self.num_voxels_y_field.hasAcceptableInput():
+                num_elems = (int(self.num_voxels_x_field.text()) * int(self.num_voxels_y_field.text()))
             else:
-                msg_2 = f'{required_memory:0.2f} MB of RAM.'
-            if num_elems > 999999999:
-                self.model_size_field.setText(
-                    f"Error: The model contains {num_elems:,} elements which exceeds the 999999999 element limit.")
+                self.model_size_field.setText('Waiting for parameters...')
+                return
+        elif self.dim_combo.currentText() == '3D':
+            if (self.num_voxels_x_field.hasAcceptableInput() and self.num_voxels_y_field.hasAcceptableInput()
+                    and self.num_voxels_z_field.hasAcceptableInput()):
+                num_elems = (int(self.num_voxels_x_field.text()) * int(self.num_voxels_y_field.text())
+                             * int(self.num_voxels_z_field.text()))
             else:
-                self.model_size_field.setText(msg_1 + msg_2)
+                self.model_size_field.setText('Waiting for parameters...')
+                return
+        else:
+            raise RuntimeError('Invalid value in for self.dim_combo.currentText(). '
+                               'This is a GUI error. Please contact the author.')
+        required_memory = (num_elems *
+                           num_mats_combo_size_list[self.num_mats_combo.currentIndex()]
+                           / 2 ** 20)  # In Megabytes.
+        msg_1 = f'The model contains {num_elems:,} elements and consumes '
+        if required_memory < 1:
+            required_memory = required_memory * 2 ** 10
+            msg_2 = f'{required_memory:0.2f} KB of RAM.'
+        else:
+            msg_2 = f'{required_memory:0.2f} MB of RAM.'
+        if num_elems > 999999999:
+            self.model_size_field.setText(
+                f"Error: The model contains {num_elems:,} elements which exceeds the 999999999 element limit.")
+        else:
+            self.model_size_field.setText(msg_1 + msg_2)
 
     def determine_validity_visually(self):
         if not self.sender().hasAcceptableInput():
