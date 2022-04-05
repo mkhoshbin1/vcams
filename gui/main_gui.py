@@ -466,13 +466,17 @@ class MainWindow(QMainWindow):
         default_path = str(Path(self.working_dir))
         (file_name, _) = QFileDialog.getOpenFileName(self, 'Import Model Settings', default_path,
                                                      'VCAMS configuration file (*.vcams)')
-        import_settings(main_obj=self, file_path_str=file_name)
+        # If the dialog box is closed, file_name will be an empty string.
+        if file_name:
+            import_settings(main_obj=self, file_path_str=file_name)
 
     def export_config(self):
         default_path = str(Path(self.working_dir) / self.part_name)
         (file_name, _) = QFileDialog.getSaveFileName(self, 'Export Model Settings', default_path,
                                                      'VCAMS configuration file (*.vcams)')
-        export_settings(main_obj=self, file_path_str=file_name)
+        # If the dialog box is closed, file_name will be an empty string.
+        if file_name:
+            export_settings(main_obj=self, file_path_str=file_name)
 
     def open_about(self):
         QMessageBox.information(self, 'About VCAMS', about_vcams)  # TODO: add icon

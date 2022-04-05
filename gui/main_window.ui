@@ -34,7 +34,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>5</number>
       </property>
       <widget class="QWidget" name="welcome_page">
        <property name="geometry">
@@ -986,7 +986,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <item>
          <widget class="QLabel" name="run_label">
           <property name="text">
-           <string>TextLabel</string>
+           <string>Press one of the following buttons to proceed:</string>
           </property>
          </widget>
         </item>
