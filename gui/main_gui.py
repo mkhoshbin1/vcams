@@ -203,22 +203,6 @@ class MainWindow(QMainWindow):
         self.bc_type_button_group.addButton(self.bc_set_only_radio, 1)
         self.bc_type_button_group.addButton(self.lin_disp_radio, 2)
         self.bc_type_button_group.addButton(self.periodic_bc_radio, 3)
-        self.bc_type_button_group.buttonClicked.connect(self.toggle_bc_type)
-
-        # strain
-        strain_validator = QDoubleValidator(-1e+6, 1e+6, 8)
-        self.strain11_field.setValidator(strain_validator)
-        self.strain22_field.setValidator(strain_validator)
-        self.strain33_field.setValidator(strain_validator)
-        self.strain12_field.setValidator(strain_validator)
-        self.strain13_field.setValidator(strain_validator)
-        self.strain23_field.setValidator(strain_validator)
-        self.strain11_field.textChanged.connect(self.determine_validity_visually)
-        self.strain22_field.textChanged.connect(self.determine_validity_visually)
-        self.strain33_field.textChanged.connect(self.determine_validity_visually)
-        self.strain12_field.textChanged.connect(self.determine_validity_visually)
-        self.strain13_field.textChanged.connect(self.determine_validity_visually)
-        self.strain23_field.textChanged.connect(self.determine_validity_visually)
 
         # Code and signals for tab: Modeling.
         # Modeling: TPMS
@@ -283,26 +267,6 @@ class MainWindow(QMainWindow):
 
     def toggle_output_mats_type(self):
         self.output_mats_select_field.setEnabled(self.output_mats_select_radio.isChecked())
-
-    def toggle_bc_type(self):
-        if self.lin_disp_radio.isChecked():  # Linear Displacement Boundary Conditions.
-            self.strain_group_box.setEnabled(True)
-            self.strain11_field.setEnabled(True)
-            self.strain22_field.setEnabled(True)
-            self.strain33_field.setEnabled(True)
-            self.strain12_field.setEnabled(False)
-            self.strain13_field.setEnabled(False)
-            self.strain23_field.setEnabled(False)
-        elif self.periodic_bc_radio.isChecked():  # Periodic Boundary Conditions.
-            self.strain_group_box.setEnabled(True)
-            self.strain11_field.setEnabled(True)
-            self.strain22_field.setEnabled(True)
-            self.strain33_field.setEnabled(True)
-            self.strain12_field.setEnabled(True)
-            self.strain13_field.setEnabled(True)
-            self.strain23_field.setEnabled(True)
-        else:
-            self.strain_group_box.setEnabled(False)
 
     def tpms_type_changed(self):
         tpms_type = self.select_tpms_combo.currentData()
