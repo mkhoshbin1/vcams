@@ -277,6 +277,9 @@ class MainWindow(QMainWindow):
         self.run_create_model_button.clicked.connect(self.create_model)
         self.run_open_dir_button.clicked.connect(self.open_working_dir)
 
+        # Set the Welcome tab to be shown.
+        self.main_toolbox.setCurrentIndex(0)
+
     def toggle_output_mats_type(self):
         self.output_mats_select_field.setEnabled(self.output_mats_select_radio.isChecked())
 

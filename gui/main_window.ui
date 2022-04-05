@@ -34,7 +34,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="welcome_page">
        <property name="geometry">
@@ -506,8 +506,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>374</width>
+         <height>257</height>
         </rect>
        </property>
        <attribute name="label">
@@ -799,8 +799,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>645</width>
+         <height>416</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1021,8 +1021,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>415</width>
+         <height>175</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1128,8 +1128,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>388</width>
+         <height>192</height>
         </rect>
        </property>
        <attribute name="label">
