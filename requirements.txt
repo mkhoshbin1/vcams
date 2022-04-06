@@ -6,3 +6,6 @@ matplotlib
 PyQt5
 pyinstaller
 pyinstaller_versionfile
+Sphinx
+sphinx-autodoc-typehints
+sphinx-rtd-theme
