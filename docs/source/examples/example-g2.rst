@@ -1,9 +1,9 @@
 Example G-2: Simple Filled 2D Part
 ==================================
-In this example, the graphical user interface (GUI) is used to create a filled 2D part.
+In this example, the graphical user interface (GUI) is used to create a filled 3D part.
 This example mirrors :doc:`Example A-2 <example-a2>`.
 
-The structure is 3D with a shape of 50×75×100 voxels and
+The structure is three dimensional with a shape of 50×75×100 voxels and
 has a base material of 1 and a voxel size of 0.02 units in all directions.
 The parameter *log_debug* is set to *True* for demonstration purposes.
 
