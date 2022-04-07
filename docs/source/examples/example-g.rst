@@ -12,3 +12,6 @@ so as to make comparison between the library and the GUI easier.
    example-g2
    example-g3
    example-g4
+   example-g5
+   example-g6
+   example-g7

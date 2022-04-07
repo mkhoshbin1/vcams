@@ -29,7 +29,7 @@ from vcams.helper import return_default_results_path
 from vcams.mask.tpms import tpms_dict
 from vcams.voxelpart import from_config_file
 
-from custom_table import IntDelegate, RadiusFloatDelegate, PositionFloatDelegate
+from custom_table import MatCodeDelegate, RadiusFloatDelegate, PositionFloatDelegate
 from settings_io import export_settings, import_settings
 import main_gui_resources
 
@@ -48,7 +48,7 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    3, 2,
                                    'This form is used to model a triply periodic minimal '
                                    'surface (TPMS) in the 3D space:'),
-                      ModelingMode('Planar Particle Reinforced Composite (Circular Inclusions)',
+                      ModelingMode('Planar Composite (Circular Inclusions)',
                                    2, 3,
                                    'This form is used to model a planar particle reinforced '
                                    'composite with circular particles:'),
@@ -227,14 +227,14 @@ class MainWindow(QMainWindow):
         self.modeling_circle_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(2, RadiusFloatDelegate(self))
-        self.modeling_circle_table.setItemDelegateForColumn(3, IntDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(3, MatCodeDelegate(self))
 
         # Modeling: Spatial Composite (Spherical Inclusions)
         self.modeling_sphere_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(2, PositionFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(3, RadiusFloatDelegate(self))
-        self.modeling_sphere_table.setItemDelegateForColumn(4, IntDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(4, MatCodeDelegate(self))
 
         self.dim_changed()
 

@@ -165,8 +165,8 @@ class CustomTableWidget(QTableWidget):
             return
 
 
-class IntDelegate(QStyledItemDelegate):
-    validator_obj = QIntValidator(1, 999999999)
+class MatCodeDelegate(QStyledItemDelegate):
+    validator_obj = QIntValidator(0, 999999999)
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
