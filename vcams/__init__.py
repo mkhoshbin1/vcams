@@ -16,9 +16,9 @@ __contact__ = __email__
 __deprecated__ = False
 
 # The following are used in the GUI:
-# gui_footer_notice = ('%s\nVCAMS is a free and open source software published under'
+# gui_footer_notice = ('%s\nVCAMS is a free and open source software published under '
 #                      'the GNU AGPLv3 license.\n' % __copyright__)
-gui_footer_notice = ('VCAMS is a free and open source software published under'
+gui_footer_notice = ('VCAMS is a free and open source software published under '
                      'the GNU AGPLv3 license.\n')
 about_vcams = ('<h1>VCAMS v%s</h1>'
                '<font size="+1"><p align="justify">VCAMS (Voxel-Based Computer-Aided '
