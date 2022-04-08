@@ -23,9 +23,7 @@ No Boundary Conditions
 ----------------------
 For this option, The user doesn't need to do anything.
 The default state of a VoxelPart instance contains an empty BC definition.
-
-In the GUI, the TODO option must be selected as shown in FigXXX TODO.
-This option is selected by default.
+and in the GUI this option is selected by default.
 
 
 .. _boundary-conditions-nodeset_only:
@@ -102,7 +100,7 @@ is demonstrated in :doc:`Example B-2 </examples/example-b2>`.
 Periodic Boundary Conditions
 ----------------------------
 In this BC, opposing edges and faces have identical displacements.
-Implementation of a PBC requires three dummy nodes (TODO) and three equations for each node on the boundary.
+Implementation of a PBC requires three dummy nodes and three equations for each node on the boundary.
 Assume the the size of the cubic model in the three directions
 to be :math:`L_1`, :math:`L_2`, and :math:`L_3`, respectively.
 Based on `this paper <https://doi.org/10.1016/j.cma.2020.113572>`__ [1]_,

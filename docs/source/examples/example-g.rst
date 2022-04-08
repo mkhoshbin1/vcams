@@ -1,8 +1,14 @@
 G: The Graphical User Interface
 ===============================
 These examples demonstrating the use of the graphical user interface (GUI).
-They have been written in such a way to mirror the parameters of some of the other examples
-so as to make comparison between the library and the GUI easier.
+Each example includes images of the parameters and the *.vcams* file
+which can be used for re-creating the GUI's state.
+
+The examples have been written in such a way to mirror the parameters of
+some of the other examples so as to make comparison between the library and the GUI easier.
+
+Users are advised to first read the :ref:`gui` section and then
+do these examples as practice.
 
 .. toctree::
    :caption: List of Examples:
