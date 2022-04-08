@@ -48,9 +48,9 @@ It does not contain any model-related parameters or information.
 .. figure:: /images/gui_1.png
    :name: gui_1
    :align: center
-   :alt: The Welcome Page of the VCAMS graphical user interface (GUI).
+   :alt: The Welcome page of the VCAMS graphical user interface (GUI).
 
-   The Welcome Page of the VCAMS graphical user interface (GUI).
+   The Welcome page of the VCAMS graphical user interface (GUI).
 
 
 The *Basic Model Information* Page
@@ -62,9 +62,9 @@ which is then manipulated and exported in the next sections.
 .. figure:: /images/gui_2.png
    :name: gui_2
    :align: center
-   :alt: The Basic Model Information Page of the VCAMS graphical user interface (GUI).
+   :alt: The Basic Model Information page of the VCAMS graphical user interface (GUI).
 
-   The Basic Model Information Page of the VCAMS graphical user interface (GUI).
+   The Basic Model Information page of the VCAMS graphical user interface (GUI).
 
 The items numbered in :numref:`gui_2` are as follows:
 
@@ -96,22 +96,101 @@ The items numbered in :numref:`gui_2` are as follows:
 
 The *Model Manipulations* Page
 ------------------------------
+This page contains a select number of modeling techniques available in VCAMS.
+The page first asks the user to select a *Modeling Mode* and then
+shows the relevant form.
+
+Different modeling modes are demonstrated in the :ref:`examples` section.
+
+.. figure:: /images/gui_3.png
+   :name: gui_3
+   :align: center
+   :alt: The Model Manipulations page of the VCAMS graphical user interface (GUI).
+
+   The Model Manipulations page of the VCAMS graphical user interface (GUI).
 
 The *Boundary Conditions* Page
 ------------------------------
+This page contains four radio buttons which are used for choosing
+the boundary conditions that will be created as constraints on the model.
+They are described in the :ref:`boundary-conditions` section.
+
+.. figure:: /images/gui_4.png
+   :name: gui_4
+   :align: center
+   :alt: The Boundary Conditions page of the VCAMS graphical user interface (GUI).
+
+   The Boundary Conditions page of the VCAMS graphical user interface (GUI).
 
 .. _gui-output:
 
 The *Output* Page
 -----------------
-asdf
+This page (:numref:`gui_5`) contains parameters used for exporting the model to Abaqus™.
 
+.. figure:: /images/gui_5.png
+   :name: gui_5
+   :align: center
+   :alt: The Output page of the VCAMS graphical user interface (GUI).
 
+   The Output page of the VCAMS graphical user interface (GUI).
+
+The items numbered in :numref:`gui_5` are as follows:
+
+1. **File Name** is the named given to the output *.inp* and *.vcams* files.
+   This field automatically mirrors the *Part Name* field of the *Basic Model Information* page
+   but can be changed to the desired name which must be valid
+   according to the documentation for the :func:`vcams.helper.is_name_valid` function.
+2. **Element Code** is an uppercase string denoting the element code assigned to all elements in the model.
+   It must be a valid Abaqus element code such as *CPE4R* or *C3D8R*.
+   This parameter is not validated so care should be taken regarding validity and compatibility.
+   Currently, only 2D and 3D linear elements are supported by VCAMS.
+   To get around this, you can convert to quadratic elements after importing the model to Abaqus™.
+3. **Materials to Output** is a group of fields that select which materials are written to the output.
+   The options are:
+
+   - *Non-Empty Materials* which exports the elements containing
+     every *material code*, except 0 which signifies empty space.
+   - *All Materials* which exports all materials regardless of *material code*.
+   - *Following Materials* which allows the user to enter a comma-separated list of material codes to be exported.
 
 The *Run* Page
 --------------
+This page allows the user to finalize the process and see its progress.
 
+.. figure:: /images/gui_6.png
+   :name: gui_6
+   :align: center
+   :alt: The Run page of the VCAMS graphical user interface (GUI).
+
+   The Run page of the VCAMS graphical user interface (GUI).
+
+The items shown in :numref:`gui_6` are as follows:
+
+- The **Export Model Settings** button exports the model parameters to a *.vcams* file
+  which can be used for re-creating the current state of the GUI.
+- The **Create Model** button first exports the settings and then creates a model based on them.
+- The **Open Results Folder** button opens the directory in which the final models reside.
+- **Process Log** shows the progress of the current or last job.
+  The verbosity of this log depends on the *Debug Log* checkbox of the *Basic Model Information* page.
 
 The Menu Bar
 ------------
+The menu bar allows for fast access to the main program functions.
+The options are as follows:
 
+- The **File** menu:
+
+  + *Import Model Settings*: Allows the user to select a *.vcams* file and import model parameters from it.
+  + *Export Model Settings: Prompts the user for the path of a *.vcams* file to which the model parameters are exported.
+  + *Exit*: Closes the application.
+
+- The **Run** menu:
+
+  + *Create Model*: Creates a model based on the current parameters.
+
+- The **Help** menu:
+
+  + *Documentation*: Opens the documentation for the VCAMS software.
+  + *Source Code*: Opens the software's code repository.
+  + *About VCAMS*: Shows program, license, and version information.
