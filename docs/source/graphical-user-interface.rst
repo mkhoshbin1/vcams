@@ -4,7 +4,7 @@ The Graphical User Interface
 ============================
 VCAMS is a python library for creating complex models,
 but it also comes with *VCAMS GUI* which a graphical user interface (GUI)
-offering part of the libraries functionality in a simple and convenient manner.
+offering part of the library's functionality in a simple and convenient manner.
 It also allows the parameters to be exported to a configuration file,
 and imported later for modification or re-creation of the models.
 

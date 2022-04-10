@@ -1,3 +1,5 @@
+.. _api-reference:
+
 The VCAMS Library
 =================
 This section acts as a reference for all modules, classes, and function
