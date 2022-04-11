@@ -16,7 +16,7 @@ pyinstaller_versionfile.create_versionfile(
     file_description=description,
     internal_name=gui_file_name,
     legal_copyright=legal_copyright,
-    original_filename=gui_file_name,
+    original_filename=(gui_file_name + '.exe'),
     product_name=gui_name
 )
 
