@@ -150,9 +150,9 @@ class VoxelPart:
                             datefmt='%Y-%m-%d %H:%M:%S')
 
         # Log creation of the object.
-        logger.info('\n**Created using VCAMS v%s.'
-                    '\n**VCAMS is a free and open source program available at: %s'
-                    '\n**Author: Mohammadreza Khoshbin (www.mkhoshbin.com)\n',
+        logger.info('\n** Created using VCAMS v%s.'
+                    '\n** VCAMS is a free and open source program available at: %s'
+                    '\n** Author: Mohammadreza Khoshbin (www.mkhoshbin.com)\n',
                     __version__, __website__)
         logger.info("A VoxelPart object named '%s' was created" +
                     " with %s elements and an initial element value of %u.",
@@ -392,38 +392,35 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
     Returns:
         The :class:`VoxelPart` object created based on the configuration file.
     """
-    (part_creation_dict, part_manipulation_dict, bc_dict, output_dict) = \
-        read_configuration(file_path)
+    (part_creation_dict, part_manipulation_dict, bc_dict, output_dict) = read_configuration(file_path)
 
     part = VoxelPart(**part_creation_dict)
     logger.info('The model is being created from a configuration file loaded from %s' % file_path)
 
     modeling_mode = part_manipulation_dict['modeling_mode']
-    if modeling_mode == '0':  # No further action.
+    if modeling_mode == '0':  # This is technical invalid, but consider it to be '1'.
         pass
-    elif modeling_mode == '1':  # TPMS
+    if modeling_mode == '1':  # No Further Manipulation.
+        pass
+    elif modeling_mode == '2':  # TPMS
         boolean_mask = mask_from_function(mask_shape=part.data.shape,
                                           func=tpms_dict[part_manipulation_dict['tpms_type']],
-                                          voxel_size=part.voxel_size,
+                                          part=part,
                                           l=part_manipulation_dict['tpms_length'],
                                           c=part_manipulation_dict['tpms_constant'])
         part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['tpms_fill_value'])
-    elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
+    elif modeling_mode == '3':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:
             circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))
-            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape,
-                                                           voxel_size=part.voxel_size),
+            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape, voxel_size=part.voxel_size),
                             value=int(row[3]))
-    elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
+    elif modeling_mode == '4':  # Spatial Composite (Spherical Inclusions)
         for row in part_manipulation_dict['sphere_list']:
-            circle_obj = Sphere(id=0, a=float(row[0]), b=float(row[1]),
-                                c=float(row[2]), r=float(row[3]))
-            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape,
-                                                           voxel_size=part.voxel_size),
+            circle_obj = Sphere(id=0, a=float(row[0]), b=float(row[1]), c=float(row[2]), r=float(row[3]))
+            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape, voxel_size=part.voxel_size),
                             value=int(row[4]))
     else:
-        raise ValueError(
-            "Invalid value '%s' for part_manipulation_dict['modeling_mode']." % modeling_mode)
+        raise ValueError("Invalid value '%s' for part_manipulation_dict['modeling_mode']." % modeling_mode)
 
     bc_type = bc_dict['bc_type']
     if bc_type == '0':  # No BC.
@@ -431,8 +428,10 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
     elif bc_type == '1':  # Sets only.
         part.add_bc(bc_type='NODESET ONLY', vertices_nodeset=True, edges_nodeset=True, faces_nodeset=True,
                     explicit_nodeset=True, simple_nodeset=True)
-    elif bc_type == '2':  # Periodic BC.
-        raise NotImplementedError('Periodic BC has not been implemented.')  # TODO
+    elif bc_type == '2':  # Linear Displacement Boundary Conditions.
+        part.add_bc(bc_type='Linear Displacement')
+    elif bc_type == '3':  # Periodic Boundary Condition.
+        part.add_bc(bc_type='Periodic')
     else:
         raise ValueError("Invalid value '%s' for bc_dict['bc_type']" % bc_type)
 
@@ -459,3 +458,5 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 # TODO: in docs change output to export.
 # TODO: add real size to log.
+# TODO: change results_path to working_directory
+#  add Open Results Folder to the run menu of the GUI.

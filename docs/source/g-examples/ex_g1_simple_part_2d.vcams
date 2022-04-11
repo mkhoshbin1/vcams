@@ -1,0 +1,24 @@
+[Basic]
+part_name = Ex G-1 Simple 2D Part
+dim = 2D
+num_voxels_x = 50
+num_voxels_y = 100
+voxel_size_x = 0.02
+voxel_size_y = 0.02
+num_mats = 0
+base_material = 1
+part_description = Example G-1: A simple 50*100 2D part filled with elements.
+working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\Ex G-1 Simple 2D Part
+log_debug = True
+
+[Modeling]
+modeling_mode = 1
+
+[BC]
+bc_type = 0
+
+[Output]
+file_name = ex_g1_simple_part_2d
+elem_code = CPE4R
+output_mats_type = 1
+

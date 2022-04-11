@@ -1,28 +1,37 @@
+# noqa: E402
+
+from gui_helper import splash_update_text, splash_close
+
+splash_update_text("Loading standard Python libraries...")
 import logging
 import sys
 from collections import namedtuple
-import logging
 from pathlib import Path
 
+splash_update_text("Loading matplotlib...")
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+splash_update_text("Loading PyQt5...")
 # noinspection PyUnresolvedReferences
 from PyQt5 import uic
-from PyQt5.QtCore import Qt, QRegularExpression, QUrl, QCoreApplication
+from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
-    QImage, QPixmap, QDesktopServices
+    QImage, QPixmap, QDesktopServices, QFontMetrics, QIcon, QFont
 from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelectionRange, \
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
-from custom_table import IntDelegate, RadiusFloatDelegate, PositionFloatDelegate
-from settings_io import export_settings, import_settings
-
-from vcams import __name__ as vcams_name
+splash_update_text("Loading the VCAMS library...")
+from vcams import __name__ as vcams_name, __version__ as vcams_version
 from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
 from vcams.helper import return_default_results_path
 from vcams.mask.tpms import tpms_dict
 from vcams.voxelpart import from_config_file
+
+from custom_table import MatCodeDelegate, RadiusFloatDelegate, PositionFloatDelegate
+from settings_io import export_settings, import_settings
+import main_gui_resources
 
 logger = logging.getLogger(vcams_name)
 
@@ -30,16 +39,21 @@ ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'descriptio
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form will be used to model a structure after you select '
                                    'the modeling mode.'),
+                      ModelingMode('No Further Manipulation',
+                                   0, 1,
+                                   'This option does noting.\n'
+                                   'The model will completely consist of the elements '
+                                   'with the base material specified in the previous tab.'),
                       ModelingMode('Triply Periodic Minimal Surface (TPMS)',
-                                   3, 1,
+                                   3, 2,
                                    'This form is used to model a triply periodic minimal '
                                    'surface (TPMS) in the 3D space:'),
-                      ModelingMode('Planar Particle Reinforced Composite (Circular Inclusions)',
-                                   2, 2,
+                      ModelingMode('Planar Composite (Circular Inclusions)',
+                                   2, 3,
                                    'This form is used to model a planar particle reinforced '
                                    'composite with circular particles:'),
                       ModelingMode('Spatial Particle Reinforced Composite (Spherical Inclusions)',
-                                   3, 3,
+                                   3, 4,
                                    'This form is used to model a spatial particle reinforced '
                                    'composite with spherical particles:'),
                       # ModelingMode('Image Processing (Single Image)',
@@ -99,8 +113,32 @@ class MainWindow(QMainWindow):
 
         # Load the UI Page.
         uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
+        # Set the window title.
+        self.setWindowTitle('VCAMS GUI v%s' % vcams_version)
+        # Set the window icon.
+        self.setWindowIcon(QIcon(':/icon.ico'))
+        # Make the window size fixed.
+        self.setFixedSize(self.size())
+
+        # Set and configure the logo on the welcome page.
+        logo_size = int(1.1 * self.welcome_page.frameGeometry().width())
+        logo_pixmap = QPixmap(':/transparent_logo.png').scaledToWidth(logo_size, mode=Qt.SmoothTransformation)
+        self.logo_label.setPixmap(logo_pixmap)
+        self.logo_label.setAlignment(Qt.AlignCenter)
+        self.logo_label.setTextInteractionFlags(Qt.NoTextInteraction)
+
         # Update the footer notice.
         self.footer_label.setText(gui_footer_notice)
+
+        # Adjust the size of some text fields.
+        # src: https://stackoverflow.com/a/8638114/7180705
+        metrics = QFontMetrics(self.font())
+        # self.model_size_field.setFixedWidth(metrics.boundingRect('M'*40).width())
+        # self.working_dir_field.setFixedWidth(metrics.boundingRect('M'*40).width())
+        # self.part_description_field.setFixedWidth(metrics.boundingRect('M'*50).width())
+        # self.file_name_field.setFixedWidth(metrics.boundingRect('M'*20).width())
+        # self.elem_code_field.setFixedWidth(metrics.boundingRect('M'*20).width())
+        # self.output_mats_select_field.setFixedWidth(metrics.boundingRect('M'*40).width())
 
         # Connect signals for the menu.
         self.action_import_settings.triggered.connect(self.import_config)
@@ -114,6 +152,9 @@ class MainWindow(QMainWindow):
         # Code and signals for tab: Basic Modeling Information.
         # part_name
         self.part_name = 'unnamed'
+        self.part_name_field.setFixedWidth(self.num_voxels_y_field.pos().x()
+                                           + self.num_voxels_y_field.frameGeometry().width()
+                                           - self.num_voxels_x_field.pos().x())
         self.part_name_field.setText(self.part_name)
         part_name_regex = r"^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`\",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$"
         self.part_name_field.setValidator(QRegularExpressionValidator(
@@ -122,7 +163,7 @@ class MainWindow(QMainWindow):
         self.part_name_field.textChanged.connect(self.determine_validity_visually)
         self.part_name_field.textChanged.connect(self.part_name_changed)
         # dim_combo
-        self.dim_combo.currentTextChanged.connect(self.modeling_mode_changed)
+        self.dim_combo.currentTextChanged.connect(self.dim_changed)
         # num_voxels
         num_voxels_validator = QIntValidator(1, 999999999, self)
         self.num_voxels_x_field.setValidator(num_voxels_validator)
@@ -160,24 +201,8 @@ class MainWindow(QMainWindow):
         self.bc_type_button_group.setExclusive(True)
         self.bc_type_button_group.addButton(self.no_bc_radio, 0)
         self.bc_type_button_group.addButton(self.bc_set_only_radio, 1)
-        self.bc_type_button_group.addButton(self.periodic_bc_radio, 2)
-        self.no_bc_radio.toggled.connect(self.toggle_bc_type)
-        self.bc_set_only_radio.toggled.connect(self.toggle_bc_type)
-        self.periodic_bc_radio.toggled.connect(self.toggle_bc_type)
-        # strain
-        strain_validator = QDoubleValidator(-1e+6, 1e+6, 8)
-        self.strain11_field.setValidator(strain_validator)
-        self.strain22_field.setValidator(strain_validator)
-        self.strain33_field.setValidator(strain_validator)
-        self.strain12_field.setValidator(strain_validator)
-        self.strain13_field.setValidator(strain_validator)
-        self.strain23_field.setValidator(strain_validator)
-        self.strain11_field.textChanged.connect(self.determine_validity_visually)
-        self.strain22_field.textChanged.connect(self.determine_validity_visually)
-        self.strain33_field.textChanged.connect(self.determine_validity_visually)
-        self.strain12_field.textChanged.connect(self.determine_validity_visually)
-        self.strain13_field.textChanged.connect(self.determine_validity_visually)
-        self.strain23_field.textChanged.connect(self.determine_validity_visually)
+        self.bc_type_button_group.addButton(self.lin_disp_radio, 2)
+        self.bc_type_button_group.addButton(self.periodic_bc_radio, 3)
 
         # Code and signals for tab: Modeling.
         # Modeling: TPMS
@@ -202,14 +227,16 @@ class MainWindow(QMainWindow):
         self.modeling_circle_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(2, RadiusFloatDelegate(self))
-        self.modeling_circle_table.setItemDelegateForColumn(3, IntDelegate(self))
+        self.modeling_circle_table.setItemDelegateForColumn(3, MatCodeDelegate(self))
 
         # Modeling: Spatial Composite (Spherical Inclusions)
         self.modeling_sphere_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(2, PositionFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(3, RadiusFloatDelegate(self))
-        self.modeling_sphere_table.setItemDelegateForColumn(4, IntDelegate(self))
+        self.modeling_sphere_table.setItemDelegateForColumn(4, MatCodeDelegate(self))
+
+        self.dim_changed()
 
         # Modeling: Single Image
         # TODO
@@ -233,17 +260,31 @@ class MainWindow(QMainWindow):
         self.run_export_button.clicked.connect(self.export_config)
         self.run_create_model_button.clicked.connect(self.create_model)
         self.run_open_dir_button.clicked.connect(self.open_working_dir)
+        self.log_field.setFont(QFont('Courier', 10, QFont.Monospace))
+
+        # Set the Welcome tab to be shown.
+        self.main_toolbox.setCurrentIndex(0)
 
     def toggle_output_mats_type(self):
         self.output_mats_select_field.setEnabled(self.output_mats_select_radio.isChecked())
-
-    def toggle_bc_type(self):
-        self.strain_group_box.setEnabled(self.periodic_bc_radio.isChecked())
 
     def tpms_type_changed(self):
         tpms_type = self.select_tpms_combo.currentData()
         self.tpms_formula_real_label.setPixmap(
             mathtex_to_qpixmap(tpms_type.formula, self.formula_font_size))
+
+    def dim_changed(self):
+        self.modeling_mode_changed()
+        self.calculate_part_size()
+        if self.dim_combo.currentText() == '2D':
+            self.num_voxels_z_field.setEnabled(False)
+            self.voxel_size_z_field.setEnabled(False)
+        elif self.dim_combo.currentText() == '3D':
+            self.num_voxels_z_field.setEnabled(True)
+            self.voxel_size_z_field.setEnabled(True)
+        else:
+            raise RuntimeError('Invalid value in for self.dim_combo.currentText(). '
+                               'This is a GUI error. Please contact the author.')
 
     def modeling_mode_changed(self):
         modeling_mode = self.modeling_mode_combo.currentData()
@@ -264,33 +305,52 @@ class MainWindow(QMainWindow):
     def calculate_part_size(self):
         # For part_size fields.
         num_mats_combo_size_list = [1, 2, 4, 8]  # In bytes.
-        if (self.num_voxels_x_field.hasAcceptableInput() and
-                self.voxel_size_x_field.hasAcceptableInput()):
+        if self.num_voxels_x_field.hasAcceptableInput() and self.voxel_size_x_field.hasAcceptableInput():
             self.part_size_x_field.setText(str(int(self.num_voxels_x_field.text())
                                                * float(self.voxel_size_x_field.text())))
-        if (self.num_voxels_y_field.hasAcceptableInput() and
-                self.voxel_size_y_field.hasAcceptableInput()):
+        else:
+            self.part_size_x_field.setText('N/A')
+        if self.num_voxels_y_field.hasAcceptableInput() and self.voxel_size_y_field.hasAcceptableInput():
             self.part_size_y_field.setText(str(int(self.num_voxels_y_field.text())
                                                * float(self.voxel_size_y_field.text())))
-        if (self.num_voxels_z_field.hasAcceptableInput() and
-                self.voxel_size_z_field.hasAcceptableInput()):
+        else:
+            self.part_size_y_field.setText('N/A')
+        if self.num_voxels_z_field.hasAcceptableInput() and self.voxel_size_z_field.hasAcceptableInput():
             self.part_size_z_field.setText(str(int(self.num_voxels_z_field.text())
                                                * float(self.voxel_size_z_field.text())))
+        else:
+            self.part_size_z_field.setText('N/A')
         # For model_size_field.
-        if (self.num_voxels_x_field.hasAcceptableInput() and
-                self.num_voxels_y_field.hasAcceptableInput() and
-                self.num_voxels_z_field.hasAcceptableInput()):
-            num_elems = (int(self.num_voxels_x_field.text()) * int(self.num_voxels_y_field.text())
-                         * int(self.num_voxels_z_field.text()))
-            required_memory = (num_elems *
-                               num_mats_combo_size_list[self.num_mats_combo.currentIndex()]
-                               / 2 ** 20)  # In Megabytes.
-            msg_1 = f'The model contains {num_elems:,} elements and consumes '
-            if required_memory < 1:
-                required_memory = required_memory * 2 ** 10
-                msg_2 = f'{required_memory:0.2f} KB of RAM.'
+        if self.dim_combo.currentText() == '2D':
+            if self.num_voxels_x_field.hasAcceptableInput() and self.num_voxels_y_field.hasAcceptableInput():
+                num_elems = (int(self.num_voxels_x_field.text()) * int(self.num_voxels_y_field.text()))
             else:
-                msg_2 = f'{required_memory:0.2f} MB of RAM.'
+                self.model_size_field.setText('Waiting for parameters...')
+                return
+        elif self.dim_combo.currentText() == '3D':
+            if (self.num_voxels_x_field.hasAcceptableInput() and self.num_voxels_y_field.hasAcceptableInput()
+                    and self.num_voxels_z_field.hasAcceptableInput()):
+                num_elems = (int(self.num_voxels_x_field.text()) * int(self.num_voxels_y_field.text())
+                             * int(self.num_voxels_z_field.text()))
+            else:
+                self.model_size_field.setText('Waiting for parameters...')
+                return
+        else:
+            raise RuntimeError('Invalid value in for self.dim_combo.currentText(). '
+                               'This is a GUI error. Please contact the author.')
+        required_memory = (num_elems *
+                           num_mats_combo_size_list[self.num_mats_combo.currentIndex()]
+                           / 2 ** 20)  # In Megabytes.
+        msg_1 = f'The model contains {num_elems:,} elements and consumes '
+        if required_memory < 1:
+            required_memory = required_memory * 2 ** 10
+            msg_2 = f'{required_memory:0.2f} KB of RAM.'
+        else:
+            msg_2 = f'{required_memory:0.2f} MB of RAM.'
+        if num_elems > 999999999:
+            self.model_size_field.setText(
+                f"Error: The model contains {num_elems:,} elements which exceeds the 999999999 element limit.")
+        else:
             self.model_size_field.setText(msg_1 + msg_2)
 
     def determine_validity_visually(self):
@@ -406,13 +466,17 @@ class MainWindow(QMainWindow):
         default_path = str(Path(self.working_dir))
         (file_name, _) = QFileDialog.getOpenFileName(self, 'Import Model Settings', default_path,
                                                      'VCAMS configuration file (*.vcams)')
-        import_settings(main_obj=self, file_path_str=file_name)
+        # If the dialog box is closed, file_name will be an empty string.
+        if file_name:
+            import_settings(main_obj=self, file_path_str=file_name)
 
     def export_config(self):
         default_path = str(Path(self.working_dir) / self.part_name)
         (file_name, _) = QFileDialog.getSaveFileName(self, 'Export Model Settings', default_path,
                                                      'VCAMS configuration file (*.vcams)')
-        export_settings(main_obj=self, file_path_str=file_name)
+        # If the dialog box is closed, file_name will be an empty string.
+        if file_name:
+            export_settings(main_obj=self, file_path_str=file_name)
 
     def open_about(self):
         QMessageBox.information(self, 'About VCAMS', about_vcams)  # TODO: add icon
@@ -423,10 +487,9 @@ class MainWindow(QMainWindow):
         export_settings(main_obj=self, file_path_str=default_path)
         try:
             self.main_toolbox.setCurrentWidget(self.run_page)
-            gui_logging_handler = QTextEditLogger(self.log_field)
+            gui_logging_handler = QTextEditLogger(self.log_field)  # TODO: is this ever closed?
             gui_logging_handler.setFormatter(
-                logging.Formatter(
-                    fmt='%(asctime)s - %(levelname) 5s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+                logging.Formatter(fmt='%(asctime)s - %(levelname) 5s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
             logger.addHandler(gui_logging_handler)
             from_config_file(file_path=default_path)  # TODO: show a QProgressDialog.
         except Exception as err:
@@ -450,5 +513,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle(QStyleFactory.create('fusion'))
     main = MainWindow()
+    splash_update_text('Program initialized successfully.')
+    splash_close()
     main.show()
     sys.exit(app.exec_())

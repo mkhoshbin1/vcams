@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author>Mohammadreza Khoshbin</author>
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>968</width>
-    <height>717</height>
+    <width>715</width>
+    <height>760</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -40,8 +41,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>925</width>
-         <height>434</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -49,50 +50,14 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_6">
         <item>
-         <widget class="QLabel" name="logo_label">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>750</width>
-            <height>300</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>1500</width>
-            <height>600</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="resources/main_gui_resources.qrc">:/transparent_logo.png</pixmap>
-          </property>
-          <property name="scaledContents">
-           <bool>true</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignHCenter|Qt::AlignTop</set>
-          </property>
-          <property name="textInteractionFlags">
-           <set>Qt::NoTextInteraction</set>
-          </property>
-         </widget>
+         <widget class="QLabel" name="logo_label"/>
         </item>
         <item>
          <widget class="QLabel" name="welcome_label">
           <property name="text">
            <string>&lt;h2&gt;Welcome to VCAMS!&lt;/h2&gt;
-&lt;font size=&quot;+1&quot;&gt;&lt;p align=&quot;justify&quot;&gt;Using this GUI you can create very complex models and export them to the Abaqus™ FEA software.&lt;/p&gt;
+&lt;font size=&quot;+1&quot;&gt;&lt;p align=&quot;justify&quot;&gt;Using this GUI you can create complex models
+for the Abaqus™ FEA software.&lt;/p&gt;
 &lt;p align=&quot;justify&quot;&gt;If you need access to the library's full functionality, you can install and use its API.&lt;br&gt;
 Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&gt;</string>
           </property>
@@ -108,8 +73,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>946</width>
-         <height>418</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -122,7 +87,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QLayout::SetDefaultConstraint</enum>
           </property>
           <property name="fieldGrowthPolicy">
-           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+           <enum>QFormLayout::ExpandingFieldsGrow</enum>
           </property>
           <property name="verticalSpacing">
            <number>7</number>
@@ -203,6 +168,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
              </widget>
             </item>
             <item>
@@ -213,6 +181,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
              </widget>
             </item>
             <item>
@@ -222,6 +193,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -247,6 +221,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
              </widget>
             </item>
             <item>
@@ -257,6 +234,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
              </widget>
             </item>
             <item>
@@ -266,6 +246,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -282,11 +265,29 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <layout class="QHBoxLayout" name="part_size_layout">
             <item>
              <widget class="QLineEdit" name="part_size_x_field">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+              <property name="text">
+               <string>N/A</string>
+              </property>
+              <property name="frame">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
               <property name="readOnly">
                <bool>true</bool>
@@ -295,11 +296,29 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </item>
             <item>
              <widget class="QLineEdit" name="part_size_y_field">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+              <property name="text">
+               <string>N/A</string>
+              </property>
+              <property name="frame">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
               <property name="readOnly">
                <bool>true</bool>
@@ -308,11 +327,29 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </item>
             <item>
              <widget class="QLineEdit" name="part_size_z_field">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+              <property name="text">
+               <string>N/A</string>
+              </property>
+              <property name="frame">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
               <property name="readOnly">
                <bool>true</bool>
@@ -330,47 +367,79 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            </widget>
           </item>
           <item row="5" column="1">
-           <layout class="QHBoxLayout" name="num_mats_layout">
+           <widget class="QComboBox" name="num_mats_combo">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <item>
-             <widget class="QComboBox" name="num_mats_combo">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <item>
-               <property name="text">
-                <string>2⁸ (256)</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>2¹⁶ (265536)</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>2³²</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>2⁶⁴</string>
-               </property>
-              </item>
-             </widget>
+             <property name="text">
+              <string>2⁸ (256)</string>
+             </property>
             </item>
             <item>
-             <widget class="QLineEdit" name="model_size_field">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-             </widget>
+             <property name="text">
+              <string>2¹⁶ (265536)</string>
+             </property>
             </item>
-           </layout>
+            <item>
+             <property name="text">
+              <string>2³²</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>2⁶⁴</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="model_size_label">
+            <property name="text">
+             <string>Model Size</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="model_size_field">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
+            <property name="text">
+             <string>Waiting for parameters...</string>
+            </property>
+            <property name="frame">
+             <bool>false</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
           <item row="7" column="0">
+           <widget class="QLabel" name="base_material_label">
+            <property name="text">
+             <string>Base Material</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="base_material_field">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0">
            <widget class="QLabel" name="part_description_label">
             <property name="text">
              <string>Part Description</string>
@@ -380,14 +449,14 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
+          <item row="8" column="1">
            <widget class="QPlainTextEdit" name="part_description_field">
             <property name="tabChangesFocus">
              <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item row="8" column="0">
+          <item row="9" column="0">
            <widget class="QLabel" name="working_dir_label">
             <property name="text">
              <string>Working Directory</string>
@@ -397,7 +466,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </property>
            </widget>
           </item>
-          <item row="8" column="1">
+          <item row="9" column="1">
            <layout class="QHBoxLayout" name="working_dir_layout">
             <item>
              <widget class="QLineEdit" name="working_dir_field">
@@ -415,7 +484,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </item>
            </layout>
           </item>
-          <item row="9" column="0">
+          <item row="10" column="0">
            <widget class="QLabel" name="log_debug_field">
             <property name="text">
              <string>Debug Log</string>
@@ -425,25 +494,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </property>
            </widget>
           </item>
-          <item row="9" column="1">
+          <item row="10" column="1">
            <widget class="QCheckBox" name="log_debug_checkbox"/>
-          </item>
-          <item row="6" column="0">
-           <widget class="QLabel" name="base_material_label">
-            <property name="text">
-             <string>Base Material</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="1">
-           <widget class="QLineEdit" name="base_material_field">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
           </item>
          </layout>
         </item>
@@ -454,8 +506,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>946</width>
-         <height>418</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -496,9 +548,10 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>4</number>
+           <number>5</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
+          <widget class="QWidget" name="modeling_nothing"/>
           <widget class="QWidget" name="modeling_tpms">
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>
@@ -517,6 +570,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
                 </property>
                </widget>
               </item>
@@ -542,6 +598,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
                </widget>
               </item>
               <item row="3" column="0">
@@ -558,6 +617,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
                 </property>
                </widget>
               </item>
@@ -583,6 +645,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
                </widget>
               </item>
              </layout>
@@ -593,6 +658,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <layout class="QVBoxLayout" name="verticalLayout_4">
             <item>
              <widget class="CustomTableWidget" name="modeling_circle_table">
+              <property name="focusPolicy">
+               <enum>Qt::ClickFocus</enum>
+              </property>
               <property name="contextMenuPolicy">
                <enum>Qt::ActionsContextMenu</enum>
               </property>
@@ -655,6 +723,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <layout class="QVBoxLayout" name="verticalLayout_7">
             <item>
              <widget class="CustomTableWidget" name="modeling_sphere_table">
+              <property name="focusPolicy">
+               <enum>Qt::ClickFocus</enum>
+              </property>
               <property name="contextMenuPolicy">
                <enum>Qt::ActionsContextMenu</enum>
               </property>
@@ -728,8 +799,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>946</width>
-         <height>418</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -762,6 +833,13 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
               </widget>
              </item>
              <item>
+              <widget class="QRadioButton" name="lin_disp_radio">
+               <property name="text">
+                <string>Linear Displacement Boundary Conditions</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QRadioButton" name="periodic_bc_radio">
                <property name="text">
                 <string>Periodic Boundary Conditions</string>
@@ -772,139 +850,16 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            </widget>
           </item>
           <item>
-           <widget class="QGroupBox" name="strain_group_box">
-            <property name="enabled">
-             <bool>false</bool>
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Note: It is vital that the &quot;Boundary Conditions&quot; section of the documentation be studied before using any BCs.</string>
             </property>
-            <property name="title">
-             <string>BC Value</string>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
-            <layout class="QFormLayout" name="formLayout_2">
-             <property name="fieldGrowthPolicy">
-              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-             </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="strain11_label">
-               <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;11&lt;sub&gt;</string>
-               </property>
-               <property name="textFormat">
-                <enum>Qt::AutoText</enum>
-               </property>
-               <property name="buddy">
-                <cstring>strain11_field</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QLineEdit" name="strain11_field">
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="strain22Label">
-               <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;22&lt;sub&gt;</string>
-               </property>
-               <property name="buddy">
-                <cstring>strain22_field</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="strain22_field">
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="strain33_label">
-               <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;33&lt;sub&gt;</string>
-               </property>
-               <property name="buddy">
-                <cstring>strain33_field</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLineEdit" name="strain33_field">
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="strain12_label">
-               <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;12&lt;sub&gt;</string>
-               </property>
-               <property name="buddy">
-                <cstring>strain12_field</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QLineEdit" name="strain12_field">
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="strain13_label">
-               <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;13&lt;sub&gt;</string>
-               </property>
-               <property name="buddy">
-                <cstring>strain13_field</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QLineEdit" name="strain13_field">
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="strain23_label">
-               <property name="text">
-                <string>&amp;epsilon;&lt;sub&gt;23&lt;sub&gt;</string>
-               </property>
-               <property name="buddy">
-                <cstring>strain23_field</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="1">
-              <widget class="QLineEdit" name="strain23_field">
-               <property name="text">
-                <string>0</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
            </widget>
           </item>
          </layout>
-        </item>
-        <item>
-         <widget class="QLabel" name="bc_image_label">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap>resources/bc_2d.png</pixmap>
-          </property>
-          <property name="scaledContents">
-           <bool>false</bool>
-          </property>
-         </widget>
         </item>
        </layout>
       </widget>
@@ -913,8 +868,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>946</width>
-         <height>418</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1020,8 +975,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>946</width>
-         <height>418</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1031,7 +986,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <item>
          <widget class="QLabel" name="run_label">
           <property name="text">
-           <string>TextLabel</string>
+           <string>Press one of the following buttons to proceed:</string>
           </property>
          </widget>
         </item>
@@ -1087,6 +1042,9 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         </item>
         <item>
          <widget class="QPlainTextEdit" name="log_field">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="documentTitle">
            <string/>
           </property>
@@ -1146,13 +1104,13 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>968</width>
+     <width>715</width>
      <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="action_import_settings"/>
     <addaction name="action_export_settings"/>
@@ -1161,13 +1119,13 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
    </widget>
    <widget class="QMenu" name="menuRun">
     <property name="title">
-     <string>Run</string>
+     <string>&amp;Run</string>
     </property>
     <addaction name="action_create_model"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="action_docs"/>
     <addaction name="action_code"/>
@@ -1180,22 +1138,22 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </widget>
   <action name="action_import_settings">
    <property name="text">
-    <string>Import Model Settings</string>
+    <string>&amp;Import Model Settings</string>
    </property>
   </action>
   <action name="action_export_settings">
    <property name="text">
-    <string>Export Model Settings</string>
+    <string>&amp;Export Model Settings</string>
    </property>
   </action>
   <action name="action_exit">
    <property name="text">
-    <string>Exit</string>
+    <string>E&amp;xit</string>
    </property>
   </action>
   <action name="action_docs">
    <property name="text">
-    <string>Documentation</string>
+    <string>&amp;Documentation</string>
    </property>
    <property name="toolTip">
     <string>View VCAMS software's online documentation.</string>
@@ -1203,7 +1161,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </action>
   <action name="action_code">
    <property name="text">
-    <string>Source Code</string>
+    <string>&amp;Source Code</string>
    </property>
    <property name="toolTip">
     <string>Open VCAMS software's GitHub repository.</string>
@@ -1211,7 +1169,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </action>
   <action name="action_about">
    <property name="text">
-    <string>About VCAMS</string>
+    <string>&amp;About VCAMS</string>
    </property>
    <property name="toolTip">
     <string>About VCAMS</string>
@@ -1219,7 +1177,7 @@ VCAMS is a free and open source software published under the GNU AGPLv3 license.
   </action>
   <action name="action_create_model">
    <property name="text">
-    <string>Create Model</string>
+    <string>&amp;Create Model</string>
    </property>
    <property name="toolTip">
     <string>Create a model based on the current settings.</string>

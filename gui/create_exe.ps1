@@ -4,16 +4,39 @@
 #   1. UPX must be installed.
 #      It's available in chocolatey or at https://github.com/upx/upx/tree/v3.96.
 
-..\venv\Scripts\Activate.ps1
+# Use --console and run the executable in cmd when debugging.
 
-pyinstaller --onefile --clean --windowed `
+..\venv\Scripts\Activate.ps1
+pyrcc5 .\resources\main_gui_resources.qrc -o main_gui_resources.py
+
+$exe_name = python create_versionfile.py
+
+# pyinstaller --onedir --clean --noupx --windowed `
+#     --add-data 'main_window.ui;.' `
+#     --add-data 'resources\main_gui_resources.qrc;.\resources\' `
+#     --hidden-import=pyi_splash `
+#     --icon=".\resources\icon.ico" `
+#     --splash=".\resources\splash.png" `
+#     --paths .. `
+#     --name VCAMS `
+#     main_gui.spec
+
+pyi-makespec --onefile --noupx --windowed `
     --add-data 'main_window.ui;.' `
-    --icon=".\resources\icon.ico" `
-    --splash=".\resources\splash.png" `
+    --add-data 'resources\main_gui_resources.qrc;.\resources\' `
+    --hidden-import=pyi_splash `
+    --icon='.\resources\icon.ico' `
+    --splash='.\resources\splash.png' `
+    --version='versionfile.txt' `
     --paths .. `
-    --name VCAMS `
+    --name "$exe_name" `
     main_gui.py
-#    VCAMS.spec
-# --noupx
+
+(Get-Content "$exe_name.spec") -Replace 'text_pos=None', 'text_pos=(25, 440)' |
+Set-Content "$exe_name.spec"
+
+pyinstaller --clean --noconfirm "$exe_name.spec"
+
+Remove-Item 'versionfile.txt', "$exe_name.spec"
 
 pause

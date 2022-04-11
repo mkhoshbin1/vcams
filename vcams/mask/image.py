@@ -13,7 +13,7 @@ from warnings import warn
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from numpy import moveaxis, unique, ndarray
-from skimage.filters import threshold_otsu
+from skimage.filters.thresholding import threshold_otsu
 from skimage.io import imread, ImageCollection
 from skimage.restoration import denoise_bilateral
 from skimage.transform import rescale

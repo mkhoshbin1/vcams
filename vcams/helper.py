@@ -138,9 +138,15 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         part_creation_dict['base_material'] = int(basic_section['base_material'])
     else:
         part_creation_dict['base_material'] = 0
-    part_creation_dict['voxel_size'] = (float(basic_section['voxel_size_x']),
-                                        float(basic_section['voxel_size_y']),
-                                        float(basic_section['voxel_size_z']))
+    if dim == '2D':
+        part_creation_dict['voxel_size'] = (float(basic_section['voxel_size_x']),
+                                            float(basic_section['voxel_size_y']))
+    elif dim == '3D':
+        part_creation_dict['voxel_size'] = (float(basic_section['voxel_size_x']),
+                                            float(basic_section['voxel_size_y']),
+                                            float(basic_section['voxel_size_z']))
+    else:
+        raise ValueError('Field "dim" is set to %s, which is invalid.' % basic_section['dim'])
     num_mats = basic_section['num_mats']
     if num_mats == '0':
         part_creation_dict['dtype'] = 'uint8'
@@ -166,7 +172,9 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
     part_manipulation_dict['dim'] = dim
     if modeling_mode == '0':  # No further action.
         pass
-    elif modeling_mode == '1':  # TPMS
+    elif modeling_mode == '1':  # No Further Manipulation.
+        pass
+    elif modeling_mode == '2':  # TPMS
         tpms_type = modeling_section['tpms_type']
         if int(tpms_type) in tpms_dict.keys():
             part_manipulation_dict['tpms_type'] = int(tpms_type)
@@ -175,12 +183,10 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         part_manipulation_dict['tpms_length'] = float(modeling_section['tpms_length'])
         part_manipulation_dict['tpms_constant'] = float(modeling_section['tpms_constant'])
         part_manipulation_dict['tpms_fill_value'] = int(modeling_section['tpms_fill_value'])
-    elif modeling_mode == '2':  # Planar Composite (Circular Inclusions)
-        part_manipulation_dict['circle_list'] = \
-            csv_string_to_list(modeling_section['modeling_circle_table'])
-    elif modeling_mode == '3':  # Spatial Composite (Spherical Inclusions)
-        part_manipulation_dict['sphere_list'] = \
-            csv_string_to_list(modeling_section['modeling_sphere_table'])
+    elif modeling_mode == '3':  # Planar Composite (Circular Inclusions)
+        part_manipulation_dict['circle_list'] = csv_string_to_list(modeling_section['modeling_circle_table'])
+    elif modeling_mode == '4':  # Spatial Composite (Spherical Inclusions)
+        part_manipulation_dict['sphere_list'] = csv_string_to_list(modeling_section['modeling_sphere_table'])
     else:
         raise ValueError('Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)
 
@@ -189,21 +195,7 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
     bc_section = config['BC']
     bc_dict['dim'] = dim
     bc_type = bc_section['bc_type']
-    bc_dict['bc_type'] = bc_type
-    if bc_type == '0':  # No BC.
-        pass
-    elif bc_type == '1':  # Sets only.
-        pass
-    elif bc_type == '2':  # Periodic BC.
-        bc_dict['strain11'] = float(bc_section['strain11'])
-        bc_dict['strain22'] = float(bc_section['strain22'])
-        bc_dict['strain33'] = float(bc_section['strain33'])
-        bc_dict['strain12'] = float(bc_section['strain12'])
-        bc_dict['strain13'] = float(bc_section['strain13'])
-        bc_dict['strain23'] = float(bc_section['strain23'])
-        raise NotImplementedError('Periodic BC has not been implemented.')  # TODO
-    else:
-        raise ValueError('Field "bc_type" is set to %s, which is invalid.' % bc_type)
+    bc_dict['bc_type'] = bc_type  # There are no parameters associated with BCs.
 
     # Output.
     output_dict = dict()
@@ -212,7 +204,7 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         output_dict['file_name'] = output_section['file_name']
     else:
         raise ValueError('Field "file_name" contains an invalid name.')
-    output_dict['elem_type'] = output_section['elem_code']
+    output_dict['elem_code'] = output_section['elem_code']
     output_dict['dim'] = dim
     output_mats_type = output_section['output_mats_type']
     if output_mats_type == '0':  # All Materials.
@@ -220,11 +212,9 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
     elif output_mats_type == '1':  # Non-Empty Materials.
         output_dict['material_elem_sets'] = 'Non-Empty'
     elif output_mats_type == '2':  # Output Selected Materials.
-        output_dict['material_elem_sets'] = \
-            [int(i) for i in output_section['output_mats_select'].split(',')]
+        output_dict['material_elem_sets'] = [int(i) for i in output_section['output_mats_select'].split(',')]
     else:
-        raise ValueError(
-            'Field "output_mats_type" is set to %s, which is invalid.' % output_mats_type)
+        raise ValueError('Field "output_mats_type" is set to %s, which is invalid.' % output_mats_type)
 
     logger.debug('Configuration file read successfully.')
     return part_creation_dict, part_manipulation_dict, bc_dict, output_dict

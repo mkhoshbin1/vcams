@@ -4,11 +4,22 @@ Installation
 ============
 The software can be used as both a plugin to the Abaqus software or as a library for developing Abaqus scripts. Installation for either mode is very straightforward.
 
+.. _installation_gui:
+
 Installing the GUI Version
 --------------------------
+The GUI is shipped as a single portable executable (.exe file)
+which contains the library and all of the dependencies.
+
 To use the GUI version of VCAMS, you only need to download the last release from GitHub (TODO).
 The program is portable and does not need any installation.
 You can just open the executable file and use the program.
+
+It is currently compiled only for Microsoft Windows,
+but can be easily built from the source code on most platforms.
+
+
+.. _installation_library:
 
 Installing the VCAMS Library
 ----------------------------

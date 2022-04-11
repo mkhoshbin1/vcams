@@ -1,0 +1,26 @@
+[Basic]
+part_name = Ex G-2 Simple 3D Part
+dim = 3D
+num_voxels_x = 50
+num_voxels_y = 75
+voxel_size_x = 0.02
+voxel_size_y = 0.02
+num_voxels_z = 100
+voxel_size_z = 0.02
+num_mats = 0
+base_material = 1
+part_description = Example G-2: A simple 50*75*100 3D part filled with elements.
+working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\Ex G-2 Simple 3D Part
+log_debug = True
+
+[Modeling]
+modeling_mode = 1
+
+[BC]
+bc_type = 0
+
+[Output]
+file_name = ex_g2_simple_part_3d
+elem_code = C3D8R
+output_mats_type = 1
+

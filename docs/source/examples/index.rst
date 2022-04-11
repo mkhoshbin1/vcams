@@ -16,3 +16,4 @@ and then practice using these examples.
    example-a
    example-b
    example-c
+   example-g
