@@ -460,3 +460,4 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add real size to log.
 # TODO: change results_path to working_directory
 #  add Open Results Folder to the run menu of the GUI.
+# TODO: typo in doc and readme.md: it's -> its
