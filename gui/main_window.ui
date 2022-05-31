@@ -41,8 +41,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>604</width>
+         <height>150</height>
         </rect>
        </property>
        <attribute name="label">
@@ -73,8 +73,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>601</width>
+         <height>419</height>
         </rect>
        </property>
        <attribute name="label">
@@ -506,8 +506,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>374</width>
+         <height>257</height>
         </rect>
        </property>
        <attribute name="label">
@@ -799,8 +799,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>645</width>
+         <height>188</height>
         </rect>
        </property>
        <attribute name="label">
@@ -868,8 +868,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>461</height>
+         <width>415</width>
+         <height>175</height>
         </rect>
        </property>
        <attribute name="label">
