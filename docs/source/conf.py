@@ -62,6 +62,12 @@ autodoc_default_options = {
 # plot_html_show_source_link = False
 # plot_html_show_formats = False
 
+# For changing the landing page.
+# See https://stackoverflow.com/questions/48889270
+# and https://ofosos.org/2018/12/28/landing-page-template
+root_doc = 'docs'
+html_extra_path=['_templates/website/index.html']
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
