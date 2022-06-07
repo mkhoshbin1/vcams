@@ -144,8 +144,9 @@ class VoxelPart:
         # Create and configure the logger.
         filemode = 'w' if overwrite_logs else 'a'
         log_level = logging.DEBUG if log_debug else logging.INFO
-        log_file_path = Path(self.results_path) / (name + '.log')
-        logging.basicConfig(filename=log_file_path, filemode=filemode, level=log_level,
+        self._log_file_path = Path(self.results_path) / (name + '.log')
+        """Path of the VoxelPart's log file."""
+        logging.basicConfig(filename=self._log_file_path, filemode=filemode, level=log_level,
                             format='%(asctime)s - %(levelname) 5s - %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -173,6 +174,14 @@ class VoxelPart:
     def real_size(self):
         """Real size of the part which is ``part.size * voxel_size``."""
         return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])
+
+    def close_logger(self):
+        """Close all loggers for the part."""
+        all_handlers = set().union(logger.handlers, logger.parent.handlers, logger.root.handlers)
+        for handler in all_handlers:
+            if isinstance(handler, logging.FileHandler):
+                if Path(handler.baseFilename) == self._log_file_path:
+                    handler.close()
 
     def output_abaqus_inp(self, file_name: str, elem_code: str, dim: str,
                           material_elem_sets: Union[str, tuple], custom_elem_sets: bool = True,
