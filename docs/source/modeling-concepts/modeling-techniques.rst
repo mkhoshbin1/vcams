@@ -11,10 +11,10 @@ But first, we need to define the term *Boolean mask*.
 Boolean Masks
 -------------
 A Boolean mask is an array of Boolean values (True/False) with the same shape as another array
-and is used for many operation is programming.
+and is used for many operations in programming.
 For example, it can be used to select or highlight part of an image.
 In NumPy, a Boolean mask can be used for selecting some elements
-which can then be used for manipulate the array.
+which can then be used for manipulating the array.
 
 VCAMS offers a special function for applying a Boolean mask to a VoxelPart instance.
 The :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method
