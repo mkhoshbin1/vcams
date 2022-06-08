@@ -175,6 +175,10 @@ class VoxelPart:
         """Real size of the part which is ``part.size * voxel_size``."""
         return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])
 
+    def __del__(self):
+        """Delete the object. The respective log file is also closed."""
+        self.close_logger()
+
     def close_logger(self):
         """Close all loggers for the part."""
         all_handlers = set().union(logger.handlers, logger.parent.handlers, logger.root.handlers)
