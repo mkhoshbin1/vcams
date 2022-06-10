@@ -644,8 +644,10 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
     # Prepare part summary.
     part_summary = (
         ('Part Name', part.name),
-        ('Part   Dimensions', '*'.join(str(i) for i in part.data.shape)),
-        ('Output Dimensions', dim.upper()),
+        ('Number of Voxels', ' * '.join(str(i) for i in part.size)),
+        ('Voxel Size', ' * '.join(str(i) for i in part.voxel_size)),
+        ('Part Dimensions', ' * '.join(str(i) for i in part.real_size)),
+        ('Output Dimensionality', dim.upper()),
         ('Element Type', elem_code),
         ('Number of Elements', num_elems),
         ('Number of Nodes', num_nodes),

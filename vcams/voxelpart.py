@@ -469,7 +469,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add shape as a variable with a getter.
 # TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 # TODO: in docs change output to export.
-# TODO: add real size to log.
 # TODO: change results_path to working_directory
 #  add Open Results Folder to the run menu of the GUI.
 # TODO: typo in doc and readme.md: it's -> its
