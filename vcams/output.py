@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 from typing import Union, TextIO
 
+import numpy as np
 from numpy import savetxt, unravel_index, ravel_multi_index, array, unique, uint32, float64, \
     union1d, any, zeros, append, intersect1d, insert, vstack, ndarray
 from tabulate import tabulate
@@ -648,6 +649,7 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
         ('Element Type', elem_code),
         ('Number of Elements', num_elems),
         ('Number of Nodes', num_nodes),
+        ('Number of Material Codes', len(np.unique(part.data))),
         ('Number of Constraint Equations', num_constraints),
         ('Total Output Time', time.strftime('%H:%M:%S', time.gmtime(elapsed_time)))
     )

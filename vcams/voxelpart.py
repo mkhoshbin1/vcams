@@ -462,7 +462,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add ddbc based on walters2021, eq 24. x is node coordinates.
 # TODO: 2d pbc edges does not have shear components.
 # TODO: add disp values for all bcs.
-# TODO: add number of materials to report.
 # TODO: add setter for voxelpart.data so it doesn't have non-uint values.
 # TODO: add min and max values for voxel_size.
 # TODO: redo ndarray types. see https://stackoverflow.com/questions/35673895
