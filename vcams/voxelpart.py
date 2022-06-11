@@ -83,6 +83,11 @@ class VoxelPart:
         if not dtype.lower() in ('uint8', 'uint16', 'uint32', 'uint64'):
             raise ValueError("dtype can only be one of the following strings: "
                              "'uint8', 'uint16', 'uint32', 'uint64'")
+        self.dtype = dtype
+        """Data type used for the part."""
+
+        # Set a temporary value for _data which is used by the data property.
+        self._data = None
 
         # It seems that numpy.zeros has a special implementation which
         # makes it faster. numpy.ones is the same as numpy.fill.
@@ -174,6 +179,20 @@ class VoxelPart:
     def real_size(self):
         """Real size of the part which is ``part.size * voxel_size``."""
         return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])
+
+    @property
+    def data(self):
+        """TODO"""
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        #TODO: check for ndim.
+        if not isinstance(value, ndarray):
+            raise ValueError('data must be a numpy ndarray.')
+        if not value.flags.c_contiguous:
+            raise ValueError('data must be C-continuous.')
+        self._data = value.astype(dtype=self.dtype, order='C', casting='safe', subok=True, copy=True)
 
     def __del__(self):
         """Delete the object. The respective log file is also closed."""
@@ -462,7 +481,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add ddbc based on walters2021, eq 24. x is node coordinates.
 # TODO: 2d pbc edges does not have shear components.
 # TODO: add disp values for all bcs.
-# TODO: add setter for voxelpart.data so it doesn't have non-uint values.
 # TODO: add min and max values for voxel_size.
 # TODO: redo ndarray types. see https://stackoverflow.com/questions/35673895
 # TODO: change size to shape.
