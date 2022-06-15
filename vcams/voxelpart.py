@@ -494,3 +494,5 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: change results_path to working_directory
 #  add Open Results Folder to the run menu of the GUI.
 # TODO: typo in doc and readme.md: it's -> its
+# TODO: check various errors when 2D/3D doesn't match across part size, voxel size, etc.
+# TODO: Add docs for random including examples.

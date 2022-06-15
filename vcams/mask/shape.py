@@ -78,14 +78,13 @@ class ShapeArray:
         """
         Args:
             part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
-                                     If None, *mask_shape* and *voxel_size* must be specified
-                                     otherwise they are ignored.
+                                     If None, *mask_shape* and *voxel_size* must be specified.
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
             is_mask_calculation_lazy: If True, the ShapeArray's private *_mask* property is updated
                                       only when necessary which greatly improves performance.
                                       Otherwise, it is updated everytime a shape is added to the array.
-            mask_shape: A tuple containing three integers which determine
+            mask_shape: A tuple containing three integers which determines
                         the shape of the returned boolean mask. Ignored if *part* is passed.
             voxel_size: A tuple containing three floats which determine the size of a voxel
                         in the x, y, and z directions. Ignored if *part* is passed.
