@@ -9,7 +9,7 @@ part = VoxelPart(size=(50, 100), base_material=1,
                  description='Example B-3: A 2D part on which a Periodic BC is applied.',
                  log_debug=True)
 
-# Ask for a linear displacement BC to be applied to the model.
+# Request a Periodic BC for the model.
 part.add_bc(bc_type='Periodic')
 
 # Output the part.

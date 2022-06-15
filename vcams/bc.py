@@ -231,6 +231,7 @@ def create_bc(part, dim: str) -> list:
         create_node_sets(part, dim, vertices=part._bc_nodeset_vertices,
                          edges=part._bc_nodeset_edges, faces=part._bc_nodeset_faces,
                          explicit_sets=part._bc_nodeset_explicit, simple_sets=part._bc_nodeset_simple)
+        logger.info('No BCs have been created but node sets were added to the part.')
         return []
 
     elif bc_type.upper() == 'LINEAR DISPLACEMENT':
@@ -251,6 +252,7 @@ def create_bc(part, dim: str) -> list:
                                TieConstraint(dof=2, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face22-NodeSet'),
                                TieConstraint(dof=3, rp_set_name='RP1-NodeSet', slave_set_name='Simple-Face32-NodeSet')]
 
+        logger.info('Linear Displacement BCs have were created.')
         return constraint_list
 
     elif bc_type.upper() == 'PERIODIC':
@@ -308,6 +310,7 @@ def create_bc(part, dim: str) -> list:
                                                       ('Vertex3-NodeSet', 'Vertex5-NodeSet'))
             constraint_list += add_3d_pbc_constraints(part, 'vertex', dummy_names, (-pl[0], +pl[1], -pl[2]),
                                                       ('Vertex4-NodeSet', 'Vertex6-NodeSet'))
+        logger.info('Periodic BCs have were created.')
         return constraint_list
 
     else:
