@@ -1,7 +1,7 @@
 Example B-3: Periodic BC
 ========================
 This example demonstrates how to apply the constraints for
-a :ref:`linear displacement BC <boundary-conditions-pbc>`
+a :ref:`periodic BC <boundary-conditions-pbc>`
 to a part.
 
 These constraints can then be used for applying the boundary conditions to the part.
