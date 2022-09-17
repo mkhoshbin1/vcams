@@ -24,6 +24,7 @@ class BaseShape(ABC):
     and define the level set function *func* describing the shape in 3D space.
     It must be compatible with :func:`vcams.mask.function.mask_from_function`.
     """
+
     # TODO: implement buffer zone.
     @property
     @abstractmethod
@@ -48,6 +49,7 @@ class BaseShape(ABC):
             If scalar values are passed, a float is returned instead of an array.
             See TODO for interpretation of the results.
         """
+
     pass
 
     def calculate_mask(self, part_shape: tuple[int, int, int],
@@ -71,6 +73,7 @@ class ShapeArray:
     """Class for an array of shapes.
     The array may contain any number of shapes of any class as long as they have the same *dim* attribute.
     """
+
     def __init__(self, dim: str, part=None,
                  mask_shape: tuple[int, int, int] = None,
                  voxel_size: tuple[float, float, float] = None,
@@ -150,7 +153,7 @@ class ShapeArray:
                 for i in id_list:
                     self._mask = logical_or(self._mask,
                                             self.shapes[i].calculate_mask(
-                                               self.mask_shape, self.voxel_size))
+                                                self.mask_shape, self.voxel_size))
         else:
             # Only the shape with shape_id needs to be added to the mask.
             for i in list(shape_id):
@@ -163,7 +166,7 @@ class ShapeArray:
                                      'you should do a complete recalculation of the mask.')
                 self._mask = logical_or(self._mask,
                                         self.shapes[i].calculate_mask(
-                                           self.mask_shape, self.voxel_size))
+                                            self.mask_shape, self.voxel_size))
                 self._ignored_masks.remove(i)
 
     def _check_shape(self, shape):
@@ -180,6 +183,7 @@ class Circle(BaseShape):
     .. math::
        (x-a)^2 + (y-b)^2 - r^2 = 0
     """
+
     def __init__(self, id: int, a: float, b: float, r: float):
         """
         Args:
@@ -207,6 +211,7 @@ class Sphere(BaseShape):
     .. math::
        (x-a)^2 + (y-b)^2 + (z-c)^2 - r^2 = 0
     """
+
     def __init__(self, id, a: float, b: float, c: float, r: float):
         """
         Args:
@@ -228,3 +233,47 @@ class Sphere(BaseShape):
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
         return (x - self.a) ** 2 + (y - self.b) ** 2 + (z - self.c) ** 2 - self.r ** 2
+
+
+class Cylinder(BaseShape):
+    """Class describing a 3D Cylinder with the axis in one of x, y, or z directions.
+    """
+    # TODO: add cylinder formula in a table.
+    # TODO: change formula to equation in docs.
+    # TODO: This can probably optimized by using multiple classes and selecting the appropriate one.
+    # TODO: See if you can cylinder with general axis direction.
+
+    def __init__(self, id, dir: str, a: float, b: Union[float, None], c: Union[float, None], r: Union[float, None]):
+        """
+        Args:
+            id:  ID of the shape which should be must be unique.
+            dir: Direction of the axis. Can be 'x', 'y', or 'z'.
+            a:   x-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
+            b:   y-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
+            c:   y-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
+            r:   Radius of the cylinder.
+        """
+        if dir.lower() not in ('x', 'y', 'z'):
+            raise ValueError("dir must be one of 'x', 'y', or 'z'.")
+        self.dir = dir.lower()
+        self.id = id
+        self.a = a
+        self.b = b
+        self.c = c
+        self.r = r
+
+    dim: str = '3D'
+    """This class attribute means that shape can be used for 3D models."""
+
+    def func(self, x: Union[float, ndarray],
+             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+        if self.dir == 'x':
+            return (x - x) + (y - self.b) ** 2 + (z - self.c) ** 2 - self.r ** 2
+        elif self.dir == 'y':
+            return (x - self.a) ** 2 + (y - y) + (z - self.c) ** 2 - self.r ** 2
+        elif self.dir == 'z':
+            return (x - self.a) ** 2 + (y - self.b) ** 2 + (z - z) - self.r ** 2
+        else:
+            raise RuntimeError("self.dir is equal to '%s' which is not valid and"
+                               "should have been caught in the constructor."
+                               "Please contact the author." % self.dir)
