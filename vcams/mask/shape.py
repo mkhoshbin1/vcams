@@ -329,3 +329,24 @@ class Ellipse(BaseShape):
         return (((((x - self.x0) * cos(self.theta) + (y - self.y0) * sin(self.theta)) ** 2) / self.a ** 2)
                 + ((((x - self.x0) * sin(self.theta) - (y - self.y0) * cos(self.theta)) ** 2) / self.b ** 2)
                 - 1)
+
+
+class Ellipsoid(BaseShape):
+    def __init__(self, id: int, x0: float, y0: float, z0: float, a: float, b: float, c: float):
+        self.id = id
+        self.x0 = x0
+        self.y0 = y0
+        self.z0 = z0
+        self.a = a
+        self.b = b
+        self.c = c
+
+    dim: str = '3D'
+    """This class attribute means that shape can be used for 2D models."""
+
+    def func(self, x: Union[float, ndarray],
+             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+        return (((x-self.x0)**2 / (self.a**2))
+                + ((y-self.y0)**2 / (self.b**2))
+                + ((z-self.z0)**2 / (self.c**2))
+                - 1)
