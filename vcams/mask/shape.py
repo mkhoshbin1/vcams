@@ -10,7 +10,7 @@ from itertools import count
 from abc import ABC, abstractmethod
 from typing import Union
 
-from numpy import logical_or, ndarray
+from numpy import logical_or, ndarray, sin, cos, radians
 
 from vcams.mask.function import mask_from_function
 
@@ -178,7 +178,7 @@ class ShapeArray:
 
 
 class Circle(BaseShape):
-    """Class describing a 2D Circle with the formula:
+    """Class describing a 2D Circle with the implicit equation:
 
     .. math::
        (x-a)^2 + (y-b)^2 - r^2 = 0
@@ -206,7 +206,7 @@ class Circle(BaseShape):
 
 
 class Sphere(BaseShape):
-    """Class describing a 3D Sphere with the formula:
+    """Class describing a 3D Sphere with the implicit equation:
 
     .. math::
        (x-a)^2 + (y-b)^2 + (z-c)^2 - r^2 = 0
@@ -238,6 +238,7 @@ class Sphere(BaseShape):
 class Cylinder(BaseShape):
     """Class describing a 3D Cylinder with the axis in one of x, y, or z directions.
     """
+
     # TODO: add cylinder formula in a table.
     # TODO: change formula to equation in docs.
     # TODO: This can probably optimized by using multiple classes and selecting the appropriate one.
@@ -277,3 +278,54 @@ class Cylinder(BaseShape):
             raise RuntimeError("self.dir is equal to '%s' which is not valid and"
                                "should have been caught in the constructor."
                                "Please contact the author." % self.dir)
+
+
+class Ellipse(BaseShape):
+    """Class describing a 2D Ellipse with the implicit equation:
+
+    .. math::
+       \\frac{((x-x_0)\\cos(\\theta)+(y-y_0)\\sin(\\theta))^2}{a^2}
+       + \\frac{((x-x_0) \sin(\\theta)-(y-y_0) \\cos(\\theta))^2}{b^2}
+       - 1 = 0
+
+    Where :math:`(x_0, y_0)` is the center of the ellipse,
+    :math:`a` and :math:`b` are the semi-axes is the x and y directions,
+    and :math:`\\theta` is the rotation applied to the ellipse measured from the x-axis.
+    The angle :math:`\\theta` is input in degrees, but is converted to radians for the equation.
+
+    This formula has been developed by
+    `andikat dennis <https://math.stackexchange.com/users/82597/andikat-dennis>`_
+    as `the answer <https://math.stackexchange.com/a/434482>`_
+    to the Mathematics StackExchange question titled
+    `What is the general equation of the ellipse
+    that is not in the origin and rotated by an angle?
+    <https://math.stackexchange.com/q/426150>`_.
+    """
+
+    def __init__(self, id: int, theta: float, x0: float, y0: float, a: float, b: float):
+        """
+        Args:
+            id: ID of the shape which should be must be unique.
+            theta: Angle in degrees measured from the x-axis.
+            x0: x-coordinate of the center of the ellipse where semi-axes meet.
+            y0: y-coordinate of the center of the ellipse where semi-axes meet.
+            a: semi-axis of the ellipse in the x-direction.
+            b: semi-axis of the ellipse in the y-direction.
+        """
+        self.id = id
+        # theta is received as degrees but is used in radians.
+        # Also, the -90 accounts for the way VCAMS stores and exports a VoxelPart.
+        self.theta = radians(theta - 90)
+        self.x0 = x0
+        self.y0 = y0
+        self.a = a
+        self.b = b
+
+    dim: str = '2D'
+    """This class attribute means that shape can be used for 2D models."""
+
+    def func(self, x: Union[float, ndarray],
+             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+        return (((((x - self.x0) * cos(self.theta) + (y - self.y0) * sin(self.theta)) ** 2) / self.a ** 2)
+                + ((((x - self.x0) * sin(self.theta) - (y - self.y0) * cos(self.theta)) ** 2) / self.b ** 2)
+                - 1)
