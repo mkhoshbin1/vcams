@@ -48,6 +48,7 @@ class BaseShape(ABC):
             An array of floats which may be negative, zero, or positive.
             If scalar values are passed, a float is returned instead of an array.
             See TODO for interpretation of the results.
+            # TODO: add definition of level set (https://en.wikipedia.org/wiki/Level_set)
         """
 
     pass
@@ -243,6 +244,10 @@ class Cylinder(BaseShape):
     # TODO: change formula to equation in docs.
     # TODO: This can probably optimized by using multiple classes and selecting the appropriate one.
     # TODO: See if you can cylinder with general axis direction.
+    # TODO: We work with right cylinders. (https://www.math.net/cylinder) document this.
+    # TODO: 2D cylinder (rectangle)
+    # TODO: capped cylinder (half-circle vs line vs infinite)
+    # TODO: update predefined structures to add new shapes.
 
     def __init__(self, id, dir: str, a: float, b: Union[float, None], c: Union[float, None], r: Union[float, None]):
         """
@@ -284,14 +289,14 @@ class Ellipse(BaseShape):
     """Class describing a 2D Ellipse with the implicit equation:
 
     .. math::
-       \\frac{((x-x_0)\\cos(\\theta)+(y-y_0)\\sin(\\theta))^2}{a^2}
-       + \\frac{((x-x_0) \sin(\\theta)-(y-y_0) \\cos(\\theta))^2}{b^2}
+       \\frac{((x-x_c)\\cos(\\alpha)+(y-y_c)\\sin(\\alpha))^2}{a^2}
+       + \\frac{((x-x_c) \\sin(\\alpha)-(y-y_c) \\cos(\\alpha))^2}{b^2}
        - 1 = 0
 
-    Where :math:`(x_0, y_0)` is the center of the ellipse,
-    :math:`a` and :math:`b` are the semi-axes is the x and y directions,
-    and :math:`\\theta` is the rotation applied to the ellipse measured from the x-axis.
-    The angle :math:`\\theta` is input in degrees, but is converted to radians for the equation.
+    Where :math:`(x_c, y_c)` is the center of the ellipse,
+    :math:`a` and :math:`b` are the length of the semi-axes along the unrotated x and y axes,
+    and :math:`\\alpha` is the counterclockwise rotation of the ellipse around the z-axis.
+    The angle :math:`\\alpha` is input in degrees, but is converted to radians for the equation.
 
     This formula has been developed by
     `andikat dennis <https://math.stackexchange.com/users/82597/andikat-dennis>`_
@@ -302,22 +307,22 @@ class Ellipse(BaseShape):
     <https://math.stackexchange.com/q/426150>`_.
     """
 
-    def __init__(self, id: int, theta: float, x0: float, y0: float, a: float, b: float):
+    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float, b: float):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            theta: Angle in degrees measured from the x-axis.
-            x0: x-coordinate of the center of the ellipse where semi-axes meet.
-            y0: y-coordinate of the center of the ellipse where semi-axes meet.
-            a: semi-axis of the ellipse in the x-direction.
-            b: semi-axis of the ellipse in the y-direction.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis (in degrees).
+            xc: x-coordinate of the center of the ellipse where semi-axes meet.
+            yc: y-coordinate of the center of the ellipse where semi-axes meet.
+            a: semi-axis of the ellipse along the unrotated x-axis.
+            b: semi-axis of the ellipse along the unrotated y-axis.
         """
         self.id = id
-        # theta is received as degrees but is used in radians.
+        # alpha is received as degrees but is used in radians.
         # Also, the -90 accounts for the way VCAMS stores and exports a VoxelPart.
-        self.theta = radians(theta - 90)
-        self.x0 = x0
-        self.y0 = y0
+        self.alpha = radians(alpha - 90)
+        self.xc = xc
+        self.yc = yc
         self.a = a
         self.b = b
 
@@ -326,27 +331,72 @@ class Ellipse(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (((((x - self.x0) * cos(self.theta) + (y - self.y0) * sin(self.theta)) ** 2) / self.a ** 2)
-                + ((((x - self.x0) * sin(self.theta) - (y - self.y0) * cos(self.theta)) ** 2) / self.b ** 2)
+        return (((((x - self.xc) * cos(self.alpha) + (y - self.yc) * sin(self.alpha)) ** 2) / self.a ** 2)
+                + ((((x - self.xc) * sin(self.alpha) - (y - self.yc) * cos(self.alpha)) ** 2) / self.b ** 2)
                 - 1)
 
 
 class Ellipsoid(BaseShape):
-    def __init__(self, id: int, x0: float, y0: float, z0: float, a: float, b: float, c: float):
+    """Class describing a triaxial Ellipsoid with rotation and translation.
+    The implicit equation is
+
+    .. math::
+       \\frac{((x-x_c)\\cos(\\alpha)+(y-y_c)\\sin(\\alpha))^2}{a^2}
+       + \\frac{((x-x_c) \\sin(\\alpha)-(y-y_c) \\cos(\\alpha))^2}{b^2}
+       - 1 = 0
+
+    Where :math:`(x_c, y_c)` is the center of the ellipse,
+    :math:`a` and :math:`b` are the length of the semi-axes along the unrotated x and y axes,
+    and :math:`\\alpha` is the counterclockwise rotation of the ellipse around the z-axis.
+    The angle :math:`\\alpha` is input in degrees, but is converted to radians for the equation.
+
+
+    The implicit equation for an unrotated ellipsoid in the center is:
+
+    .. math::
+       \\frac{x}{a^2} + \\frac{y}{b^2} + \\frac{z}{c^2} - 1 = 0
+
+    To rotate the ellipsoid, we need to transform the :math:`xyz` coordinates to the new :math:`x'y'z'` system.
+    This
+
+    """
+
+    def __init__(self, id: int, xc: float, yc: float, zc: float, a: float, b: float, c: float,
+                 psi: float, theta: float, phi: float):
         self.id = id
-        self.x0 = x0
-        self.y0 = y0
-        self.z0 = z0
+        self.xc = xc
+        self.yc = yc
+        self.zc = zc
         self.a = a
         self.b = b
         self.c = c
+        self.psi = radians(psi - 90)
+        self.theta = radians(theta)
+        self.phi = radians(phi)
+        # TODO: validate angles.
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 2D models."""
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (((x-self.x0)**2 / (self.a**2))
-                + ((y-self.y0)**2 / (self.b**2))
-                + ((z-self.z0)**2 / (self.c**2))
+
+        x = x-self.xc
+        y = y-self.yc
+        z = z-self.zc
+
+        xx = (z * (sin(self.phi) * sin(self.psi) + cos(self.phi) * cos(self.psi) * sin(self.theta))
+              - y * (cos(self.phi) * sin(self.psi) - cos(self.psi) * sin(self.phi) * sin(self.theta))
+              + x * cos(self.psi) * cos(self.theta))
+
+        yy = (y*(cos(self.phi)*cos(self.psi) + sin(self.phi)*sin(self.psi)*sin(self.theta))
+              - z*(cos(self.psi)*sin(self.phi) - cos(self.phi)*sin(self.psi)*sin(self.theta))
+              + x*cos(self.theta)*sin(self.psi) )
+
+        zz = z * cos(self.phi) * cos(self.theta) - x * sin(self.theta) + y * cos(self.theta) * sin(self.phi)
+
+
+        return (((xx) ** 2 / (self.a ** 2))
+                + ((yy) ** 2 / (self.b ** 2))
+                + ((zz) ** 2 / (self.c ** 2))
                 - 1)
