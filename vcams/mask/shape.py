@@ -417,17 +417,18 @@ class Ellipsoid(BaseShape):
     performed in :mod:`~vcams.mask.function` module.
     """
 
-    def __init__(self, id: int, xc: float, yc: float, zc: float, a: float, b: float, c: float,
+    def __init__(self, id: int, a: float, b: float, c: float,
+                 xc: float, yc: float, zc: float,
                  alpha: float, beta: float, gamma: float):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
-            yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
-            zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
             a: semi-axis of the ellipsoid along the unrotated x-axis.
             b: semi-axis of the ellipsoid along the unrotated y-axis.
             c: semi-axis of the ellipsoid along the unrotated z-axis.
+            xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
+            yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
+            zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
             alpha: Rotation of the ellipsoid about its z-axis. It must be in the range [0, 360] degrees.
             beta: Rotation of the ellipsoid around its y-axis. It must be in the range [0, 180] degrees.
             gamma: Rotation of the ellipsoid around its x-axis. It must be in the range [0, 360] degrees.
@@ -436,13 +437,30 @@ class Ellipsoid(BaseShape):
         self.xc = xc
         self.yc = yc
         self.zc = zc
-        self.a = a
-        self.b = b
-        self.c = c
-        self.alpha = radians(alpha)
-        self.beta = radians(beta)
-        self.gamma = radians(gamma)
-        # TODO: validate angles.
+        if a <= 0:
+            raise ValueError(f'a must be positive but is {a:.6f}')
+        else:
+            self.a = a
+        if b <= 0:
+            raise ValueError(f'b must be positive but is {b:.6f}')
+        else:
+            self.b = b
+        if c <= 0:
+            raise ValueError(f'c must be positive but is {c:.6f}')
+        else:
+            self.c = c
+        if alpha > 360 or alpha < 0:
+            raise ValueError(f'alpha must be in the range [0, 360], but is {alpha:.6f}')
+        else:
+            self.alpha = radians(alpha)
+        if beta > 180 or beta < 0:
+            raise ValueError(f'beta must be in the range [0, 180], but is {beta:.6f}')
+        else:
+            self.beta = radians(beta)
+        if gamma > 360 or gamma < 0:
+            raise ValueError(f'gamma must be in the range [0, 360], but is {gamma:.6f}')
+        else:
+            self.gamma = radians(gamma)
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
