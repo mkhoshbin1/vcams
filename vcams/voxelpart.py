@@ -496,3 +496,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: typo in doc and readme.md: it's -> its
 # TODO: check various errors when 2D/3D doesn't match across part size, voxel size, etc.
 # TODO: Add docs for random including examples.
+# TODO: update to Python 3.10.
+# TODO: In Python 3.10, use | instead of Union for type hints.
+#       See https://medium.com/techtofreedom/8-levels-of-using-type-hints-in-python-a6717e28f8fd

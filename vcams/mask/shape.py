@@ -10,7 +10,8 @@ from itertools import count
 from abc import ABC, abstractmethod
 from typing import Union
 
-from numpy import logical_or, ndarray, sin, cos, radians
+import numpy as np
+from numpy import logical_or, ndarray, sin, cos, radians, array, diagflat, sum
 
 from vcams.mask.function import mask_from_function
 
@@ -338,31 +339,99 @@ class Ellipse(BaseShape):
 
 class Ellipsoid(BaseShape):
     """Class describing a triaxial Ellipsoid with rotation and translation.
-    The implicit equation is
-
-    .. math::
-       \\frac{((x-x_c)\\cos(\\alpha)+(y-y_c)\\sin(\\alpha))^2}{a^2}
-       + \\frac{((x-x_c) \\sin(\\alpha)-(y-y_c) \\cos(\\alpha))^2}{b^2}
-       - 1 = 0
-
-    Where :math:`(x_c, y_c)` is the center of the ellipse,
-    :math:`a` and :math:`b` are the length of the semi-axes along the unrotated x and y axes,
-    and :math:`\\alpha` is the counterclockwise rotation of the ellipse around the z-axis.
-    The angle :math:`\\alpha` is input in degrees, but is converted to radians for the equation.
-
 
     The implicit equation for an unrotated ellipsoid in the center is:
 
     .. math::
+       :label: shape-ellipsoid-simple
+
        \\frac{x}{a^2} + \\frac{y}{b^2} + \\frac{z}{c^2} - 1 = 0
 
     To rotate the ellipsoid, we need to transform the :math:`xyz` coordinates to the new :math:`x'y'z'` system.
-    This
+    Three rotations must be applied in the following order:
 
+      - A rotation :math:`\\boldsymbol{R_x}(\\gamma)` about the ellipsoid's x-axis.
+      - A rotation :math:`\\boldsymbol{R_y}(\\beta)` about the ellipsoid's y-axis.
+      - A rotation :math:`\\boldsymbol{R_z}(\\alpha)` about the ellipsoid's z-axis.
+
+    The combination of these rotations is an intrinsic rotation
+    whose Tait–Bryan angles are :math:`\\gamma`, :math:`\\beta`, and :math:`\\alpha`.
+    We can represent the complete rotation as:
+
+    .. math::
+       :label: shape-ellipsoid-rotation
+
+       \\begin{aligned}
+       \\boldsymbol{R} &= \\boldsymbol{R_z}(\\alpha)\\boldsymbol{R_y}(\\beta)\\boldsymbol{R_x}(\\gamma)\\\\[12pt]
+       &=
+       \\begin{bmatrix}
+         \\cos(\\alpha) & -\\sin(\\alpha)  & 0 \\\\
+         \\sin(\\alpha) &  \\cos(\\alpha)  & 0 \\\\
+         0              & 0                & 1
+       \\end{bmatrix}
+       \\begin{bmatrix}
+         \\cos(\\beta)  & 0 & \\sin(\\beta) \\\\
+         0              & 1 & 0             \\\\
+         -\\sin(\\beta) & 0 & \\cos(\\beta)
+       \\end{bmatrix}
+       \\begin{bmatrix}
+         1 & 0              & 0               \\\\
+         0 & \\cos(\\gamma) & -\\sin(\\gamma) \\\\
+         0 & \\sin(\\gamma) &  \\cos(\\gamma)
+       \\end{bmatrix} \\\\[12pt]
+       &=
+       \\begin{bmatrix}
+         \\cos(\\alpha)\\cos(\\beta) & \\cos(\\alpha)\\sin(\\beta)\\sin(\\gamma)-\\sin(\\alpha)\\cos(\\gamma) & \\cos(\\alpha)\\sin(\\beta)\\cos(\\gamma)+\\sin(\\alpha)\\sin(\\gamma) \\\\
+         \\sin(\\alpha)\\cos(\\beta) & \\sin(\\alpha)\\sin(\\beta)\\sin(\\gamma)+\\cos(\\alpha)\\cos(\\gamma) & \\sin(\\alpha)\\sin(\\beta)\\cos(\\gamma)-\\cos(\\alpha)\\sin(\\gamma) \\\\
+         -\\sin(\\beta)      & \\cos(\\beta)\\sin(\\gamma)                    & \\cos(\\beta)\\cos(\\gamma)
+       \\end{bmatrix}\\\\
+       \\end{aligned}
+
+    The main goal is to find the state of a point :math:`P(x,y,z)` with regards to the transformed ellipsoid.
+    To do that, the coordinates of :math:`P` must undergo the same transformation as the ellipsoid.
+    This means that first it must be translated by the vector :math:`(x_c, y_c, z_c)`,
+    and then the rotation :math:`\\boldsymbol{R}` must be applied to it.
+    The formula for this transformation is:
+
+    .. math::
+       :label: shape-ellipsoid-pdot-transform
+
+       \\begin{bmatrix}x'\\\\y'\\\\z'\\end{bmatrix}
+       =\\boldsymbol{R}(\\alpha, \\beta, \\gamma)\\begin{bmatrix}x-x_c\\\\y-y_c\\\\z-z_c\\end{bmatrix}
+
+    Now that we have :math:`P'(x',y',z')`, we can rewrite Eq. :eq:`shape-ellipsoid-simple` for :math:`P'`:
+
+    .. math::
+       :label: shape-ellipsoid-pdot-eq
+
+       \\frac{x'}{a^2} + \\frac{y'}{b^2} + \\frac{z'}{c^2} - 1 = 0
+
+    The actual implementation is a little different.
+    Using Eqs. :eq:`shape-ellipsoid-rotation` and :eq:`shape-ellipsoid-pdot-transform`,
+    and MATLAB's Symbolic Math Toolbox,
+    the expressions for each of :math:`x'`, :math:`y'`, and :math:`z'` are found.
+    This allows us to use the transformed coordinates :math:`P'(x',y',z')`
+    to evaluate Eq. :eq:`shape-ellipsoid-pdot-eq`.
+
+    The reason for this different approach lies in the complex vectorization
+    performed in :mod:`~vcams.mask.function` module.
     """
 
     def __init__(self, id: int, xc: float, yc: float, zc: float, a: float, b: float, c: float,
-                 psi: float, theta: float, phi: float):
+                 alpha: float, beta: float, gamma: float):
+        """
+        Args:
+            id: ID of the shape which should be must be unique.
+            xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
+            yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
+            zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
+            a: semi-axis of the ellipsoid along the unrotated x-axis.
+            b: semi-axis of the ellipsoid along the unrotated y-axis.
+            c: semi-axis of the ellipsoid along the unrotated z-axis.
+            alpha: Rotation of the ellipsoid about its z-axis. It must be in the range [0, 360] degrees.
+            beta: Rotation of the ellipsoid around its y-axis. It must be in the range [0, 180] degrees.
+            gamma: Rotation of the ellipsoid around its x-axis. It must be in the range [0, 360] degrees.
+        """
         self.id = id
         self.xc = xc
         self.yc = yc
@@ -370,33 +439,31 @@ class Ellipsoid(BaseShape):
         self.a = a
         self.b = b
         self.c = c
-        self.psi = radians(psi - 90)
-        self.theta = radians(theta)
-        self.phi = radians(phi)
+        self.alpha = radians(alpha)
+        self.beta = radians(beta)
+        self.gamma = radians(gamma)
         # TODO: validate angles.
 
     dim: str = '3D'
-    """This class attribute means that shape can be used for 2D models."""
+    """This class attribute means that shape can be used for 3D models."""
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+        # Apply the translation.
+        xx = x - self.xc
+        yy = y - self.yc
+        zz = z - self.zc
 
-        x = x-self.xc
-        y = y-self.yc
-        z = z-self.zc
+        # Apply the rotation.
+        xxx = (xx * cos(self.alpha) * cos(self.beta)
+               - yy * (cos(self.gamma) * sin(self.alpha) - cos(self.alpha) * sin(self.gamma) * sin(self.beta))
+               + zz * (sin(self.gamma) * sin(self.alpha) + cos(self.gamma) * cos(self.alpha) * sin(self.beta))
+               )
+        yyy = (xx * cos(self.beta) * sin(self.alpha)
+               + yy * (cos(self.gamma) * cos(self.alpha) + sin(self.gamma) * sin(self.alpha) * sin(self.beta))
+               - zz * (cos(self.alpha) * sin(self.gamma) - cos(self.gamma) * sin(self.alpha) * sin(self.beta))
+               )
+        zzz = -xx * sin(self.beta) + yy * cos(self.beta) * sin(self.gamma) + zz * cos(self.gamma) * cos(self.beta)
 
-        xx = (z * (sin(self.phi) * sin(self.psi) + cos(self.phi) * cos(self.psi) * sin(self.theta))
-              - y * (cos(self.phi) * sin(self.psi) - cos(self.psi) * sin(self.phi) * sin(self.theta))
-              + x * cos(self.psi) * cos(self.theta))
-
-        yy = (y*(cos(self.phi)*cos(self.psi) + sin(self.phi)*sin(self.psi)*sin(self.theta))
-              - z*(cos(self.psi)*sin(self.phi) - cos(self.phi)*sin(self.psi)*sin(self.theta))
-              + x*cos(self.theta)*sin(self.psi) )
-
-        zz = z * cos(self.phi) * cos(self.theta) - x * sin(self.theta) + y * cos(self.theta) * sin(self.phi)
-
-
-        return (((xx) ** 2 / (self.a ** 2))
-                + ((yy) ** 2 / (self.b ** 2))
-                + ((zz) ** 2 / (self.c ** 2))
-                - 1)
+        # Evaluate the ellipsoid function.
+        return (xxx ** 2 / (self.a ** 2)) + (yyy ** 2 / (self.b ** 2)) + (zzz ** 2 / (self.c ** 2)) - 1
