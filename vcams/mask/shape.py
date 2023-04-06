@@ -183,26 +183,22 @@ class Circle(BaseShape):
     """Class describing a 2D Circle with the implicit equation:
 
     .. math::
-       (x-a)^2 + (y-b)^2 - r^2 = 0
+       :label: shape-circle-eq
+
+       (x-x_c)^2 + (y-y_c)^2 - r^2 = 0
     """
 
-    def __init__(self, id: int, a: float, b: float, r: float):
+    def __init__(self, id: int, xc: float, yc: float, r: float):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: x-coordinate of the center of the circle. It must be positive.
-            b: y-coordinate of the center of the circle. It must be positive.
+            xc: x-coordinate of the center of the circle. It must be positive.
+            yc: y-coordinate of the center of the circle. It must be positive.
             r: Radius of the circle. It must be positive.
         """
         self.id = id
-        if a <= 0:
-            raise ValueError(f'a must be positive but is {a:.6f}')
-        else:
-            self.a = a
-        if b <= 0:
-            raise ValueError(f'b must be positive but is {b:.6f}')
-        else:
-            self.b = b
+        self.xc = xc
+        self.yc = yc
         if r <= 0:
             raise ValueError(f'r must be positive but is {r:.6f}')
         else:
@@ -213,38 +209,31 @@ class Circle(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (x - self.a) ** 2 + (y - self.b) ** 2 - self.r ** 2
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 - self.r ** 2
 
 
 class Sphere(BaseShape):
     """Class describing a 3D Sphere with the implicit equation:
 
     .. math::
-       (x-a)^2 + (y-b)^2 + (z-c)^2 - r^2 = 0
+       :label: shape-sphere-eq
+
+       (x-x_c)^2 + (y-y_c)^2 + (z-z_c)^2 - r^2 = 0
     """
 
-    def __init__(self, id, a: float, b: float, c: float, r: float):
+    def __init__(self, id, xc: float, yc: float, zc: float, r: float):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: x-coordinate of the center of the sphere. It must be positive.
-            b: y-coordinate of the center of the sphere. It must be positive.
-            c: y-coordinate of the center of the sphere. It must be positive.
+            xc: x-coordinate of the center of the sphere. It must be positive.
+            yc: y-coordinate of the center of the sphere. It must be positive.
+            zc: y-coordinate of the center of the sphere. It must be positive.
             r: Radius of the sphere. It must be positive.
         """
         self.id = id
-        if a <= 0:
-            raise ValueError(f'a must be positive but is {a:.6f}')
-        else:
-            self.a = a
-        if b <= 0:
-            raise ValueError(f'b must be positive but is {b:.6f}')
-        else:
-            self.b = b
-        if c <= 0:
-            raise ValueError(f'c must be positive but is {c:.6f}')
-        else:
-            self.c = c
+        self.xc = xc
+        self.yc = yc
+        self.zc = zc
         if r <= 0:
             raise ValueError(f'r must be positive but is {r:.6f}')
         else:
@@ -255,7 +244,7 @@ class Sphere(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (x - self.a) ** 2 + (y - self.b) ** 2 + (z - self.c) ** 2 - self.r ** 2
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 - self.r ** 2
 
 
 class Cylinder(BaseShape):
