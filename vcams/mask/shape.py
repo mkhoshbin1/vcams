@@ -190,14 +190,23 @@ class Circle(BaseShape):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: x-coordinate of the center of the circle.
-            b: y-coordinate of the center of the circle.
-            r: Radius of the circle.
+            a: x-coordinate of the center of the circle. It must be positive.
+            b: y-coordinate of the center of the circle. It must be positive.
+            r: Radius of the circle. It must be positive.
         """
         self.id = id
-        self.a = a
-        self.b = b
-        self.r = r
+        if a <= 0:
+            raise ValueError(f'a must be positive but is {a:.6f}')
+        else:
+            self.a = a
+        if b <= 0:
+            raise ValueError(f'b must be positive but is {b:.6f}')
+        else:
+            self.b = b
+        if r <= 0:
+            raise ValueError(f'r must be positive but is {r:.6f}')
+        else:
+            self.r = r
 
     dim: str = '2D'
     """This class attribute means that shape can be used for 2D models."""
@@ -218,16 +227,28 @@ class Sphere(BaseShape):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: x-coordinate of the center of the sphere.
-            b: y-coordinate of the center of the sphere.
-            c: y-coordinate of the center of the sphere.
-            r: Radius of the sphere.
+            a: x-coordinate of the center of the sphere. It must be positive.
+            b: y-coordinate of the center of the sphere. It must be positive.
+            c: y-coordinate of the center of the sphere. It must be positive.
+            r: Radius of the sphere. It must be positive.
         """
         self.id = id
-        self.a = a
-        self.b = b
-        self.c = c
-        self.r = r
+        if a <= 0:
+            raise ValueError(f'a must be positive but is {a:.6f}')
+        else:
+            self.a = a
+        if b <= 0:
+            raise ValueError(f'b must be positive but is {b:.6f}')
+        else:
+            self.b = b
+        if c <= 0:
+            raise ValueError(f'c must be positive but is {c:.6f}')
+        else:
+            self.c = c
+        if r <= 0:
+            raise ValueError(f'r must be positive but is {r:.6f}')
+        else:
+            self.r = r
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
@@ -290,50 +311,56 @@ class Ellipse(BaseShape):
     """Class describing a 2D Ellipse with the implicit equation:
 
     .. math::
-       \\frac{((x-x_c)\\cos(\\alpha)+(y-y_c)\\sin(\\alpha))^2}{a^2}
-       + \\frac{((x-x_c) \\sin(\\alpha)-(y-y_c) \\cos(\\alpha))^2}{b^2}
+       :label: shape-ellipse_eq
+
+       \\frac{((x-x_c)\\cos(\\alpha) - (y-y_c)\\sin(\\alpha))^2}{a^2}
+       + \\frac{((x-x_c) \\sin(\\alpha) + (y-y_c) \\cos(\\alpha))^2}{b^2}
        - 1 = 0
 
     Where :math:`(x_c, y_c)` is the center of the ellipse,
     :math:`a` and :math:`b` are the length of the semi-axes along the unrotated x and y axes,
-    and :math:`\\alpha` is the counterclockwise rotation of the ellipse around the z-axis.
-    The angle :math:`\\alpha` is input in degrees, but is converted to radians for the equation.
+    and :math:`\\alpha` is the rotation of the ellipse around the z-axis.
 
-    This formula has been developed by
-    `andikat dennis <https://math.stackexchange.com/users/82597/andikat-dennis>`_
-    as `the answer <https://math.stackexchange.com/a/434482>`_
-    to the Mathematics StackExchange question titled
-    `What is the general equation of the ellipse
-    that is not in the origin and rotated by an angle?
-    <https://math.stackexchange.com/q/426150>`_.
+    Note that :math:`\\alpha` is counterclockwise when viewed in the direction of the z-axis,
+    but this is not the default view in most viewers. This means that it may be viewed as clockwise.
+
+    This formula is a simple form of the equations developed for :class:`~Ellipsoid`.
+    See the docs for that class for a general ellipsoid.
     """
 
     def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float, b: float):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            alpha: Counterclockwise rotation of the ellipse around the z-axis (in degrees).
+            a: semi-axis of the ellipse along the unrotated x-axis. It must be positive.
+            b: semi-axis of the ellipse along the unrotated y-axis. It must be positive.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
             xc: x-coordinate of the center of the ellipse where semi-axes meet.
             yc: y-coordinate of the center of the ellipse where semi-axes meet.
-            a: semi-axis of the ellipse along the unrotated x-axis.
-            b: semi-axis of the ellipse along the unrotated y-axis.
         """
         self.id = id
-        # alpha is received as degrees but is used in radians.
-        # Also, the -90 accounts for the way VCAMS stores and exports a VoxelPart.
-        self.alpha = radians(alpha - 90)
         self.xc = xc
         self.yc = yc
-        self.a = a
-        self.b = b
+        if a <= 0:
+            raise ValueError(f'a must be positive but is {a:.6f}')
+        else:
+            self.a = a
+        if b <= 0:
+            raise ValueError(f'b must be positive but is {b:.6f}')
+        else:
+            self.b = b
+        if alpha > 360 or alpha < 0:
+            raise ValueError(f'alpha must be in the range [0, 360], but is {alpha:.6f}')
+        else:
+            self.alpha = radians(alpha)
 
     dim: str = '2D'
     """This class attribute means that shape can be used for 2D models."""
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (((((x - self.xc) * cos(self.alpha) + (y - self.yc) * sin(self.alpha)) ** 2) / self.a ** 2)
-                + ((((x - self.xc) * sin(self.alpha) - (y - self.yc) * cos(self.alpha)) ** 2) / self.b ** 2)
+        return (((((x - self.xc) * cos(self.alpha) - (y - self.yc) * sin(self.alpha)) ** 2) / self.a ** 2)
+                + ((((x - self.xc) * sin(self.alpha) + (y - self.yc) * cos(self.alpha)) ** 2) / self.b ** 2)
                 - 1)
 
 
@@ -423,9 +450,9 @@ class Ellipsoid(BaseShape):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: semi-axis of the ellipsoid along the unrotated x-axis.
-            b: semi-axis of the ellipsoid along the unrotated y-axis.
-            c: semi-axis of the ellipsoid along the unrotated z-axis.
+            a: semi-axis of the ellipsoid along the unrotated x-axis. It must be positive.
+            b: semi-axis of the ellipsoid along the unrotated y-axis. It must be positive.
+            c: semi-axis of the ellipsoid along the unrotated z-axis. It must be positive.
             xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
             yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
             zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
