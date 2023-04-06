@@ -10,7 +10,8 @@ from itertools import count
 from abc import ABC, abstractmethod
 from typing import Union
 
-from numpy import logical_or, ndarray
+import numpy as np
+from numpy import logical_or, ndarray, sin, cos, radians, array, diagflat, sum
 
 from vcams.mask.function import mask_from_function
 
@@ -48,6 +49,7 @@ class BaseShape(ABC):
             An array of floats which may be negative, zero, or positive.
             If scalar values are passed, a float is returned instead of an array.
             See TODO for interpretation of the results.
+            # TODO: add definition of level set (https://en.wikipedia.org/wiki/Level_set)
         """
 
     pass
@@ -178,70 +180,85 @@ class ShapeArray:
 
 
 class Circle(BaseShape):
-    """Class describing a 2D Circle with the formula:
+    """Class describing a 2D Circle with the implicit equation:
 
     .. math::
-       (x-a)^2 + (y-b)^2 - r^2 = 0
+       :label: shape-circle-eq
+
+       (x-x_c)^2 + (y-y_c)^2 - r^2 = 0
     """
 
-    def __init__(self, id: int, a: float, b: float, r: float):
+    def __init__(self, id: int, xc: float, yc: float, r: float):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: x-coordinate of the center of the circle.
-            b: y-coordinate of the center of the circle.
-            r: Radius of the circle.
+            xc: x-coordinate of the center of the circle. It must be positive.
+            yc: y-coordinate of the center of the circle. It must be positive.
+            r: Radius of the circle. It must be positive.
         """
         self.id = id
-        self.a = a
-        self.b = b
-        self.r = r
+        self.xc = xc
+        self.yc = yc
+        if r <= 0:
+            raise ValueError(f'r must be positive but is {r:.6f}')
+        else:
+            self.r = r
 
     dim: str = '2D'
     """This class attribute means that shape can be used for 2D models."""
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (x - self.a) ** 2 + (y - self.b) ** 2 - self.r ** 2
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 - self.r ** 2
 
 
 class Sphere(BaseShape):
-    """Class describing a 3D Sphere with the formula:
+    """Class describing a 3D Sphere with the implicit equation:
 
     .. math::
-       (x-a)^2 + (y-b)^2 + (z-c)^2 - r^2 = 0
+       :label: shape-sphere-eq
+
+       (x-x_c)^2 + (y-y_c)^2 + (z-z_c)^2 - r^2 = 0
     """
 
-    def __init__(self, id, a: float, b: float, c: float, r: float):
+    def __init__(self, id, xc: float, yc: float, zc: float, r: float):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: x-coordinate of the center of the sphere.
-            b: y-coordinate of the center of the sphere.
-            c: y-coordinate of the center of the sphere.
-            r: Radius of the sphere.
+            xc: x-coordinate of the center of the sphere. It must be positive.
+            yc: y-coordinate of the center of the sphere. It must be positive.
+            zc: y-coordinate of the center of the sphere. It must be positive.
+            r: Radius of the sphere. It must be positive.
         """
         self.id = id
-        self.a = a
-        self.b = b
-        self.c = c
-        self.r = r
+        self.xc = xc
+        self.yc = yc
+        self.zc = zc
+        if r <= 0:
+            raise ValueError(f'r must be positive but is {r:.6f}')
+        else:
+            self.r = r
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (x - self.a) ** 2 + (y - self.b) ** 2 + (z - self.c) ** 2 - self.r ** 2
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 - self.r ** 2
 
 
 class Cylinder(BaseShape):
     """Class describing a 3D Cylinder with the axis in one of x, y, or z directions.
     """
+
     # TODO: add cylinder formula in a table.
     # TODO: change formula to equation in docs.
     # TODO: This can probably optimized by using multiple classes and selecting the appropriate one.
     # TODO: See if you can cylinder with general axis direction.
+    # TODO: We work with right cylinders. (https://www.math.net/cylinder) document this.
+    # TODO: 2D cylinder (rectangle)
+    # TODO: capped cylinder (half-circle vs line vs infinite)
+    # TODO: update predefined structures to add new shapes.
 
     def __init__(self, id, dir: str, a: float, b: Union[float, None], c: Union[float, None], r: Union[float, None]):
         """
@@ -277,3 +294,210 @@ class Cylinder(BaseShape):
             raise RuntimeError("self.dir is equal to '%s' which is not valid and"
                                "should have been caught in the constructor."
                                "Please contact the author." % self.dir)
+
+
+class Ellipse(BaseShape):
+    """Class describing a 2D Ellipse with the implicit equation:
+
+    .. math::
+       :label: shape-ellipse_eq
+
+       \\frac{((x-x_c)\\cos(\\alpha) - (y-y_c)\\sin(\\alpha))^2}{a^2}
+       + \\frac{((x-x_c) \\sin(\\alpha) + (y-y_c) \\cos(\\alpha))^2}{b^2}
+       - 1 = 0
+
+    Where :math:`(x_c, y_c)` is the center of the ellipse,
+    :math:`a` and :math:`b` are the length of the semi-axes along the unrotated x and y axes,
+    and :math:`\\alpha` is the rotation of the ellipse around the z-axis.
+
+    Note that :math:`\\alpha` is counterclockwise when viewed in the direction of the z-axis,
+    but this is not the default view in most viewers. This means that it may be viewed as clockwise.
+
+    This formula is a simple form of the equations developed for :class:`~Ellipsoid`.
+    See the docs for that class for a general ellipsoid.
+    """
+
+    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float, b: float):
+        """
+        Args:
+            id: ID of the shape which should be must be unique.
+            a: semi-axis of the ellipse along the unrotated x-axis. It must be positive.
+            b: semi-axis of the ellipse along the unrotated y-axis. It must be positive.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
+            xc: x-coordinate of the center of the ellipse where semi-axes meet.
+            yc: y-coordinate of the center of the ellipse where semi-axes meet.
+        """
+        self.id = id
+        self.xc = xc
+        self.yc = yc
+        if a <= 0:
+            raise ValueError(f'a must be positive but is {a:.6f}')
+        else:
+            self.a = a
+        if b <= 0:
+            raise ValueError(f'b must be positive but is {b:.6f}')
+        else:
+            self.b = b
+        if alpha > 360 or alpha < 0:
+            raise ValueError(f'alpha must be in the range [0, 360], but is {alpha:.6f}')
+        else:
+            self.alpha = radians(alpha)
+
+    dim: str = '2D'
+    """This class attribute means that shape can be used for 2D models."""
+
+    def func(self, x: Union[float, ndarray],
+             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+        return (((((x - self.xc) * cos(self.alpha) - (y - self.yc) * sin(self.alpha)) ** 2) / self.a ** 2)
+                + ((((x - self.xc) * sin(self.alpha) + (y - self.yc) * cos(self.alpha)) ** 2) / self.b ** 2)
+                - 1)
+
+
+class Ellipsoid(BaseShape):
+    """Class describing a triaxial Ellipsoid with rotation and translation.
+
+    The implicit equation for an unrotated ellipsoid in the center is:
+
+    .. math::
+       :label: shape-ellipsoid-simple
+
+       \\frac{x}{a^2} + \\frac{y}{b^2} + \\frac{z}{c^2} - 1 = 0
+
+    To rotate the ellipsoid, we need to transform the :math:`xyz` coordinates to the new :math:`x'y'z'` system.
+    Three rotations must be applied in the following order:
+
+      - A rotation :math:`\\boldsymbol{R_x}(\\gamma)` about the ellipsoid's x-axis.
+      - A rotation :math:`\\boldsymbol{R_y}(\\beta)` about the ellipsoid's y-axis.
+      - A rotation :math:`\\boldsymbol{R_z}(\\alpha)` about the ellipsoid's z-axis.
+
+    The combination of these rotations is an intrinsic rotation
+    whose Tait–Bryan angles are :math:`\\gamma`, :math:`\\beta`, and :math:`\\alpha`.
+    We can represent the complete rotation as:
+
+    .. math::
+       :label: shape-ellipsoid-rotation
+
+       \\begin{aligned}
+       \\boldsymbol{R} &= \\boldsymbol{R_z}(\\alpha)\\boldsymbol{R_y}(\\beta)\\boldsymbol{R_x}(\\gamma)\\\\[12pt]
+       &=
+       \\begin{bmatrix}
+         \\cos(\\alpha) & -\\sin(\\alpha)  & 0 \\\\
+         \\sin(\\alpha) &  \\cos(\\alpha)  & 0 \\\\
+         0              & 0                & 1
+       \\end{bmatrix}
+       \\begin{bmatrix}
+         \\cos(\\beta)  & 0 & \\sin(\\beta) \\\\
+         0              & 1 & 0             \\\\
+         -\\sin(\\beta) & 0 & \\cos(\\beta)
+       \\end{bmatrix}
+       \\begin{bmatrix}
+         1 & 0              & 0               \\\\
+         0 & \\cos(\\gamma) & -\\sin(\\gamma) \\\\
+         0 & \\sin(\\gamma) &  \\cos(\\gamma)
+       \\end{bmatrix} \\\\[12pt]
+       &=
+       \\begin{bmatrix}
+         \\cos(\\alpha)\\cos(\\beta) & \\cos(\\alpha)\\sin(\\beta)\\sin(\\gamma)-\\sin(\\alpha)\\cos(\\gamma) & \\cos(\\alpha)\\sin(\\beta)\\cos(\\gamma)+\\sin(\\alpha)\\sin(\\gamma) \\\\
+         \\sin(\\alpha)\\cos(\\beta) & \\sin(\\alpha)\\sin(\\beta)\\sin(\\gamma)+\\cos(\\alpha)\\cos(\\gamma) & \\sin(\\alpha)\\sin(\\beta)\\cos(\\gamma)-\\cos(\\alpha)\\sin(\\gamma) \\\\
+         -\\sin(\\beta)      & \\cos(\\beta)\\sin(\\gamma)                    & \\cos(\\beta)\\cos(\\gamma)
+       \\end{bmatrix}\\\\
+       \\end{aligned}
+
+    The main goal is to find the state of a point :math:`P(x,y,z)` with regards to the transformed ellipsoid.
+    To do that, the coordinates of :math:`P` must undergo the same transformation as the ellipsoid.
+    This means that first it must be translated by the vector :math:`(x_c, y_c, z_c)`,
+    and then the rotation :math:`\\boldsymbol{R}` must be applied to it.
+    The formula for this transformation is:
+
+    .. math::
+       :label: shape-ellipsoid-pdot-transform
+
+       \\begin{bmatrix}x'\\\\y'\\\\z'\\end{bmatrix}
+       =\\boldsymbol{R}(\\alpha, \\beta, \\gamma)\\begin{bmatrix}x-x_c\\\\y-y_c\\\\z-z_c\\end{bmatrix}
+
+    Now that we have :math:`P'(x',y',z')`, we can rewrite Eq. :eq:`shape-ellipsoid-simple` for :math:`P'`:
+
+    .. math::
+       :label: shape-ellipsoid-pdot-eq
+
+       \\frac{x'}{a^2} + \\frac{y'}{b^2} + \\frac{z'}{c^2} - 1 = 0
+
+    The actual implementation is a little different.
+    Using Eqs. :eq:`shape-ellipsoid-rotation` and :eq:`shape-ellipsoid-pdot-transform`,
+    and MATLAB's Symbolic Math Toolbox,
+    the expressions for each of :math:`x'`, :math:`y'`, and :math:`z'` are found.
+    This allows us to use the transformed coordinates :math:`P'(x',y',z')`
+    to evaluate Eq. :eq:`shape-ellipsoid-pdot-eq`.
+
+    The reason for this different approach lies in the complex vectorization
+    performed in :mod:`~vcams.mask.function` module.
+    """
+
+    def __init__(self, id: int, a: float, b: float, c: float,
+                 xc: float, yc: float, zc: float,
+                 alpha: float, beta: float, gamma: float):
+        """
+        Args:
+            id: ID of the shape which should be must be unique.
+            a: semi-axis of the ellipsoid along the unrotated x-axis. It must be positive.
+            b: semi-axis of the ellipsoid along the unrotated y-axis. It must be positive.
+            c: semi-axis of the ellipsoid along the unrotated z-axis. It must be positive.
+            xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
+            yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
+            zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
+            alpha: Rotation of the ellipsoid about its z-axis. It must be in the range [0, 360] degrees.
+            beta: Rotation of the ellipsoid around its y-axis. It must be in the range [0, 180] degrees.
+            gamma: Rotation of the ellipsoid around its x-axis. It must be in the range [0, 360] degrees.
+        """
+        self.id = id
+        self.xc = xc
+        self.yc = yc
+        self.zc = zc
+        if a <= 0:
+            raise ValueError(f'a must be positive but is {a:.6f}')
+        else:
+            self.a = a
+        if b <= 0:
+            raise ValueError(f'b must be positive but is {b:.6f}')
+        else:
+            self.b = b
+        if c <= 0:
+            raise ValueError(f'c must be positive but is {c:.6f}')
+        else:
+            self.c = c
+        if alpha > 360 or alpha < 0:
+            raise ValueError(f'alpha must be in the range [0, 360], but is {alpha:.6f}')
+        else:
+            self.alpha = radians(alpha)
+        if beta > 180 or beta < 0:
+            raise ValueError(f'beta must be in the range [0, 180], but is {beta:.6f}')
+        else:
+            self.beta = radians(beta)
+        if gamma > 360 or gamma < 0:
+            raise ValueError(f'gamma must be in the range [0, 360], but is {gamma:.6f}')
+        else:
+            self.gamma = radians(gamma)
+
+    dim: str = '3D'
+    """This class attribute means that shape can be used for 3D models."""
+
+    def func(self, x: Union[float, ndarray],
+             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+        # Apply the translation.
+        xx = x - self.xc
+        yy = y - self.yc
+        zz = z - self.zc
+
+        # Apply the rotation.
+        xxx = (xx * cos(self.alpha) * cos(self.beta)
+               - yy * (cos(self.gamma) * sin(self.alpha) - cos(self.alpha) * sin(self.gamma) * sin(self.beta))
+               + zz * (sin(self.gamma) * sin(self.alpha) + cos(self.gamma) * cos(self.alpha) * sin(self.beta))
+               )
+        yyy = (xx * cos(self.beta) * sin(self.alpha)
+               + yy * (cos(self.gamma) * cos(self.alpha) + sin(self.gamma) * sin(self.alpha) * sin(self.beta))
+               - zz * (cos(self.alpha) * sin(self.gamma) - cos(self.gamma) * sin(self.alpha) * sin(self.beta))
+               )
+        zzz = -xx * sin(self.beta) + yy * cos(self.beta) * sin(self.gamma) + zz * cos(self.gamma) * cos(self.beta)
+
+        # Evaluate the ellipsoid function.
+        return (xxx ** 2 / (self.a ** 2)) + (yyy ** 2 / (self.b ** 2)) + (zzz ** 2 / (self.c ** 2)) - 1

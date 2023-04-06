@@ -25,14 +25,14 @@ is created based on the *VoxelPart* and with its dimensionality set to *2D*::
 
 Then, a number of shapes are added using
 the :meth:`~vcams.mask.shape.ShapeArray.add_shape` method.
-Each time, the :class:`~vcams.mask.shape.Circle` class is passed
+Each time, one of the classes in the :mod:`~vcams.mask.shape` module is passed
 which determines the shape to be added and also the shape's parameters are added
 as keyword arguments::
 
     shape_array_obj.add_shape(Circle, a=0, b=0, r=0.1)
     shape_array_obj.add_shape(Circle, a=0.4, b=0.2, r=0.15)
     shape_array_obj.add_shape(Circle, a=0.7, b=0.5, r=0.1)
-    shape_array_obj.add_shape(Circle, a=0.3, b=0.7, r=0.25)
+    shape_array_obj.add_shape(Ellipse, a=0.15, b=0.30, xc=0.30, yc=0.65, alpha=20)
 
 When using the *ShapeArray* object we don't need to calculate a mask,
 we just ask it to give us its mask using
