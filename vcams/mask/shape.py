@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
-from numpy import logical_or, ndarray, sin, cos, radians, array, diagflat, sum
+from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy
 
 from vcams.mask.function import mask_from_function
 
@@ -36,7 +36,7 @@ class BaseShape(ABC):
     @abstractmethod
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
-             has_boundary: bool = False) -> Union[float, ndarray]:
+             boundary_on: bool = False) -> Union[float, ndarray]:
         """The level set function *func* describing the shape in 3D space
 
         It must be compatible with :func:`vcams.mask.function.mask_from_function`.
@@ -45,8 +45,8 @@ class BaseShape(ABC):
             x: A float or numpy 1D array of x-coordinates.
             y: A float or numpy 1D array of y-coordinates.
             z: A float or numpy 1D array of z-coordinates.
-            has_boundary: A boolean specifying whether or not
-            shape boundary must be considered when evaluating the function.
+            boundary_on: A boolean specifying whether shape boundary
+            must be considered when evaluating the function.
             The boolean itself is added to the equations as a multiplier and
             evaluates to 0 or 1 which allows for a single expression.
 
@@ -60,7 +60,8 @@ class BaseShape(ABC):
     pass
 
     def calculate_mask(self, part_shape: tuple[int, int, int],
-                       voxel_size: tuple[float, float, float]) -> ndarray:
+                       voxel_size: tuple[float, float, float],
+                       boundary_on: bool = False) -> ndarray:
         """Calculate the boolean mask based on this shape.
         This is a wrapper for :func:`vcams.mask.function.mask_from_function`.
 
@@ -69,16 +70,20 @@ class BaseShape(ABC):
                         the shape of the returned boolean mask. Ignored if *part* is passed.
             voxel_size: A tuple containing three floats which determine the size of a voxel
                         in the x, y, and z directions. Ignored if *part* is passed.
+            boundary_on: A boolean specifying whether shape boundary
+                         must be considered when evaluating the function.
 
         Returns:
             A numpy ndarray with a dtype of bool representing the current shape.
         """
-        return mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size, func=self.func)
+        return mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size,
+                                  func=self.func, boundary_on=boundary_on)
 
 
 class ShapeArray:
     """Class for an array of shapes.
     The array may contain any number of shapes of any class as long as they have the same *dim* attribute.
+    # TODO: doc what is _ignored_masks?
     """
 
     def __init__(self, dim: str, part=None,
@@ -88,7 +93,7 @@ class ShapeArray:
         """
         Args:
             part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
-                                     If None, *mask_shape* and *voxel_size* must be specified.
+                                     If None, *mask_shape* and *voxel_size* must be specified (%TODO: enforce).
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
             is_mask_calculation_lazy: If True, the ShapeArray's private *_mask* property is updated
@@ -184,6 +189,96 @@ class ShapeArray:
                 % (shape.dim, self.dim))
 
 
+class ShapeDispersionArray:
+    """TODO: doc
+    is_mask_calculation_lazy is always false."""
+
+    def __init__(self, dim: str, part=None,
+                 mask_shape: tuple[int, int, int] = None,
+                 voxel_size: tuple[float, float, float] = None):
+        """
+        Args:
+            part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
+                                     If None, *mask_shape* and *voxel_size* must be specified (%TODO: enforce).
+            dim: Dimensionality of the shape array which determines the shapes that
+                 can be added to the shape array. Valid values are '2D' and '3D'.
+            mask_shape: A tuple containing three integers which determines
+                        the shape of the returned boolean mask. Ignored if *part* is passed.
+            voxel_size: A tuple containing three floats which determine the size of a voxel
+                        in the x, y, and z directions. Ignored if *part* is passed.
+        """
+        if dim.upper() not in ['2D', '3D']:
+            raise ValueError("dim can only be one of '2D' or '3D'.")
+        self.dim = dim.upper()
+        """The boolean mask representing the union (logical OR) of the shapes in ShapeArray."""
+        if part:
+            self.mask_shape = part.size
+            self.voxel_size = part.voxel_size
+            self.base_mask = (part.data != 0)
+            self._full_mask = copy(self.base_mask)
+        else:
+            self.mask_shape = mask_shape
+            self.voxel_size = voxel_size
+            self.base_mask = None
+            self._full_mask = full(mask_shape, False, dtype=bool)
+        self._mask = full(mask_shape, False, dtype=bool)
+        self.shapes = dict()
+
+    def __len__(self):
+        return len(self.shapes)
+
+    id_iter: iter = count()
+    """An iterable keeping track of the number of shapes in the ShapeArray."""
+
+    @property
+    def mask(self):
+        """The boolean mask representing the union (logical OR) of the shapes in ShapeArray.
+        This is guaranteed to be up-to-date.
+        """
+        if len(self) > 0:
+            return self._mask
+        else:
+            raise ValueError('The array is empty.')
+
+    def _add_to_mask(self, new_mask):
+        """Add the mask to that of the current array."""
+        self._mask = logical_or(self._mask, new_mask)
+        self._full_mask = logical_or(self._mask, self.base_mask)
+
+    def _check_shape(self, shape):
+        """Check the given shape class or instance to make sure its dim matches the shape array."""
+        if shape.dim != self.dim:
+            raise ValueError(
+                'The specified shape is %s, but the shape array has been defined for %s shapes.'
+                % (shape.dim, self.dim))
+
+    def add_shape(self, cls, **kwargs) -> bool:
+        """*Try* to add a shape to the ShapeArray using its class.
+        If the shape intersects with the mask, it is discarded
+        and False is returned to signify an unsuccessful operation.
+        Otherwise, True is returned, the shape is added to the array,
+        and the mask is recalculated.
+        """
+        self._check_shape(cls)
+        # Create the new shape and calculate its mask.
+        new_shape_obj = cls(id=-1, **kwargs)
+        new_shape_mask = new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size, boundary_on=False)
+
+        # Check if the new shape intersects with the ShapeDispersionArray's current mask,
+        if any(logical_and(self._full_mask, new_shape_mask)):
+            # If they intersect, return False for an unsuccessful operation.
+            # The shape is discarded.
+            return False
+        else:
+            # If they don't intersect, return True for a successful operation,
+            # add the shape to the array, and recalculate the mask.
+            idd = next(self.id_iter)
+            new_shape_obj.id = idd
+            self.shapes[idd] = new_shape_obj
+            self._add_to_mask(new_mask = new_shape_mask)
+            return True
+
+
 class Circle(BaseShape):
     """Class describing a 2D Circle with the implicit equation:
 
@@ -216,8 +311,8 @@ class Circle(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
-             has_boundary: bool = False) -> Union[float, ndarray]:
-        return (x - self.xc) ** 2 + (y - self.yc) ** 2 - (self.r + has_boundary * self.br) ** 2
+             boundary_on: bool = False) -> Union[float, ndarray]:
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 - (self.r + boundary_on * self.br) ** 2
 
 
 class Sphere(BaseShape):
@@ -254,9 +349,9 @@ class Sphere(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
-             has_boundary: bool = False) -> Union[float, ndarray]:
-        return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2\
-               - (self.r + has_boundary * self.br) ** 2
+             boundary_on: bool = False) -> Union[float, ndarray]:
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 \
+               - (self.r + boundary_on * self.br) ** 2
 
 
 class Cylinder(BaseShape):
