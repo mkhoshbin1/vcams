@@ -35,7 +35,8 @@ class BaseShape(ABC):
 
     @abstractmethod
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             has_boundary: bool = False) -> Union[float, ndarray]:
         """The level set function *func* describing the shape in 3D space
 
         It must be compatible with :func:`vcams.mask.function.mask_from_function`.
@@ -44,6 +45,10 @@ class BaseShape(ABC):
             x: A float or numpy 1D array of x-coordinates.
             y: A float or numpy 1D array of y-coordinates.
             z: A float or numpy 1D array of z-coordinates.
+            has_boundary: A boolean specifying whether or not
+            shape boundary must be considered when evaluating the function.
+            The boolean itself is added to the equations as a multiplier and
+            evaluates to 0 or 1 which allows for a single expression.
 
         Returns:
             An array of floats which may be negative, zero, or positive.
@@ -188,17 +193,19 @@ class Circle(BaseShape):
        (x-x_c)^2 + (y-y_c)^2 - r^2 = 0
     """
 
-    def __init__(self, id: int, xc: float, yc: float, r: float):
+    def __init__(self, id: int, xc: float, yc: float, r: float, br: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
             xc: x-coordinate of the center of the circle. It must be positive.
             yc: y-coordinate of the center of the circle. It must be positive.
             r: Radius of the circle. It must be positive.
+            br: Radial boundary used for shape dispersion. Defaults to 0.
         """
         self.id = id
         self.xc = xc
         self.yc = yc
+        self.br = br
         if r <= 0:
             raise ValueError(f'r must be positive but is {r:.6f}')
         else:
@@ -208,8 +215,9 @@ class Circle(BaseShape):
     """This class attribute means that shape can be used for 2D models."""
 
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (x - self.xc) ** 2 + (y - self.yc) ** 2 - self.r ** 2
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             has_boundary: bool = False) -> Union[float, ndarray]:
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 - (self.r + has_boundary * self.br) ** 2
 
 
 class Sphere(BaseShape):
@@ -221,7 +229,7 @@ class Sphere(BaseShape):
        (x-x_c)^2 + (y-y_c)^2 + (z-z_c)^2 - r^2 = 0
     """
 
-    def __init__(self, id, xc: float, yc: float, zc: float, r: float):
+    def __init__(self, id, xc: float, yc: float, zc: float, r: float, br: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
@@ -229,11 +237,13 @@ class Sphere(BaseShape):
             yc: y-coordinate of the center of the sphere. It must be positive.
             zc: y-coordinate of the center of the sphere. It must be positive.
             r: Radius of the sphere. It must be positive.
+            br: Radial boundary used for shape dispersion. Defaults to 0.
         """
         self.id = id
         self.xc = xc
         self.yc = yc
         self.zc = zc
+        self.br = br
         if r <= 0:
             raise ValueError(f'r must be positive but is {r:.6f}')
         else:
@@ -243,8 +253,10 @@ class Sphere(BaseShape):
     """This class attribute means that shape can be used for 3D models."""
 
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 - self.r ** 2
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             has_boundary: bool = False) -> Union[float, ndarray]:
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2\
+               - (self.r + has_boundary * self.br) ** 2
 
 
 class Cylinder(BaseShape):
