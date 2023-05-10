@@ -6,12 +6,13 @@ using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 See the :ref:`predefined-shape` section for a complete explanation
 of the basic concepts.
 """
+from collections.abc import Iterable
 from itertools import count
 from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
-from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy
+from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze
 
 from vcams.mask.function import mask_from_function
 
@@ -191,7 +192,7 @@ class ShapeArray:
 
 class ShapeDispersionArray:
     """TODO: doc
-    is_mask_calculation_lazy is always false."""
+    TODO: if part is specified, it's used as background."""
 
     def __init__(self, dim: str, part=None,
                  mask_shape: tuple[int, int, int] = None,
@@ -211,6 +212,7 @@ class ShapeDispersionArray:
             raise ValueError("dim can only be one of '2D' or '3D'.")
         self.dim = dim.upper()
         """The boolean mask representing the union (logical OR) of the shapes in ShapeArray."""
+        # TODO: for 2d, voxel_size should be OK with (x,y) but it isn't.
         if part:
             self.mask_shape = part.size
             self.voxel_size = part.voxel_size
@@ -242,6 +244,7 @@ class ShapeDispersionArray:
 
     def _add_to_mask(self, new_mask):
         """Add the mask to that of the current array."""
+        new_mask = squeeze(new_mask)
         self._mask = logical_or(self._mask, new_mask)
         self._full_mask = logical_or(self._mask, self.base_mask)
 
@@ -262,7 +265,7 @@ class ShapeDispersionArray:
         self._check_shape(cls)
         # Create the new shape and calculate its mask.
         new_shape_obj = cls(id=-1, **kwargs)
-        new_shape_mask = new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size, boundary_on=False)
+        new_shape_mask = new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size)
 
         # Check if the new shape intersects with the ShapeDispersionArray's current mask,
         if any(logical_and(self._full_mask, new_shape_mask)):
@@ -275,8 +278,26 @@ class ShapeDispersionArray:
             idd = next(self.id_iter)
             new_shape_obj.id = idd
             self.shapes[idd] = new_shape_obj
-            self._add_to_mask(new_mask = new_shape_mask)
+            self._add_to_mask(new_mask=new_shape_mask)
             return True
+
+    def place_shape_randomly(self, cls, **kwargs):
+        # new_kwargs = dict()
+        # list_kwargs = dict()
+        # for k,v in kwargs.items():
+        #     if isinstance(v, str):
+        #         raise ValueError('There is a string in the keyword argument. This is not supported.')
+        #     elif not isinstance(v, Iterable):
+        #         new_kwargs[k] = v
+        #     else:
+        #         if len(v) != 2:
+        #             raise ValueError('%s must have exactly two elements.' % len(v))
+        #         list_kwargs[k] = v
+        # add_shape(cls)
+        # TODO: Try with a script first.
+        pass
+
+
 
 
 class Circle(BaseShape):
@@ -351,7 +372,7 @@ class Sphere(BaseShape):
              y: Union[float, ndarray], z: Union[float, ndarray],
              boundary_on: bool = False) -> Union[float, ndarray]:
         return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 \
-               - (self.r + boundary_on * self.br) ** 2
+               - (self.r + (boundary_on * self.br)) ** 2
 
 
 class Cylinder(BaseShape):
