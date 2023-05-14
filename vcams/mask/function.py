@@ -12,7 +12,7 @@ from inspect import isclass
 from typing import Union, Callable
 
 import numpy as np
-from numpy import ndarray
+from numpy import ndarray, squeeze
 
 from .tpms import BaseTpms
 
@@ -87,7 +87,7 @@ def mask_from_function(func: Union[Callable, BaseTpms], vectorized: bool = True,
     if do_log:
         logger.info("Created a mask from the function named '%s' in %.2f seconds.",
                     func.__name__, perf_counter() - start_time)
-    return mask
+    return squeeze(mask)
 
 
 def is_voxel_inside(x: Union[float, ndarray], y: Union[float, ndarray], z: Union[float, ndarray],
