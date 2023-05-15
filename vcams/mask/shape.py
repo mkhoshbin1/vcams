@@ -206,7 +206,7 @@ class Circle(BaseShape):
             xc: x-coordinate of the center of the circle. It must be positive.
             yc: y-coordinate of the center of the circle. It must be positive.
             r: Radius of the circle. It must be positive.
-            br: Radial boundary used for shape dispersion. Defaults to 0.
+            br: Radial boundary added to *r* when dispersing the shape. Defaults to 0.
         """
         self.id = id
         self.xc = xc
@@ -243,7 +243,7 @@ class Sphere(BaseShape):
             yc: y-coordinate of the center of the sphere. It must be positive.
             zc: y-coordinate of the center of the sphere. It must be positive.
             r: Radius of the sphere. It must be positive.
-            br: Radial boundary used for shape dispersion. Defaults to 0.
+            br: Radial boundary added to *r* when dispersing the shape. Defaults to 0.
         """
         self.id = id
         self.xc = xc
@@ -335,12 +335,14 @@ class Ellipse(BaseShape):
     See the docs for that class for a general ellipsoid.
     """
 
-    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float, b: float):
+    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float, b: float, ba: float = 0, bb: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: semi-axis of the ellipse along the unrotated x-axis. It must be positive.
-            b: semi-axis of the ellipse along the unrotated y-axis. It must be positive.
+            a: Semi-axis of the ellipse along the unrotated x-axis. It must be positive.
+            b: Semi-axis of the ellipse along the unrotated y-axis. It must be positive.
+            ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
+            bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
             alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
             xc: x-coordinate of the center of the ellipse where semi-axes meet.
             yc: y-coordinate of the center of the ellipse where semi-axes meet.
@@ -348,6 +350,8 @@ class Ellipse(BaseShape):
         self.id = id
         self.xc = xc
         self.yc = yc
+        self.ba = ba
+        self.bb = bb
         if a <= 0:
             raise ValueError(f'a must be positive but is {a:.6f}')
         else:
@@ -365,9 +369,13 @@ class Ellipse(BaseShape):
     """This class attribute means that shape can be used for 2D models."""
 
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (((((x - self.xc) * cos(self.alpha) - (y - self.yc) * sin(self.alpha)) ** 2) / self.a ** 2)
-                + ((((x - self.xc) * sin(self.alpha) + (y - self.yc) * cos(self.alpha)) ** 2) / self.b ** 2)
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             boundary_on: bool = True) -> Union[float, ndarray]:
+        return (
+                ((((x - self.xc) * cos(self.alpha) - (y - self.yc) * sin(self.alpha)) ** 2)
+                 / (self.a + boundary_on * self.ba) ** 2)
+                + ((((x - self.xc) * sin(self.alpha) + (y - self.yc) * cos(self.alpha)) ** 2)
+                   / (self.b + boundary_on * self.bb) ** 2)
                 - 1)
 
 
@@ -453,13 +461,17 @@ class Ellipsoid(BaseShape):
 
     def __init__(self, id: int, a: float, b: float, c: float,
                  xc: float, yc: float, zc: float,
-                 alpha: float, beta: float, gamma: float):
+                 alpha: float, beta: float, gamma: float,
+                 ba: float = 0, bb: float = 0, bc: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: semi-axis of the ellipsoid along the unrotated x-axis. It must be positive.
-            b: semi-axis of the ellipsoid along the unrotated y-axis. It must be positive.
-            c: semi-axis of the ellipsoid along the unrotated z-axis. It must be positive.
+            a: Semi-axis of the ellipsoid along the unrotated x-axis. It must be positive.
+            b: Semi-axis of the ellipsoid along the unrotated y-axis. It must be positive.
+            c: Semi-axis of the ellipsoid along the unrotated z-axis. It must be positive.
+            ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
+            bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
+            bc: Boundary added to *c* when dispersing the shape. Defaults to 0.
             xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
             yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
             zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
@@ -471,6 +483,9 @@ class Ellipsoid(BaseShape):
         self.xc = xc
         self.yc = yc
         self.zc = zc
+        self.ba = ba
+        self.bb = bb
+        self.bc = bc
         if a <= 0:
             raise ValueError(f'a must be positive but is {a:.6f}')
         else:
@@ -500,7 +515,8 @@ class Ellipsoid(BaseShape):
     """This class attribute means that shape can be used for 3D models."""
 
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             boundary_on: bool = True) -> Union[float, ndarray]:
         # Apply the translation.
         xx = x - self.xc
         yy = y - self.yc
@@ -518,4 +534,6 @@ class Ellipsoid(BaseShape):
         zzz = -xx * sin(self.beta) + yy * cos(self.beta) * sin(self.gamma) + zz * cos(self.gamma) * cos(self.beta)
 
         # Evaluate the ellipsoid function.
-        return (xxx ** 2 / (self.a ** 2)) + (yyy ** 2 / (self.b ** 2)) + (zzz ** 2 / (self.c ** 2)) - 1
+        return ((xxx ** 2 / ((self.a + boundary_on * self.ba) ** 2))
+                + (yyy ** 2 / ((self.b + boundary_on * self.bb) ** 2))
+                + (zzz ** 2 / ((self.c + boundary_on * self.bc) ** 2)) - 1)
