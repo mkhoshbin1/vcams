@@ -66,6 +66,9 @@ class DispersionNormalDistribution:
     def __len__(self):
         return len(self.values)
 
+    def __mul__(self, other):
+        return DispersionList(self.values * other)
+
     def __repr__(self):
         return f"""{self.__class__}
         Number of Values: {len(self.values)}
@@ -78,7 +81,7 @@ class DispersionNormalDistribution:
 
 
 class DispersionRandom:
-    def __init__(self, low, high, boundary):
+    def __init__(self, low, high, boundary=0):
         self.low = low + boundary
         self.high = high - boundary
 
@@ -98,7 +101,8 @@ class ShapeDispersionArray:
 
     def __init__(self, dim: str, part=None,
                  mask_shape: tuple[int, int, int] = None,
-                 voxel_size: tuple[float, float, float] = None):
+                 voxel_size: tuple[float, float, float] = None,
+                 num_bound_pixels: int = 0):
         """
         Args:
             part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
@@ -109,6 +113,9 @@ class ShapeDispersionArray:
                         the shape of the returned boolean mask. Ignored if *part* is passed.
             voxel_size: A tuple containing three floats which determine the size of a voxel
                         in the x, y, and z directions. Ignored if *part* is passed.
+            num_bound_pixels: An int specifying the number of pixels to add to the boundary of the base mask.
+                              The boundary will become a region that the dispersed shapes cannot touch.
+                              Defaults to 0.
         """
         if dim.upper() not in ['2D', '3D']:
             raise ValueError("dim can only be one of '2D' or '3D'.")
@@ -119,14 +126,20 @@ class ShapeDispersionArray:
             self.mask_shape = part.size
             self.voxel_size = part.voxel_size
             self.base_mask = (part.data != 0)
-            self._full_mask = copy(self.base_mask)
         else:
             self.mask_shape = mask_shape
             self.voxel_size = voxel_size
-            self.base_mask = None
-            self._full_mask = full(mask_shape, False, dtype=bool)
+            self.base_mask = full(mask_shape, False, dtype=bool)
         self._mask = full(mask_shape, False, dtype=bool)
         self.shapes = dict()
+        # Add boundary to the base mask so the shapes don't touch the outside.
+        if num_bound_pixels:
+            self.base_mask[:, :num_bound_pixels] = True
+            self.base_mask[:, -num_bound_pixels:] = True
+            self.base_mask[:num_bound_pixels, :] = True
+            self.base_mask[-num_bound_pixels:, :] = True
+        self._full_mask = copy(self.base_mask)  # full mask is base_mask + _mask. #TODO: doc this.
+
 
     def __len__(self):
         return len(self.shapes)
@@ -148,7 +161,7 @@ class ShapeDispersionArray:
         """Add the mask to that of the current array."""
         new_mask = squeeze(new_mask)
         self._mask = logical_or(self._mask, new_mask)
-        self._full_mask = logical_or(self._mask, self.base_mask)
+        self._full_mask = logical_or(self._mask, self.base_mask)  # TODO: why reassign each time?
 
     def _check_shape(self, shape):
         """Check the given shape class or instance to make sure its dim matches the shape array."""
@@ -167,10 +180,10 @@ class ShapeDispersionArray:
         self._check_shape(cls)
         # Create the new shape and calculate its mask.
         new_shape_obj = cls(id=-1, **kwargs)
-        new_shape_mask = new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size)
+        big_shape_mask = new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size, boundary_on=True)
 
         # Check if the new shape intersects with the ShapeDispersionArray's current mask.
-        if any(logical_and(self._full_mask, new_shape_mask)):
+        if any(logical_and(self._full_mask, big_shape_mask)):
             # If they intersect, return False for an unsuccessful operation.
             # The shape is discarded.
             return False
@@ -180,7 +193,8 @@ class ShapeDispersionArray:
             idd = next(self.id_iter)
             new_shape_obj.id = idd
             self.shapes[idd] = new_shape_obj
-            self._add_to_mask(new_mask=new_shape_mask)
+            self._add_to_mask(
+                new_mask=new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size, boundary_on=False))
             return True
 
     def place_shape_randomly(self, cls, shape_number: int, max_tries: int = 5000, **kwargs):

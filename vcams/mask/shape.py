@@ -37,7 +37,7 @@ class BaseShape(ABC):
     @abstractmethod
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = True) -> Union[float, ndarray]:
+             boundary_on: bool = False) -> Union[float, ndarray]:
         """The level set function *func* describing the shape in 3D space
 
         It must be compatible with :func:`vcams.mask.function.mask_from_function`.
@@ -62,7 +62,7 @@ class BaseShape(ABC):
 
     def calculate_mask(self, part_shape: tuple[int, int, int],
                        voxel_size: tuple[float, float, float],
-                       boundary_on: bool = True) -> ndarray:
+                       boundary_on: bool = False) -> ndarray:
         """Calculate the boolean mask based on this shape.
         This is a wrapper for :func:`vcams.mask.function.mask_from_function`.
 
@@ -222,7 +222,7 @@ class Circle(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = True) -> Union[float, ndarray]:
+             boundary_on: bool = False) -> Union[float, ndarray]:
         return (x - self.xc) ** 2 + (y - self.yc) ** 2 - (self.r + boundary_on * self.br) ** 2
 
 
@@ -260,7 +260,7 @@ class Sphere(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = True) -> Union[float, ndarray]:
+             boundary_on: bool = False) -> Union[float, ndarray]:
         return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 \
                - (self.r + (boundary_on * self.br)) ** 2
 
@@ -370,13 +370,55 @@ class Ellipse(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = True) -> Union[float, ndarray]:
+             boundary_on: bool = False) -> Union[float, ndarray]:
         return (
                 ((((x - self.xc) * cos(self.alpha) - (y - self.yc) * sin(self.alpha)) ** 2)
                  / (self.a + boundary_on * self.ba) ** 2)
                 + ((((x - self.xc) * sin(self.alpha) + (y - self.yc) * cos(self.alpha)) ** 2)
                    / (self.b + boundary_on * self.bb) ** 2)
                 - 1)
+
+
+class EllipseFromAspectRatio(Ellipse):
+    """Class describing a 2D Ellipse defined using one axis and the ellipse's aspect ratio.
+
+    See #TODO for the main class.
+    """
+
+    # noinspection PyMissingConstructor
+    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float,
+                 aspect_ratio: float, ba: float = 0, bb: float = 0):
+        """
+        Args:
+            id: ID of the shape which should be must be unique.
+            a: Semi-axis of the ellipse along the unrotated x-axis. It must be positive.
+            aspect_ratio: The ratio b/a.
+                          The attribute b (the semi-axes along the unrotated y-axis) is
+                          calculated as aspect_ratio × a.
+            ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
+            bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
+            xc: x-coordinate of the center of the ellipse where semi-axes meet.
+            yc: y-coordinate of the center of the ellipse where semi-axes meet.
+        """
+        self.id = id
+        self.xc = xc
+        self.yc = yc
+        self.ba = ba
+        self.bb = bb
+        if a <= 0:
+            raise ValueError(f'a must be positive but is {a:.6f}')
+        else:
+            self.a = a
+        if aspect_ratio < 0:
+            raise ValueError(f'aspect_ratio must be positive but is {aspect_ratio:.6f}')
+        else:
+            self.aspect_ratio = aspect_ratio
+            self.b = self.a * aspect_ratio
+        if alpha > 360 or alpha < 0:
+            raise ValueError(f'alpha must be in the range [0, 360], but is {alpha:.6f}')
+        else:
+            self.alpha = radians(alpha)
 
 
 class Ellipsoid(BaseShape):
@@ -516,7 +558,7 @@ class Ellipsoid(BaseShape):
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = True) -> Union[float, ndarray]:
+             boundary_on: bool = False) -> Union[float, ndarray]:
         # Apply the translation.
         xx = x - self.xc
         yy = y - self.yc
