@@ -13,12 +13,12 @@ part = VoxelPart(size=(50, 50), base_material=1,
 # Create a ShapeArray based on the VoxelPart object.
 shape_array_obj = ShapeArray(dim='2D', part=part)
 
-# Add shapes to shape_array_obj.
+# Add shapes to shape_disp_array_obj.
 # Note that the class object is passed as the first argument.
 shape_array_obj.add_shape(Circle, xc=0, yc=0, r=0.1)
 shape_array_obj.add_shape(Circle, xc=0.4, yc=0.2, r=0.15)
 shape_array_obj.add_shape(Circle, xc=0.7, yc=0.5, r=0.1)
-shape_array_obj.add_shape(Ellipse, a=0.15, b=0.30, xc=0.30, yc=0.65, alpha=20)
+# shape_array_obj.add_shape(Ellipse, a=0.15, b=0.30, xc=0.30, yc=0.65, alpha=20)
 # Apply the Boolean mask to the part.
 part.apply_mask(mask=shape_array_obj.mask, value=2)
 

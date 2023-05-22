@@ -13,7 +13,7 @@ part = VoxelPart(size=(50, 50), base_material=1,
 # Create an instance of the vcams.mask.shape.Circle class.
 # All properties are defined when the object is created.
 t = part.real_size[0] / 2
-circle_obj = mask.shape.Circle(id=0, a=t, b=t, r=t)
+circle_obj = mask.shape.Circle(id=0, xc=t, yc=t, r=t)
 
 # Create a Boolean mask based on the VoxelPart object.
 # For the mask function use circle_obj.func. No other parameters are necessary.

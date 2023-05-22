@@ -6,12 +6,13 @@ using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 See the :ref:`predefined-shape` section for a complete explanation
 of the basic concepts.
 """
+from collections.abc import Iterable
 from itertools import count
 from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
-from numpy import logical_or, ndarray, sin, cos, radians, array, diagflat, sum
+from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze
 
 from vcams.mask.function import mask_from_function
 
@@ -35,7 +36,8 @@ class BaseShape(ABC):
 
     @abstractmethod
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             boundary_on: bool = False) -> Union[float, ndarray]:
         """The level set function *func* describing the shape in 3D space
 
         It must be compatible with :func:`vcams.mask.function.mask_from_function`.
@@ -44,6 +46,10 @@ class BaseShape(ABC):
             x: A float or numpy 1D array of x-coordinates.
             y: A float or numpy 1D array of y-coordinates.
             z: A float or numpy 1D array of z-coordinates.
+            boundary_on: A boolean specifying whether shape boundary
+            must be considered when evaluating the function.
+            The boolean itself is added to the equations as a multiplier and
+            evaluates to 0 or 1 which allows for a single expression.
 
         Returns:
             An array of floats which may be negative, zero, or positive.
@@ -55,7 +61,8 @@ class BaseShape(ABC):
     pass
 
     def calculate_mask(self, part_shape: tuple[int, int, int],
-                       voxel_size: tuple[float, float, float]) -> ndarray:
+                       voxel_size: tuple[float, float, float],
+                       boundary_on: bool = False) -> ndarray:
         """Calculate the boolean mask based on this shape.
         This is a wrapper for :func:`vcams.mask.function.mask_from_function`.
 
@@ -64,16 +71,20 @@ class BaseShape(ABC):
                         the shape of the returned boolean mask. Ignored if *part* is passed.
             voxel_size: A tuple containing three floats which determine the size of a voxel
                         in the x, y, and z directions. Ignored if *part* is passed.
+            boundary_on: A boolean specifying whether shape boundary
+                         must be considered when evaluating the function.
 
         Returns:
             A numpy ndarray with a dtype of bool representing the current shape.
         """
-        return mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size, func=self.func)
+        return mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size,
+                                  func=self.func, boundary_on=boundary_on)
 
 
 class ShapeArray:
     """Class for an array of shapes.
     The array may contain any number of shapes of any class as long as they have the same *dim* attribute.
+    # TODO: doc what is _ignored_masks?
     """
 
     def __init__(self, dim: str, part=None,
@@ -83,7 +94,7 @@ class ShapeArray:
         """
         Args:
             part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
-                                     If None, *mask_shape* and *voxel_size* must be specified.
+                                     If None, *mask_shape* and *voxel_size* must be specified (%TODO: enforce).
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
             is_mask_calculation_lazy: If True, the ShapeArray's private *_mask* property is updated
@@ -188,17 +199,19 @@ class Circle(BaseShape):
        (x-x_c)^2 + (y-y_c)^2 - r^2 = 0
     """
 
-    def __init__(self, id: int, xc: float, yc: float, r: float):
+    def __init__(self, id: int, xc: float, yc: float, r: float, br: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
             xc: x-coordinate of the center of the circle. It must be positive.
             yc: y-coordinate of the center of the circle. It must be positive.
             r: Radius of the circle. It must be positive.
+            br: Radial boundary added to *r* when dispersing the shape. Defaults to 0.
         """
         self.id = id
         self.xc = xc
         self.yc = yc
+        self.br = br
         if r <= 0:
             raise ValueError(f'r must be positive but is {r:.6f}')
         else:
@@ -208,8 +221,9 @@ class Circle(BaseShape):
     """This class attribute means that shape can be used for 2D models."""
 
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (x - self.xc) ** 2 + (y - self.yc) ** 2 - self.r ** 2
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             boundary_on: bool = False) -> Union[float, ndarray]:
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 - (self.r + boundary_on * self.br) ** 2
 
 
 class Sphere(BaseShape):
@@ -221,7 +235,7 @@ class Sphere(BaseShape):
        (x-x_c)^2 + (y-y_c)^2 + (z-z_c)^2 - r^2 = 0
     """
 
-    def __init__(self, id, xc: float, yc: float, zc: float, r: float):
+    def __init__(self, id, xc: float, yc: float, zc: float, r: float, br: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
@@ -229,11 +243,13 @@ class Sphere(BaseShape):
             yc: y-coordinate of the center of the sphere. It must be positive.
             zc: y-coordinate of the center of the sphere. It must be positive.
             r: Radius of the sphere. It must be positive.
+            br: Radial boundary added to *r* when dispersing the shape. Defaults to 0.
         """
         self.id = id
         self.xc = xc
         self.yc = yc
         self.zc = zc
+        self.br = br
         if r <= 0:
             raise ValueError(f'r must be positive but is {r:.6f}')
         else:
@@ -243,8 +259,10 @@ class Sphere(BaseShape):
     """This class attribute means that shape can be used for 3D models."""
 
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 - self.r ** 2
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             boundary_on: bool = False) -> Union[float, ndarray]:
+        return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 \
+               - (self.r + (boundary_on * self.br)) ** 2
 
 
 class Cylinder(BaseShape):
@@ -317,12 +335,14 @@ class Ellipse(BaseShape):
     See the docs for that class for a general ellipsoid.
     """
 
-    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float, b: float):
+    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float, b: float, ba: float = 0, bb: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: semi-axis of the ellipse along the unrotated x-axis. It must be positive.
-            b: semi-axis of the ellipse along the unrotated y-axis. It must be positive.
+            a: Semi-axis of the ellipse along the unrotated x-axis. It must be positive.
+            b: Semi-axis of the ellipse along the unrotated y-axis. It must be positive.
+            ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
+            bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
             alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
             xc: x-coordinate of the center of the ellipse where semi-axes meet.
             yc: y-coordinate of the center of the ellipse where semi-axes meet.
@@ -330,6 +350,8 @@ class Ellipse(BaseShape):
         self.id = id
         self.xc = xc
         self.yc = yc
+        self.ba = ba
+        self.bb = bb
         if a <= 0:
             raise ValueError(f'a must be positive but is {a:.6f}')
         else:
@@ -347,10 +369,56 @@ class Ellipse(BaseShape):
     """This class attribute means that shape can be used for 2D models."""
 
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
-        return (((((x - self.xc) * cos(self.alpha) - (y - self.yc) * sin(self.alpha)) ** 2) / self.a ** 2)
-                + ((((x - self.xc) * sin(self.alpha) + (y - self.yc) * cos(self.alpha)) ** 2) / self.b ** 2)
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             boundary_on: bool = False) -> Union[float, ndarray]:
+        return (
+                ((((x - self.xc) * cos(self.alpha) - (y - self.yc) * sin(self.alpha)) ** 2)
+                 / (self.a + boundary_on * self.ba) ** 2)
+                + ((((x - self.xc) * sin(self.alpha) + (y - self.yc) * cos(self.alpha)) ** 2)
+                   / (self.b + boundary_on * self.bb) ** 2)
                 - 1)
+
+
+class EllipseFromAspectRatio(Ellipse):
+    """Class describing a 2D Ellipse defined using one axis and the ellipse's aspect ratio.
+
+    See #TODO for the main class.
+    """
+
+    # noinspection PyMissingConstructor
+    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float,
+                 aspect_ratio: float, ba: float = 0, bb: float = 0):
+        """
+        Args:
+            id: ID of the shape which should be must be unique.
+            a: Semi-axis of the ellipse along the unrotated x-axis. It must be positive.
+            aspect_ratio: The ratio b/a.
+                          The attribute b (the semi-axes along the unrotated y-axis) is
+                          calculated as aspect_ratio × a.
+            ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
+            bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
+            xc: x-coordinate of the center of the ellipse where semi-axes meet.
+            yc: y-coordinate of the center of the ellipse where semi-axes meet.
+        """
+        self.id = id
+        self.xc = xc
+        self.yc = yc
+        self.ba = ba
+        self.bb = bb
+        if a <= 0:
+            raise ValueError(f'a must be positive but is {a:.6f}')
+        else:
+            self.a = a
+        if aspect_ratio < 0:
+            raise ValueError(f'aspect_ratio must be positive but is {aspect_ratio:.6f}')
+        else:
+            self.aspect_ratio = aspect_ratio
+            self.b = self.a * aspect_ratio
+        if alpha > 360 or alpha < 0:
+            raise ValueError(f'alpha must be in the range [0, 360], but is {alpha:.6f}')
+        else:
+            self.alpha = radians(alpha)
 
 
 class Ellipsoid(BaseShape):
@@ -435,13 +503,17 @@ class Ellipsoid(BaseShape):
 
     def __init__(self, id: int, a: float, b: float, c: float,
                  xc: float, yc: float, zc: float,
-                 alpha: float, beta: float, gamma: float):
+                 alpha: float, beta: float, gamma: float,
+                 ba: float = 0, bb: float = 0, bc: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            a: semi-axis of the ellipsoid along the unrotated x-axis. It must be positive.
-            b: semi-axis of the ellipsoid along the unrotated y-axis. It must be positive.
-            c: semi-axis of the ellipsoid along the unrotated z-axis. It must be positive.
+            a: Semi-axis of the ellipsoid along the unrotated x-axis. It must be positive.
+            b: Semi-axis of the ellipsoid along the unrotated y-axis. It must be positive.
+            c: Semi-axis of the ellipsoid along the unrotated z-axis. It must be positive.
+            ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
+            bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
+            bc: Boundary added to *c* when dispersing the shape. Defaults to 0.
             xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
             yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
             zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
@@ -453,6 +525,9 @@ class Ellipsoid(BaseShape):
         self.xc = xc
         self.yc = yc
         self.zc = zc
+        self.ba = ba
+        self.bb = bb
+        self.bc = bc
         if a <= 0:
             raise ValueError(f'a must be positive but is {a:.6f}')
         else:
@@ -482,7 +557,8 @@ class Ellipsoid(BaseShape):
     """This class attribute means that shape can be used for 3D models."""
 
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             boundary_on: bool = False) -> Union[float, ndarray]:
         # Apply the translation.
         xx = x - self.xc
         yy = y - self.yc
@@ -500,4 +576,6 @@ class Ellipsoid(BaseShape):
         zzz = -xx * sin(self.beta) + yy * cos(self.beta) * sin(self.gamma) + zz * cos(self.gamma) * cos(self.beta)
 
         # Evaluate the ellipsoid function.
-        return (xxx ** 2 / (self.a ** 2)) + (yyy ** 2 / (self.b ** 2)) + (zzz ** 2 / (self.c ** 2)) - 1
+        return ((xxx ** 2 / ((self.a + boundary_on * self.ba) ** 2))
+                + (yyy ** 2 / ((self.b + boundary_on * self.bb) ** 2))
+                + (zzz ** 2 / ((self.c + boundary_on * self.bc) ** 2)) - 1)
