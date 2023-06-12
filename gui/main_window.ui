@@ -34,15 +34,15 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="welcome_page">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>604</width>
-         <height>150</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -73,8 +73,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>601</width>
-         <height>419</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -506,8 +506,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>374</width>
-         <height>257</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -548,7 +548,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>5</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
           <widget class="QWidget" name="modeling_nothing"/>
@@ -654,6 +654,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </item>
            </layout>
           </widget>
+          <widget class="QWidget" name="modeling_single_image"/>
+          <widget class="QWidget" name="modeling_multiple_image"/>
           <widget class="QWidget" name="modeling_circle">
            <layout class="QVBoxLayout" name="verticalLayout_4">
             <item>
@@ -789,7 +791,6 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="modeling_single_image"/>
          </widget>
         </item>
        </layout>
@@ -799,8 +800,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>645</width>
-         <height>188</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">
@@ -868,8 +869,8 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>415</width>
-         <height>175</height>
+         <width>693</width>
+         <height>461</height>
         </rect>
        </property>
        <attribute name="label">

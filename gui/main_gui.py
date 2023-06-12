@@ -48,19 +48,25 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    3, 2,
                                    'This form is used to model a triply periodic minimal '
                                    'surface (TPMS) in the 3D space:'),
-                      ModelingMode('Planar Composite (Circular Inclusions)',
+                      ModelingMode('Image Processing (Single Image)',
                                    2, 3,
+                                   'This form is used to create a 2D model based on a single '
+                                   'binary or grayscale image:'),
+                      ModelingMode('Image Processing (Image Stack for 3D Part)',
+                                   2, 4,
+                                   'This form is used to create a 3D model based on a stack of '
+                                   'binary or grayscale images:'),
+                      ModelingMode('Planar Particle Reinforced Composite (Circular Inclusions)',
+                                   2, 5,
                                    'This form is used to model a planar particle reinforced '
-                                   'composite with circular particles:'),
+                                   'composite with circular inclusions:'),
                       ModelingMode('Spatial Particle Reinforced Composite (Spherical Inclusions)',
-                                   3, 4,
+                                   3, 6,
                                    'This form is used to model a spatial particle reinforced '
-                                   'composite with spherical particles:'),
-                      # ModelingMode('Image Processing (Single Image)',
-                      #              2, 4,
-                      #              'This form is used to create a 2D model based on a single'
-                      #              'binary or grayscale image:')
+                                   'composite with spherical inclusions:'),
                       )
+# Important Note: any change must also be applied to import and export functions in the settings_io module.
+# Also, values of page_id correspond to the pages of modeling_stacked_widget in main_window.ui.
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
