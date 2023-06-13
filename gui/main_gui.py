@@ -48,7 +48,7 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    3, 2,
                                    'This form is used to model a triply periodic minimal '
                                    'surface (TPMS) in the 3D space:'),
-                      ModelingMode('Image Processing (Single Image)',
+                      ModelingMode('Image Processing (Single 2D Image)',
                                    2, 3,
                                    'This form is used to create a 2D model based on a single '
                                    'binary or grayscale image:'),
