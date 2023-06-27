@@ -769,10 +769,16 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             <item>
              <widget class="QLabel" name="modeling_image_footnote">
               <property name="text">
-               <string>Note: Use the ? symbol as a placeholder for a single character in the image path string.</string>
+               <string>Note: Use the ? symbol as a placeholder for a single character in the image path string. Also, the path sting is not validated so make sure it is correct.</string>
+              </property>
+              <property name="textFormat">
+               <enum>Qt::AutoText</enum>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
               </property>
              </widget>
             </item>

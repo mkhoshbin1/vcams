@@ -65,8 +65,12 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form is used to model a spatial particle reinforced '
                                    'composite with spherical inclusions:'),
                       )
-# Important Note: any change must also be applied to import and export functions in the settings_io module.
-# Also, values of page_id correspond to the pages of modeling_stacked_widget in main_window.ui.
+# Note: To add/change any ModelingMode:
+#   - Make sure the value of page_id corresponds to the pages of modeling_stacked_widget in main_window.ui.
+#   - Update settings_io.export_settings().
+#   - Update settings_io.import_settings().
+#   - Update vcams.helper.read_configuration().
+#   - Update vcams.voxelpart.from_config_file().
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
@@ -211,6 +215,9 @@ class MainWindow(QMainWindow):
         self.bc_type_button_group.addButton(self.periodic_bc_radio, 3)
 
         # Code and signals for tab: Modeling.
+        # Modeling tabs "Please select a modeling mode..."
+        # and "No Further Manipulation" require no additional code.
+
         # Modeling: TPMS
         self.formula_font_size = 20
         # modeling_mode_combo
@@ -229,6 +236,19 @@ class MainWindow(QMainWindow):
         # tpms_fill_value_field
         self.tpms_fill_value_field.setValidator(QIntValidator(0, 999999999, self))
 
+        # Modeling: Image Processing (Single 2D Image)
+        self.single_image_path_field.setText('')
+        self.single_image_path_select_button.clicked.connect(self.select_single_image_path)
+        self.single_image_scale_field.setValidator(QDoubleValidator(0.01, 100, 2))
+        self.single_image_scale_field.setText('1.0')
+        # self.single_image_denoise_checkbox doesn't need anything.
+
+        # Modeling: Image Processing (Image Stack for 3D Part)
+        self.multi_image_path_field.setText('')
+        self.multi_image_scale_field.setValidator(QDoubleValidator(0.01, 100, 2))
+        self.multi_image_scale_field.setText('1.0')
+        # self.multi_image_denoise_checkbox doesn't need anything.
+
         # Modeling: Planar Composite (Circular Inclusions)
         self.modeling_circle_table.setItemDelegateForColumn(0, PositionFloatDelegate(self))
         self.modeling_circle_table.setItemDelegateForColumn(1, PositionFloatDelegate(self))
@@ -242,10 +262,8 @@ class MainWindow(QMainWindow):
         self.modeling_sphere_table.setItemDelegateForColumn(3, RadiusFloatDelegate(self))
         self.modeling_sphere_table.setItemDelegateForColumn(4, MatCodeDelegate(self))
 
+        # Always call this when initializing.
         self.dim_changed()
-
-        # Modeling: Single Image
-        # TODO
 
         # Code and signals for tab: Output.
         # output_mats  # TODO: move all signals from QtDesigner to python.
@@ -383,6 +401,14 @@ class MainWindow(QMainWindow):
         self.custom_working_dir = dir_str
         self.working_dir = dir_str
         self.working_dir_field.setText(dir_str)
+
+    def select_single_image_path(self):
+        (file_name, _) = QFileDialog.getOpenFileName(self, 'Select the image.', '',
+                                                     'Images (*.png *.tif *.tiff)')
+        # If the dialog box is closed, file_name will be an empty string.
+        if file_name:
+            self.single_image_path_field.setText(file_name)
+
 
     # def closeEvent(self, event):
     #     #TODO: add save prompt.
