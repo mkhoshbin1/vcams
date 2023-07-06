@@ -424,7 +424,7 @@ def voxelpart_from_image(image_dim: str, image_path: str,
                          voxel_size: Union[tuple[float, float, float], tuple[float, float]] = (1.0, 1.0, 1.0),
                          dtype: str = 'uint8', name: str = 'unnamed',
                          description: str = '', results_path: Union[str, Path] = None,
-                         overwrite_logs: bool = True, log_debug: bool = False):
+                         overwrite_logs: bool = True, log_debug: bool = False, **kwargs):
     """Create a :class:`VoxelPart` object from an image.
 
     Args:
@@ -443,26 +443,26 @@ def voxelpart_from_image(image_dim: str, image_path: str,
         description: See TODO for docs.
         results_path: See TODO for docs.
         overwrite_logs: See TODO for docs.
-        log_debug: See TODO for docs.
+        log_debug: See TODO for docs
+        **kwargs: TODO: used for preventing errors associated with unexpectd input.
 
         Note: The size parameter used for creating a :class:`VoxelPart` is determined from the image (expand).
         Note: This function uses TODO and TODO.
         Read the appropriate documentation (expand).
     """
 
+    # TODO: can we add a logger here? Examples take a long time and then just finish.
     if image_dim.upper() not in ['2D', '3D']:
         raise ValueError("image_dim can only be one of '2D' or '3D'.")
     if image_dim.upper() == '2D':
         image_mask = mask_from_image(image_path=image_path, scale=scale, denoise=denoise, show_image=show_image)
-        image_mask = rot90(image_mask, -1)  # TODO: make sure this is necessary.
     else:  # dim.upper() == '3D'
         # TODO: add show_image here.
         image_mask = mask_from_image_sequence(load_pattern=image_path, scale=scale, denoise=denoise)
-        # TODO: does this not need rotating?
 
     # TODO: determine voxel size array (2 or 3 elements?). (Make sure a 1*3 array is always OK)
     # TODO: same for part shape.
-
+    image_mask = rot90(image_mask, -1)
     image_shape = image_mask.shape
     part = VoxelPart(size=image_shape, base_material=background_material,
                      voxel_size=voxel_size, dtype=dtype,
@@ -503,16 +503,19 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
                                           c=part_manipulation_dict['tpms_constant'])
         part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['tpms_fill_value'])
     elif modeling_mode == '3':  # Image Processing (Single 2D Image)
-        pass
-        # part_manipulation_dict['single_image_scale']
-        # part_manipulation_dict['single_image_denoise']
-        image_mask = mask_from_image(image_path=part_manipulation_dict['single_image_path'],
-                                     scale=1.0, denoise=True)
+        part = voxelpart_from_image(image_dim='2D',
+                                    image_path=part_manipulation_dict['single_image_path'],
+                                    scale=part_manipulation_dict['single_image_scale'],
+                                    denoise=part_manipulation_dict['single_image_denoise'],
+                                    background_material=1, foreground_material=2,  # Note: This is built-in.
+                                    **part_creation_dict)
     elif modeling_mode == '4':  # Stack of 2D images for a 3D part.
-        pass
-        # part_manipulation_dict['multi_image_path']
-        # part_manipulation_dict['multi_image_scale']
-        # part_manipulation_dict['multi_image_denoise']
+        part = voxelpart_from_image(image_dim='3D',  ###TODO: TEST THIS!!!!
+                                    image_path=part_manipulation_dict['multi_image_path'],
+                                    scale=part_manipulation_dict['multi_image_scale'],
+                                    denoise=part_manipulation_dict['multi_image_denoise'],
+                                    background_material=1, foreground_material=2,  # Note: This is built-in.
+                                    **part_creation_dict)  # TODO: test
     elif modeling_mode == '5':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:
             circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))

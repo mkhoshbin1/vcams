@@ -71,6 +71,7 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
 #   - Update settings_io.import_settings().
 #   - Update vcams.helper.read_configuration().
 #   - Update vcams.voxelpart.from_config_file().
+#   - Add the relevant example scripts, .vcams files, and docs.
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.

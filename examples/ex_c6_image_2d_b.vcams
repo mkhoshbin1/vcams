@@ -1,0 +1,27 @@
+[Basic]
+part_name = unnamed
+dim = 2D
+num_voxels_x = 1
+num_voxels_y = 1
+voxel_size_x = 0.2
+voxel_size_y = 0.2
+num_mats = 0
+base_material = 1
+part_description = 
+working_dir = 
+log_debug = False
+
+[Modeling]
+modeling_mode = 3
+single_image_path = C:/Users/MKhos/Desktop/VCAMS Working Directory/ex_c6_image_2d_input.jpg
+single_image_scale = 1.0
+single_image_denoise = True
+
+[BC]
+bc_type = 0
+
+[Output]
+file_name = unnamed
+elem_code = CPE4R
+output_mats_type = 1
+
