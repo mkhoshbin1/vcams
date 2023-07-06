@@ -452,6 +452,8 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     """
 
     # TODO: can we add a logger here? Examples take a long time and then just finish.
+    # TODO:  it seems to be logged in the GUI, check why/how
+    # TODO:  it also seems to have duplicates. why?
     if image_dim.upper() not in ['2D', '3D']:
         raise ValueError("image_dim can only be one of '2D' or '3D'.")
     if image_dim.upper() == '2D':

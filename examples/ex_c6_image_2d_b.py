@@ -17,6 +17,6 @@ part = voxelpart_from_image(image_dim='2D',
                             log_debug=True)
 
 # Output the part.
-part.output_abaqus_inp(file_name='ex_c6_image_2d',
+part.output_abaqus_inp(file_name='ex_c6_image_2d_b',
                        elem_code='CPE4R', dim='2D',
                        material_elem_sets='Non-Empty')

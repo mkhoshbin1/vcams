@@ -53,7 +53,7 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form is used to create a 2D model based on a single '
                                    'binary or grayscale image:'),
                       ModelingMode('Image Processing (Image Stack for 3D Part)',
-                                   2, 4,
+                                   3, 4,
                                    'This form is used to create a 3D model based on a stack of '
                                    'binary or grayscale images:'),
                       ModelingMode('Planar Particle Reinforced Composite (Circular Inclusions)',
