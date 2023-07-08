@@ -512,12 +512,12 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
                                     background_material=1, foreground_material=2,  # Note: This is built-in.
                                     **part_creation_dict)
     elif modeling_mode == '4':  # Stack of 2D images for a 3D part.
-        part = voxelpart_from_image(image_dim='3D',  ###TODO: TEST THIS!!!!
+        part = voxelpart_from_image(image_dim='3D',
                                     image_path=part_manipulation_dict['multi_image_path'],
                                     scale=part_manipulation_dict['multi_image_scale'],
                                     denoise=part_manipulation_dict['multi_image_denoise'],
-                                    background_material=1, foreground_material=2,  # Note: This is built-in.
-                                    **part_creation_dict)  # TODO: test
+                                    background_material=0, foreground_material=1,  # Note: This is built-in.
+                                    **part_creation_dict)
     elif modeling_mode == '5':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:
             circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))

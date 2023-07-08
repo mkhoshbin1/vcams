@@ -6,7 +6,6 @@ from vcams.voxelpart import voxelpart_from_image
 # Create a Boolean mask based on an image.
 # The image is taken from https://en.wikipedia.org/wiki/File:Dual_Phase_Steel.jpg
 # and is under the CC BY-SA 4.0 license.
-
 part = voxelpart_from_image(image_dim='2D',
                             image_path='ex_c6_image_2d_input.jpg',
                             scale=1.0, denoise=True,

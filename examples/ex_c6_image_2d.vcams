@@ -1,5 +1,5 @@
 [Basic]
-part_name = unnamed
+part_name = Ex C-6 Part from Image 2D
 dim = 2D
 num_voxels_x = 1
 num_voxels_y = 1
@@ -21,7 +21,7 @@ single_image_denoise = True
 bc_type = 0
 
 [Output]
-file_name = unnamed
+file_name = ex_c6_image_2d
 elem_code = CPE4R
 output_mats_type = 1
 
