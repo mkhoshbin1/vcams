@@ -655,62 +655,81 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            </layout>
           </widget>
           <widget class="QWidget" name="modeling_single_image">
-           <layout class="QFormLayout" name="formLayout_5">
-            <item row="0" column="0">
-             <widget class="QLabel" name="single_image_path_label">
-              <property name="text">
-               <string>Image Path</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <layout class="QHBoxLayout" name="single_image_path_layout">
-              <item>
-               <widget class="QLineEdit" name="single_image_path_field"/>
+           <layout class="QVBoxLayout" name="verticalLayout_12">
+            <item>
+             <layout class="QFormLayout" name="formLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="single_image_path_label">
+                <property name="text">
+                 <string>Image Path</string>
+                </property>
+               </widget>
               </item>
-              <item>
-               <widget class="QPushButton" name="single_image_path_select_button">
+              <item row="0" column="1">
+               <layout class="QHBoxLayout" name="single_image_path_layout">
+                <item>
+                 <widget class="QLineEdit" name="single_image_path_field"/>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="single_image_path_select_button">
+                  <property name="focusPolicy">
+                   <enum>Qt::ClickFocus</enum>
+                  </property>
+                  <property name="text">
+                   <string>Select</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="single_image_scale_label">
+                <property name="text">
+                 <string>Scale</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="single_image_scale_field">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="focusPolicy">
                  <enum>Qt::ClickFocus</enum>
                 </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="single_image_denoise_label">
                 <property name="text">
-                 <string>Select</string>
+                 <string>Remove Noise</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QCheckBox" name="single_image_denoise_checkbox">
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
                 </property>
                </widget>
               </item>
              </layout>
             </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="single_image_scale_label">
+            <item>
+             <widget class="QLabel" name="single_image_footnote">
               <property name="text">
-               <string>Scale</string>
+               <string>Notes:
+ - In this modeling mode, number of voxels is determined from the image and the input values are ignored.
+ - In this modeling mode, the base material is set to 0 and the foreground material is set to 1.</string>
               </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QLineEdit" name="single_image_scale_field">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
               </property>
-              <property name="focusPolicy">
-               <enum>Qt::ClickFocus</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="single_image_denoise_label">
-              <property name="text">
-               <string>Remove Noise</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QCheckBox" name="single_image_denoise_checkbox">
-              <property name="focusPolicy">
-               <enum>Qt::ClickFocus</enum>
+              <property name="wordWrap">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -767,15 +786,12 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
              </layout>
             </item>
             <item>
-             <widget class="QLabel" name="modeling_image_footnote">
+             <widget class="QLabel" name="multi_image_footnote">
               <property name="text">
                <string>Notes:
  - In this modeling mode, number of voxels is determined from the image and the input values are ignored.
  - In this modeling mode, the base material is set to 0 and the foreground material is set to 1.
  - You can use the ? symbol as a placeholder for a single character in the image path string. Also, the path sting is not validated so make sure it is correct.</string>
-              </property>
-              <property name="textFormat">
-               <enum>Qt::AutoText</enum>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
