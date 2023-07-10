@@ -32,13 +32,18 @@ The author's experience with 2D microscopy images suggests a combination of the 
     Furthermore, some simulations are more sensitive to these kinds of changes.
     If you think you shouldn't do this for your simulation, you probably shouldn't.
 
-The two functions used for singular images and image sequences are
-:func:`~vcams.mask.image.mask_from_image`
+The two functions used for creating Boolean masks from
+singular images and image sequences are :func:`~vcams.mask.image.mask_from_image`
 and :func:`~vcams.mask.image.mask_from_image_sequence`, respectively.
-Users are advised to thoroughly read the documentation and even the source code
-to familiarize themselves with the specific set of procedures done in these functions.
-Finally, users should not be discouraged by bad results because
-oftentimes a great deal of trial and error is necessary.
+Also, the :func:`~vcams.voxelpart.voxelpart_from_image` function allows for
+convenient use of these functions with preset binarization parameters.
+
+Furthermore, users are advised to thoroughly read the documentation and even the source code
+to familiarize themselves with the specific set of procedures done in these functions
+and if necessary, create their own procedures for image processing.
+
+Finally, The autor advises the users to not be discouraged by bad results because
+image processing oftentimes requires a great deal of trial and error.
 
 Examples :doc:`C-6 </examples/example-c6>` and :doc:`C-7 </examples/example-c7>`
 demonstrate the use of these functions.
