@@ -1,9 +1,13 @@
 Example C-6: Part from Image (2D)
 =================================
 In this example, a 2D part is created based on an image.
-This is done using the :func:`~vcams.mask.image.mask_from_image` function
+Two methods are presented, with the first using
+the :func:`~vcams.mask.image.mask_from_image` function
 which binarizes the image and returns a Boolean mask,
 which is then applied to the part.
+The second method uses
+the :func:`~vcams.voxelpart.voxelpart_from_image` function
+which does all of this automatically.
 
 This procedure is especially useful for grayscale images obtained from microscopy.
 See :ref:`predefined-image` for more information and some important tips.
@@ -11,6 +15,8 @@ In order to avoid copyright issues, a simple image of a dual-phase steel
 is taken from `Wikipedia <https://en.wikipedia.org/wiki/File:Dual_Phase_Steel.jpg>`__
 (licensed under CC BY-SA 4.0) and is used for this example.
 
+The First Method
+----------------
 First, the image is converted to a mask without being re-scaled::
 
     image_mask = mask_from_image(image_path='ex_c6_image_2d_input.jpg',
@@ -31,8 +37,18 @@ The *Non-Empty* elements are requested to be exported.
 
 The code can be found in the *examples* folder of the main repository. It is also included below:
 
-.. literalinclude:: /../../examples/ex_c6_image_2d.py
+.. literalinclude:: /../../examples/ex_c6_image_2d_a.py
 
+The Second Method
+-----------------
+This method uses the :func:`~vcams.voxelpart.voxelpart_from_image` function
+which automatically does all of the steps used in the first method.
+it is more convenient, but allows for less customization.
+
+.. literalinclude:: /../../examples/ex_c6_image_2d_b.py
+
+Results
+-------
 The initial image and the final model are shown in :numref:`ex_c6_image_2d`.
 
 .. figure:: /images/ex_c6_image_2d.png
