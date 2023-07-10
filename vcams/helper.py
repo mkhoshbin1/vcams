@@ -170,7 +170,7 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
     modeling_mode = modeling_section['modeling_mode']
     part_manipulation_dict['modeling_mode'] = modeling_mode
     part_manipulation_dict['dim'] = dim
-    if modeling_mode == '0':  # No further action.
+    if modeling_mode == '0':  # No action selected. This is technically invalid, but is considered to be '1'.
         pass
     elif modeling_mode == '1':  # No Further Manipulation.
         pass
@@ -183,9 +183,17 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         part_manipulation_dict['tpms_length'] = float(modeling_section['tpms_length'])
         part_manipulation_dict['tpms_constant'] = float(modeling_section['tpms_constant'])
         part_manipulation_dict['tpms_fill_value'] = int(modeling_section['tpms_fill_value'])
-    elif modeling_mode == '3':  # Planar Composite (Circular Inclusions)
+    elif modeling_mode == '3':  # Image Processing (Single 2D Image)
+        part_manipulation_dict['single_image_path'] = modeling_section['single_image_path']
+        part_manipulation_dict['single_image_scale'] = float(modeling_section['single_image_scale'])
+        part_manipulation_dict['single_image_denoise'] = config.getboolean('Modeling', 'single_image_denoise')
+    elif modeling_mode == '4':  # Stack of 2D images for a 3D part.
+        part_manipulation_dict['multi_image_path'] = modeling_section['multi_image_path']
+        part_manipulation_dict['multi_image_scale'] = float(modeling_section['multi_image_scale'])
+        part_manipulation_dict['multi_image_denoise'] = config.getboolean('Modeling', 'multi_image_denoise')
+    elif modeling_mode == '5':  # Planar Composite (Circular Inclusions)
         part_manipulation_dict['circle_list'] = csv_string_to_list(modeling_section['modeling_circle_table'])
-    elif modeling_mode == '4':  # Spatial Composite (Spherical Inclusions)
+    elif modeling_mode == '6':  # Spatial Composite (Spherical Inclusions)
         part_manipulation_dict['sphere_list'] = csv_string_to_list(modeling_section['modeling_sphere_table'])
     else:
         raise ValueError('Field "modeling_mode" is set to %s, which is invalid.' % modeling_mode)

@@ -1,8 +1,11 @@
 Example C-7: Part from Image Series (3D)
 ========================================
 In this example, a 3D part is created based on a sequence of images.
-This is done using the :func:`~vcams.mask.image.mask_from_image_sequence` function
+Two methods are presented, with the first using
+the :func:`~vcams.mask.image.mask_from_image_sequence` function
 which binarizes the image and returns a 3D Boolean mask, which is then applied to the part.
+The second method uses the :func:`~vcams.voxelpart.voxelpart_from_image` function
+which does all of this automatically.
 
 The image set used in this example is a micro-CT scan of the tibia of a mouse.
 It has been made available by the authors of
@@ -12,7 +15,10 @@ and its corresponding `figshare collection <https://doi.org/10.6084/m9.figshare.
 In the collection, the micro-CT scan used is named *MicroCT of mouse tibiae-oim4*
 and consists of 991 images (which will be in the z-direction of the model),
 each being 784×784 pixels. Each voxel is reported to be 5.06 micrometers.
+The model is scaled at 50%, which means that voxel size must doubled.
 
+The First Method
+----------------
 First, the image sequence is converted to a mask without being re-scaled.
 The *load_pattern* parameter is set to a path which describes all of the
 images in the sequence. They will be automatically be loaded in alphabetical order::
@@ -20,8 +26,8 @@ images in the sequence. They will be automatically be loaded in alphabetical ord
     image_mask = mask_from_image_sequence(load_pattern=r'D:\MicroCT of mouse tibiae-oim4\28Oim__rec0???.bmp',
                                           scale=1.0, denoise=True)
 
-Afterwards, a 3D part with the same shape as the mask is created
-with a base material of 0 (empty space) and a voxel size of 0.00506 units in all directions.
+Then, a 3D part with the same shape as the mask is created
+with a base material of 0 (empty space) and a voxel size of 0.01012 units in all directions.
 The parameter *log_debug* is set to *True* for demonstration purposes.
 
 Afterwards, the Boolean mask is applied to the part with a value of 1.
@@ -32,14 +38,24 @@ The *Non-Empty* elements are requested to be exported.
 
 The code can be found in the *examples* folder of the main repository. It is also included below:
 
-.. literalinclude:: /../../examples/ex_c7_image_3d.py
+.. literalinclude:: /../../examples/ex_c7_image_3d_a.py
 
+The Second Method
+-----------------
+This method uses the :func:`~vcams.voxelpart.voxelpart_from_image` function
+which automatically does all of the steps used in the first method.
+it is more convenient, but allows for less customization.
+
+.. literalinclude:: /../../examples/ex_c7_image_3d_b.py
+
+Results
+-------
 The initial image and the final model are shown in :numref:`ex_c7_image_3d`.
 It should be noted that the method used here is very crude.
 Realistically, the images must be further processed
 to reduce noise (note the specks on the image),
 improve binarization, and remove the support structure.
-Also, the un-scaled model is very big (31.1M elements) and
+Also, even the scaled model is very big (3.9M elements) and
 may not be feasible for finite element analysis.
 
 .. figure:: /images/ex_c7_image_3d.png

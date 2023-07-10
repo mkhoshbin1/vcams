@@ -22,7 +22,8 @@ logger = getLogger(__name__)
 
 
 def mask_from_image(image_path: str, scale: float = 1.0,
-                    denoise: bool = True, show_image: bool = False) -> ndarray:
+                    denoise: bool = True, show_image: bool = False,
+                    verbose_log: bool = True) -> ndarray:
     """Return a boolean mask by thresholding an image.
 
     This function does the following in the given order:
@@ -40,6 +41,7 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         show_image: If set to True, the opened image and the final binary image
                     will be shown side by side in a figure.
                     The program may be paused while the window is open.
+        verbose_log: If set to True, logs will be verbose, otherwise only one entry will be made.
 
     Returns:
         The binary mask derived from the image.
@@ -52,20 +54,23 @@ def mask_from_image(image_path: str, scale: float = 1.0,
 
     # Open the image and convert it to grayscale.
     gray_image = imread(fname=image_path, as_gray=True)
-    logger.debug("Opened image '%s'.", image_path)
+    if verbose_log:
+        logger.debug("Opened image '%s'.", image_path)
 
     # Apply the scale.
-    gray_image = resize_image(gray_image, scale)
+    gray_image = resize_image(gray_image, scale, verbose_log)
 
     # Denoise the image using a Bilateral filer.
     if denoise:
         gray_image = denoise_bilateral(gray_image)
-        logger.debug('Denoised the image using a Bilateral filer.')
+        if verbose_log:
+            logger.debug('Denoised the image using a Bilateral filer.')
 
     # Apply Otsu’s method to make a binary image.
     thresh = threshold_otsu(gray_image)
     binary_image = gray_image > thresh
-    logger.debug("Applied the Otsu's Method to create a binary image.")
+    if verbose_log:
+        logger.debug("Applied the Otsu's Method to create a binary image.")
 
     # Show the image.
     if show_image:
@@ -83,7 +88,11 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         plt.show(block=True)
 
     # Return the binary mask.
-    logger.info("Created a binary mask from the image at '%s'.", image_path)
+    final_log_msg = f"Created a binary mask from the image at '{image_path}' with a scale of {scale:.2f}."
+    if verbose_log:
+        logger.info(final_log_msg)
+    else:
+        logger.debug(final_log_msg)
     return binary_image
 
 
@@ -112,7 +121,7 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
     # the mask_from_image() function. No scaling is applied and denoising is done if requested.
     image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=False,
                                  load_func=mask_from_image, scale=1.0, denoise=denoise,
-                                 show_image=False)
+                                 show_image=False, verbose_log=False)
 
     # Make sure the collection has an appropriate number of images.
     if len(image_coll) == 0:
@@ -123,17 +132,17 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
              'or an incorrect load_pattern.')
         # TODO: use this method of filling (space in above line) everywhere else.
     else:
-        logger.debug('Loaded %u images in the image collection', len(image_coll))
+        logger.info('Loaded %u images in the image collection', len(image_coll))
 
     full_image = moveaxis(image_coll.concatenate(), 0, -1)
     # TODO: test input with and without move axis.
     # TODO: is scale passed? is it already done by now? either way, check for 1.0.
     # Apply the scale.
-    full_image = resize_image(full_image, scale)
+    full_image = resize_image(full_image, scale, verbose_log=True)
     return full_image
 
 
-def resize_image(image: ndarray, scale: float) -> ndarray:
+def resize_image(image: ndarray, scale: float, verbose_log: bool = True) -> ndarray:
     """Resize an image. This function is not intended for standalone use.
 
     Args:
@@ -143,12 +152,14 @@ def resize_image(image: ndarray, scale: float) -> ndarray:
                Otherwise, a simple resizing operation with the default parameters
                of ``skimage.transform.rescale()`` will be attempted.
         scale: The scale to be applied. If equal to 1.0, the function logs the call and returns.
+        verbose_log: If set to True, logs will be verbose, otherwise no entry will be made.
 
     Returns:
         The resized image which is of the same *dtype* as the input.
     """
     if scale == 1.0:
-        logger.debug('Scale was equal to 1.0. No resizing was performed.')
+        if verbose_log:
+            logger.debug('Scale was equal to 1.0. No resizing was performed.')
         return image
 
     if image.dtype == bool:
@@ -172,5 +183,6 @@ def resize_image(image: ndarray, scale: float) -> ndarray:
         # TODO: test data type.
         image = rescale(image, scale, anti_aliasing=True)
 
-    logger.debug('Applied a scale of %.2f.', scale)
+    if verbose_log:
+        logger.debug('Applied a scale of %.2f.', scale)
     return image

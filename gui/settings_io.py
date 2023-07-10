@@ -134,7 +134,7 @@ def export_settings(main_obj, file_path_str):
         # Tab: Modeling.
         config['Modeling'] = {}
         config['Modeling']['modeling_mode'] = str(main_obj.modeling_mode_combo.currentIndex())
-        if config['Modeling']['modeling_mode'] == '0':  # No further action.
+        if config['Modeling']['modeling_mode'] == '0':  # No action selected. Is invalid.
             QMessageBox.critical(main_obj, 'Invalid Data!',
                                  'No modeling mode is selected in the Model Manipulations section.')
         elif config['Modeling']['modeling_mode'] == '1':  # No Further Manipulation.
@@ -145,10 +145,26 @@ def export_settings(main_obj, file_path_str):
             config['Modeling']['tpms_constant'] = return_field_value(main_obj.tpms_constant_field)
             config['Modeling']['tpms_fill_value'] = \
                 return_field_value(main_obj.tpms_fill_value_field)
-        elif config['Modeling']['modeling_mode'] == '3':  # Planar Composite (Circular Inclusions)
+        elif config['Modeling']['modeling_mode'] == '3':  # Image Processing (Single 2D Image)
+            if return_field_value(main_obj.single_image_path_field):
+                config['Modeling']['single_image_path'] = return_field_value(main_obj.single_image_path_field)
+            else:
+                QMessageBox.critical(main_obj, 'Invalid Data!',
+                                     'Image path (single) has not been specified in the Model Manipulations section.')
+            config['Modeling']['single_image_scale'] = return_field_value(main_obj.single_image_scale_field)
+            config['Modeling']['single_image_denoise'] = str(main_obj.single_image_denoise_checkbox.isChecked())
+        elif config['Modeling']['modeling_mode'] == '4':  # Stack of 2D images for a 3D part.
+            if return_field_value(main_obj.multi_image_path_field):
+                config['Modeling']['multi_image_path'] = return_field_value(main_obj.multi_image_path_field)
+            else:
+                QMessageBox.critical(main_obj, 'Invalid Data!',
+                                     'Image path string has not been specified in the Model Manipulations section.')
+            config['Modeling']['multi_image_scale'] = return_field_value(main_obj.multi_image_scale_field)
+            config['Modeling']['multi_image_denoise'] = str(main_obj.multi_image_denoise_checkbox.isChecked())
+        elif config['Modeling']['modeling_mode'] == '5':  # Planar Composite (Circular Inclusions)
             config['Modeling']['modeling_circle_table'] = \
                 main_obj.modeling_circle_table.return_csv_string(for_excel=False)
-        elif config['Modeling']['modeling_mode'] == '4':  # Spatial Composite (Spherical Inclusions)
+        elif config['Modeling']['modeling_mode'] == '6':  # Spatial Composite (Spherical Inclusions)
             config['Modeling']['modeling_sphere_table'] = \
                 main_obj.modeling_sphere_table.return_csv_string(for_excel=False)
         else:
@@ -217,7 +233,7 @@ def import_settings(main_obj, file_path_str):
         set_field_value(main_obj.modeling_mode_combo, 'modeling_mode', modeling,
                         combo_index_mode=True)
         modeling_mode = str(main_obj.modeling_mode_combo.currentIndex())
-        if modeling_mode == '0':  # No further action.
+        if modeling_mode == '0':  # No action selected. Is invalid.
             raise ValueError('Field "modeling_mode" is set to 0, which is invalid.')
         elif modeling_mode == '1':  # No Further Manipulation.
             pass
@@ -227,9 +243,17 @@ def import_settings(main_obj, file_path_str):
             set_field_value(main_obj.tpms_length_field, 'tpms_length', modeling)
             set_field_value(main_obj.tpms_constant_field, 'tpms_constant', modeling)
             set_field_value(main_obj.tpms_fill_value_field, 'tpms_fill_value', modeling)
-        elif modeling_mode == '3':  # Planar Composite (Circular Inclusions)
+        elif modeling_mode == '3':  # Image Processing (Single 2D Image)
+            set_field_value(main_obj.single_image_path_field, 'single_image_path', modeling)
+            set_field_value(main_obj.single_image_scale_field, 'single_image_scale', modeling)
+            main_obj.single_image_denoise_checkbox.setChecked(config.getboolean('Modeling', 'single_image_denoise'))
+        elif modeling_mode == '4':  # Image Processing (Image Stack for 3D Part)
+            set_field_value(main_obj.multi_image_path_field, 'multi_image_path', modeling)
+            set_field_value(main_obj.multi_image_scale_field, 'multi_image_scale', modeling)
+            main_obj.multi_image_denoise_checkbox.setChecked(config.getboolean('Modeling', 'multi_image_denoise'))
+        elif modeling_mode == '5':  # Planar Composite (Circular Inclusions)
             set_field_value(main_obj.modeling_circle_table, 'modeling_circle_table', modeling)
-        elif modeling_mode == '4':  # Spatial Composite (Spherical Inclusions)
+        elif modeling_mode == '6':  # Spatial Composite (Spherical Inclusions)
             set_field_value(main_obj.modeling_sphere_table, 'modeling_sphere_table', modeling)
         else:
             raise ValueError(
