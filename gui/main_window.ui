@@ -548,7 +548,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>4</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
           <widget class="QWidget" name="modeling_nothing"/>
@@ -769,7 +769,10 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
             <item>
              <widget class="QLabel" name="modeling_image_footnote">
               <property name="text">
-               <string>Note: Use the ? symbol as a placeholder for a single character in the image path string. Also, the path sting is not validated so make sure it is correct.</string>
+               <string>Notes:
+ - In this modeling mode, number of voxels is determined from the image and the input values are ignored.
+ - In this modeling mode, the base material is set to 0 and the foreground material is set to 1.
+ - You can use the ? symbol as a placeholder for a single character in the image path string. Also, the path sting is not validated so make sure it is correct.</string>
               </property>
               <property name="textFormat">
                <enum>Qt::AutoText</enum>
