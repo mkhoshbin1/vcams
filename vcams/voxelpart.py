@@ -204,6 +204,9 @@ class VoxelPart:
         """Delete the object. The respective log file is also closed."""
         self.close_logger()
 
+    def __len__(self):
+        return np.prod(self.size)
+
     def close_logger(self):
         """Close all loggers for the part."""
         root_logger = logging.getLogger()
