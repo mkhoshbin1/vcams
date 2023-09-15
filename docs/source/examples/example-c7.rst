@@ -3,9 +3,10 @@ Example C-7: Part from Image Series (3D)
 In this example, a 3D part is created based on a sequence of images.
 Two methods are presented, with the first using
 the :func:`~vcams.mask.image.mask_from_image_sequence` function
-which binarizes the image and returns a 3D Boolean mask, which is then applied to the part.
+which binarizes the image using the default Otsu's Threshold
+and returns a 3D Boolean mask, which is then applied to the part.
 The second method uses the :func:`~vcams.voxelpart.voxelpart_from_image` function
-which does all of this automatically.
+that does all of this automatically.
 
 The image set used in this example is a micro-CT scan of the tibia of a mouse.
 It has been made available by the authors of

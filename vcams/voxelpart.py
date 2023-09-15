@@ -420,6 +420,7 @@ class VoxelPart:
 def voxelpart_from_image(image_dim: str, image_path: str,
                          scale: float = 1.0, denoise: bool = True,
                          show_image: bool = False,
+                         thresh_mode: str = 'otsu', thresh: float = None,
                          background_material: int = 0, foreground_material: int = 1,
                          voxel_size: Union[tuple[float, float, float], tuple[float, float]] = (1.0, 1.0, 1.0),
                          dtype: str = 'uint8', name: str = 'unnamed',
@@ -435,6 +436,8 @@ def voxelpart_from_image(image_dim: str, image_path: str,
         show_image: See TODO for docs.
         scale: See TODO for docs.
         denoise: See TODO for docs.
+        thresh_mode: See TODO for docs.
+        thresh: See TODO for docs.
         background_material: After the image is binarized, this material will be assigned to the *OFF* pixels.
         foreground_material: After the image is binarized, this material will be assigned to the *ON* pixels.
         voxel_size: See TODO for docs.

@@ -7,14 +7,14 @@ num_voxels_z = 100
 voxel_size_x = 0.01
 voxel_size_y = 0.01
 voxel_size_z = 0.01
-fill_value = 1
+base_material = 1
 num_mats = 0
 part_description = 
 working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\unnamed
 log_debug = False
 
 [Modeling]
-modeling_mode = 2
+modeling_mode = 5
 modeling_circle_table = 0.0,0.0,0.1,2
 	0.4,0.2,0.15,3
 	0.7,0.5,0.15,4
