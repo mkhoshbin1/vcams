@@ -463,10 +463,14 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     if image_dim.upper() not in ['2D', '3D']:
         raise ValueError("image_dim can only be one of '2D' or '3D'.")
     if image_dim.upper() == '2D':
-        image_mask = mask_from_image(image_path=image_path, scale=scale, denoise=denoise, show_image=show_image)
+        image_mask = mask_from_image(image_path=image_path, scale=scale,
+                                     denoise=denoise, show_image=show_image,
+                                     thresh_mode=thresh_mode, thresh=thresh)
     else:  # dim.upper() == '3D'
         # TODO: add show_image here.
-        image_mask = mask_from_image_sequence(load_pattern=image_path, scale=scale, denoise=denoise)
+        image_mask = mask_from_image_sequence(load_pattern=image_path,
+                                              scale=scale, denoise=denoise,
+                                              thresh_mode=thresh_mode, thresh=thresh)
 
     # TODO: determine voxel size array (2 or 3 elements?). (Make sure a 1*3 array is always OK)
     # TODO: same for part shape.
