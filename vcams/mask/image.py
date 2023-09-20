@@ -12,7 +12,7 @@ from warnings import warn
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-from numpy import moveaxis, unique, ndarray
+from numpy import moveaxis, unique, ndarray, where
 from skimage.filters.thresholding import threshold_otsu
 from skimage.io import imread, ImageCollection
 from skimage.restoration import denoise_bilateral
@@ -109,6 +109,10 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         ax[1].imshow(binary_image, cmap=ListedColormap(['black', 'white']))
         ax[1].set_title('Binary Image')
         ax[1].axis('off')
+        num_dark_px = len(where(binary_image == 0)[0]) / binary_image.size
+        num_light_px = len(where(binary_image == 1)[0]) / binary_image.size
+        ax[1].annotate(f'Light Pixels = {100*num_light_px:3.2f}%, Dark Pixels = {100*num_dark_px:3.2f}%',
+                    xy=(0.5, -0.05), xycoords='axes fraction', ha='center')
         plt.show(block=True)
 
     # Return the binary mask.
