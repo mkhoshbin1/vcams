@@ -13,8 +13,10 @@ part = VoxelPart(size=(250, 250), base_material=1,
 # Create a ShapeArray based on the VoxelPart object.
 num_bound_pixels = 2
 bound = num_bound_pixels * part.voxel_size[0]
-shape_disp_array_obj = ShapeDispersionArray(dim='2D', mask_shape=part.size,
-                                            voxel_size=tuple(part.voxel_size), num_bound_pixels=num_bound_pixels)
+shape_disp_array_obj = ShapeDispersionArray(dim='2D', part=part,
+                                            num_bound_pixels=num_bound_pixels,
+                                            max_attempts=5000, max_trials=100,
+                                            short_msg=True)
 
 # Add circles to shape_disp_array_obj.
 # num_circles = 10
