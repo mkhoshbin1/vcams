@@ -204,6 +204,9 @@ class VoxelPart:
         """Delete the object. The respective log file is also closed."""
         self.close_logger()
 
+    def __len__(self):
+        return np.prod(self.size)
+
     def close_logger(self):
         """Close all loggers for the part."""
         root_logger = logging.getLogger()
@@ -420,6 +423,7 @@ class VoxelPart:
 def voxelpart_from_image(image_dim: str, image_path: str,
                          scale: float = 1.0, denoise: bool = True,
                          show_image: bool = False,
+                         thresh_mode: str = 'otsu', thresh: float = None,
                          background_material: int = 0, foreground_material: int = 1,
                          voxel_size: Union[tuple[float, float, float], tuple[float, float]] = (1.0, 1.0, 1.0),
                          dtype: str = 'uint8', name: str = 'unnamed',
@@ -435,6 +439,8 @@ def voxelpart_from_image(image_dim: str, image_path: str,
         show_image: See TODO for docs.
         scale: See TODO for docs.
         denoise: See TODO for docs.
+        thresh_mode: See TODO for docs.
+        thresh: See TODO for docs.
         background_material: After the image is binarized, this material will be assigned to the *OFF* pixels.
         foreground_material: After the image is binarized, this material will be assigned to the *ON* pixels.
         voxel_size: See TODO for docs.
@@ -457,10 +463,14 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     if image_dim.upper() not in ['2D', '3D']:
         raise ValueError("image_dim can only be one of '2D' or '3D'.")
     if image_dim.upper() == '2D':
-        image_mask = mask_from_image(image_path=image_path, scale=scale, denoise=denoise, show_image=show_image)
+        image_mask = mask_from_image(image_path=image_path, scale=scale,
+                                     denoise=denoise, show_image=show_image,
+                                     thresh_mode=thresh_mode, thresh=thresh)
     else:  # dim.upper() == '3D'
         # TODO: add show_image here.
-        image_mask = mask_from_image_sequence(load_pattern=image_path, scale=scale, denoise=denoise)
+        image_mask = mask_from_image_sequence(load_pattern=image_path,
+                                              scale=scale, denoise=denoise,
+                                              thresh_mode=thresh_mode, thresh=thresh)
 
     # TODO: determine voxel size array (2 or 3 elements?). (Make sure a 1*3 array is always OK)
     # TODO: same for part shape.

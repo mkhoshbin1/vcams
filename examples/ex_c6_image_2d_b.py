@@ -1,5 +1,4 @@
 """Second Script for Example C-6: Part from Image (2D)."""
-from numpy import rot90
 
 from vcams.voxelpart import voxelpart_from_image
 

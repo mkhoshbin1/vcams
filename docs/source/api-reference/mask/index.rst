@@ -15,5 +15,6 @@ of the basic concepts.
 
    function-module
    shape-module
+   shape_dispersion-module
    tpms-module
    image-module

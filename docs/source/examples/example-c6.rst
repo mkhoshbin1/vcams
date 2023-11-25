@@ -3,11 +3,11 @@ Example C-6: Part from Image (2D)
 In this example, a 2D part is created based on an image.
 Two methods are presented, with the first using
 the :func:`~vcams.mask.image.mask_from_image` function
-which binarizes the image and returns a Boolean mask,
-which is then applied to the part.
+which binarizes the image using the default Otsu's Threshold
+and returns a Boolean mask, which is then applied to the part.
 The second method uses
 the :func:`~vcams.voxelpart.voxelpart_from_image` function
-which does all of this automatically.
+that does all of this automatically.
 
 This procedure is especially useful for grayscale images obtained from microscopy.
 See :ref:`predefined-image` for more information and some important tips.

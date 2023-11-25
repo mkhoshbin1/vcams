@@ -12,7 +12,7 @@ from warnings import warn
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-from numpy import moveaxis, unique, ndarray
+from numpy import moveaxis, unique, ndarray, where
 from skimage.filters.thresholding import threshold_otsu
 from skimage.io import imread, ImageCollection
 from skimage.restoration import denoise_bilateral
@@ -23,6 +23,7 @@ logger = getLogger(__name__)
 
 def mask_from_image(image_path: str, scale: float = 1.0,
                     denoise: bool = True, show_image: bool = False,
+                    thresh_mode: str = 'otsu', thresh: float = None,
                     verbose_log: bool = True) -> ndarray:
     """Return a boolean mask by thresholding an image.
 
@@ -38,6 +39,11 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         scale: Scale to be applied to the image. Note that a scale greater than 1.0
                will introduce fake precision by interpolating the data and issues a warning.
         denoise: If set to True, the image will be denoised using a Bilateral filter.
+        thresh_mode: The kind of threshold to be applied to the image.
+                     Valid values are 'none', 'manual', and 'otsu'. Defaults to 'otsu'.
+        thresh: If *thresh_mode* is set to 'manual', should be a float in the range (0, 1)
+                Which is used as a threshold for binarizing the image.
+                Defaults to 0 which raises an error when used.
         show_image: If set to True, the opened image and the final binary image
                     will be shown side by side in a figure.
                     The program may be paused while the window is open.
@@ -52,8 +58,15 @@ def mask_from_image(image_path: str, scale: float = 1.0,
     if scale > 1.0:
         warn('scale is greater than 1.0 which introduces fake precision.')  # TODO: test this.
 
+    valid_thresh_modes = ('none', 'manual', 'otsu')
+    if thresh_mode.lower() not in ('manual', 'otsu'):
+        raise ValueError('Invalid thresh_mode. Valid values are: %s.' % ', '.join(valid_thresh_modes))
+
+    if (thresh_mode.lower() == 'manual') and ((thresh >= 1) or (thresh <= 0)):
+        raise ValueError('For manual thresholding, thresh must be in the range (0, 1), but it is %.3f.' % thresh)
+
     # Open the image and convert it to grayscale.
-    gray_image = imread(fname=image_path, as_gray=True)
+    gray_image = imread(fname=image_path, as_gray=True)  # Note that the dtype will be float, i.e. [0, 1].
     if verbose_log:
         logger.debug("Opened image '%s'.", image_path)
 
@@ -66,11 +79,22 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         if verbose_log:
             logger.debug('Denoised the image using a Bilateral filer.')
 
-    # Apply Otsu’s method to make a binary image.
-    thresh = threshold_otsu(gray_image)
-    binary_image = gray_image > thresh
-    if verbose_log:
-        logger.debug("Applied the Otsu's Method to create a binary image.")
+    if thresh_mode.lower() == 'none':
+        binary_image = gray_image
+        logger.debug('No thresholding applied to the image.')
+    else:
+        # Apply Otsu’s method to make a binary image.
+        if thresh_mode == 'manual':
+            pass  # thresh is assumed to be correct.
+        elif thresh_mode == 'otsu':
+            thresh = threshold_otsu(gray_image)
+        else:
+            raise ValueError('Invalid thresh_mode. Valid values are: %s.' % ', '.join(valid_thresh_modes) +
+                             ' This should have been caught earlier.')
+        # Threshold the image based on the thresh value
+        binary_image = gray_image > thresh
+        if verbose_log:
+            logger.debug('Applied a %s threshold to the image with a value of %.3f.' % (thresh_mode, thresh))
 
     # Show the image.
     if show_image:
@@ -85,6 +109,10 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         ax[1].imshow(binary_image, cmap=ListedColormap(['black', 'white']))
         ax[1].set_title('Binary Image')
         ax[1].axis('off')
+        num_dark_px = len(where(binary_image == 0)[0]) / binary_image.size
+        num_light_px = len(where(binary_image == 1)[0]) / binary_image.size
+        ax[1].annotate(f'Light Pixels = {100*num_light_px:3.2f}%, Dark Pixels = {100*num_dark_px:3.2f}%',
+                    xy=(0.5, -0.05), xycoords='axes fraction', ha='center')
         plt.show(block=True)
 
     # Return the binary mask.
@@ -98,7 +126,9 @@ def mask_from_image(image_path: str, scale: float = 1.0,
 
 # https://scikit-image.org/docs/dev/api/skimage.io.html#imread-collection
 
-def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
+def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
+                             denoise: bool = True,
+                             thresh_mode: str = 'otsu', thresh: float = None):
     """Return a boolean mask by opening and thresholding an image sequence.
 
     This function opens all images using the :func:`mask_from_image` function,
@@ -112,6 +142,11 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
                       Use the *?* symbol as a placeholder for a single character.
         scale: Scale to be applied to the image. Note that a scale greater than 1.0
                will introduce fake precision by interpolating the data and issues a warning.
+        thresh_mode: The kind of threshold to be applied to the image.
+                     Valid values are 'none', 'manual', and 'otsu'. Defaults to 'otsu'.
+        thresh: If *thresh_mode* is set to 'manual', should be a float in the range (0, 1)
+                Which is used as a threshold for binarizing the image.
+                Defaults to 0 which raises an error when used.
         denoise: If set to True, the image will be denoised using a Bilateral filter.
 
     Returns:
@@ -120,7 +155,9 @@ def mask_from_image_sequence(load_pattern, scale=1.0, denoise=True):
     # Create an ImageCollection function which loads the images using
     # the mask_from_image() function. No scaling is applied and denoising is done if requested.
     image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=False,
-                                 load_func=mask_from_image, scale=1.0, denoise=denoise,
+                                 load_func=mask_from_image,
+                                 scale=1.0, denoise=denoise,
+                                 thresh_mode=thresh_mode, thresh=thresh,
                                  show_image=False, verbose_log=False)
 
     # Make sure the collection has an appropriate number of images.
