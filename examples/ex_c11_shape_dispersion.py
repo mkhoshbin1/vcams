@@ -1,13 +1,14 @@
 """Script for Example C-4: Shape Array."""
 from vcams.voxelpart import VoxelPart
 from vcams.mask.shape import Circle, Ellipse, EllipseFromAspectRatio
-from vcams.mask.shape_dispersion import ShapeDispersionArray, DispersionRandom, DispersionNormalDistribution, DispersionList
+from vcams.mask.shape_dispersion import ShapeDispersionArray, DispersionRandom, DispersionNormalDistribution, \
+    DispersionList
 
 # Create the part.
 part = VoxelPart(size=(250, 250), base_material=1,
                  voxel_size=(0.008, 0.008),
-                 name='Ex C-4 Shape Dispersion',
-                 description='A 2D square 50*50 part created using an array of circular shapes.',
+                 name='Ex C-11 Shape Dispersion',
+                 description='A 2D square 250*250 part created with shapes dispersed in it.',
                  log_debug=True)
 
 # Create a ShapeArray based on the VoxelPart object.
@@ -15,25 +16,29 @@ num_bound_pixels = 2
 bound = num_bound_pixels * part.voxel_size[0]
 shape_disp_array_obj = ShapeDispersionArray(dim='2D', part=part,
                                             num_bound_pixels=num_bound_pixels,
-                                            max_attempts=5000, max_trials=100,
                                             short_msg=True)
 
-# Add circles to shape_disp_array_obj.
-# num_circles = 10
-# circle_r = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03, num_values=num_circles)
-# circle_xc = DispersionRandom(0, part.real_size[0], max(circle_r) + bound)
-# circle_yc = DispersionRandom(0, part.real_size[1], max(circle_r) + bound)
-# shape_disp_array_obj.place_shapes(Circle, xc=circle_xc, yc=circle_yc, r=circle_r, br=bound)
+# Request circles.
+num_circles = 10
+circle_r = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03, num_values=num_circles)
+circle_xc = DispersionRandom(0, part.real_size[0], max(circle_r) + bound)
+circle_yc = DispersionRandom(0, part.real_size[1], max(circle_r) + bound)
+shape_disp_array_obj.add_shape_request(num_shapes=num_circles, cls=Circle,
+                                       xc=circle_xc, yc=circle_yc, r=circle_r, br=bound)
 
-# Add ellipses to shape_disp_array_obj.
-num_ellipse = 15
+# Request ellipses.
+num_ellipse = 5
 ellipse_a = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03, num_values=num_ellipse)
-ellipse_aspect_ratio = DispersionNormalDistribution(target_mean=5, target_sd=2, num_values=num_ellipse)
+ellipse_aspect_ratio = DispersionNormalDistribution(target_mean=3, target_sd=1, num_values=num_ellipse)
 ellipse_xc = DispersionRandom(0, part.real_size[0])
 ellipse_yc = DispersionRandom(0, part.real_size[1])
 ellipse_alpha = DispersionRandom(low=0, high=360)
-shape_disp_array_obj.place_shapes(EllipseFromAspectRatio, xc=ellipse_xc, yc=ellipse_yc, alpha=ellipse_alpha,
-                                  a=ellipse_a, aspect_ratio=ellipse_aspect_ratio, ba=bound, bb=bound)
+shape_disp_array_obj.add_shape_request(num_shapes=num_ellipse, cls=EllipseFromAspectRatio,
+                                       xc=ellipse_xc, yc=ellipse_yc, alpha=ellipse_alpha,
+                                       a=ellipse_a, aspect_ratio=ellipse_aspect_ratio,
+                                       ba=bound, bb=bound)
+
+shape_disp_array_obj.disperse_shapes()
 
 # Apply the Boolean mask to the part.
 part.apply_mask(mask=shape_disp_array_obj.mask, value=2)
