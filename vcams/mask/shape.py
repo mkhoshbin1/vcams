@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
-from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze
+from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze, pi
 
 from vcams.mask.function import mask_from_function
 
@@ -32,6 +32,13 @@ class BaseShape(ABC):
     @abstractmethod
     def dim(self):
         """The dimensionality of the shape. Must be defined by subclasses to be '2D' or '3D'."""
+        pass
+
+    @property
+    @abstractmethod
+    def analytical_volume(self):
+        """Volume of the shape calculated using analytical equations.
+        For 2D shapes, surface area is returned."""
         pass
 
     @abstractmethod
@@ -220,6 +227,13 @@ class Circle(BaseShape):
     dim: str = '2D'
     """This class attribute means that shape can be used for 2D models."""
 
+    @property
+    def analytical_volume(self):
+        """Volume of the circle calculated using the analytical equation :math:`\\pi r^2`.
+        Because of the voxel meshing, actual volume will be different.
+        Note that the word volume is used instead of surface to simplify the interface."""
+        return pi * self.r ** 2
+
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
              boundary_on: bool = False) -> Union[float, ndarray]:
@@ -257,6 +271,13 @@ class Sphere(BaseShape):
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
+
+    @property
+    def analytical_volume(self):
+        """Volume of the sphere calculated using the analytical equation
+        :math:`\\frac{4}{3} \\pi r ^3`.
+        Because of the voxel meshing, actual volume will be different."""
+        return (4 * pi * self.r ** 3) / 3
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
@@ -299,6 +320,10 @@ class Cylinder(BaseShape):
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
+
+    @property
+    def analytical_volume(self):
+        raise NotImplementedError('This functionality has not been implemented.')
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
@@ -368,6 +393,14 @@ class Ellipse(BaseShape):
     dim: str = '2D'
     """This class attribute means that shape can be used for 2D models."""
 
+    @property
+    def analytical_volume(self):
+        """Volume of the ellipse calculated using the analytical equation :math:`\\pi a b`,
+        where :math:`a` and :math:`b` are the semi-axes.
+        Because of the voxel meshing, actual volume will be different.
+        Note that the word volume is used instead of surface to simplify the interface."""
+        return pi * self.a * self.b ** 2
+
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
              boundary_on: bool = False) -> Union[float, ndarray]:
@@ -382,7 +415,7 @@ class Ellipse(BaseShape):
 class EllipseFromAspectRatio(Ellipse):
     """Class describing a 2D Ellipse defined using one axis and the ellipse's aspect ratio.
 
-    See #TODO for the main class.
+    See :class:`.Ellipse` for the parent class.
     """
 
     # noinspection PyMissingConstructor
@@ -501,25 +534,25 @@ class Ellipsoid(BaseShape):
     performed in :mod:`~vcams.mask.function` module.
     """
 
-    def __init__(self, id: int, a: float, b: float, c: float,
+    def __init__(self, id: int, alpha: float, beta: float, gamma: float,
                  xc: float, yc: float, zc: float,
-                 alpha: float, beta: float, gamma: float,
+                 a: float, b: float, c: float,
                  ba: float = 0, bb: float = 0, bc: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
+            alpha: Rotation of the ellipsoid about its z-axis. It must be in the range [0, 360] degrees.
+            beta: Rotation of the ellipsoid around its y-axis. It must be in the range [0, 180] degrees.
+            gamma: Rotation of the ellipsoid around its x-axis. It must be in the range [0, 360] degrees.
+            xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
+            yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
+            zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
             a: Semi-axis of the ellipsoid along the unrotated x-axis. It must be positive.
             b: Semi-axis of the ellipsoid along the unrotated y-axis. It must be positive.
             c: Semi-axis of the ellipsoid along the unrotated z-axis. It must be positive.
             ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
             bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
             bc: Boundary added to *c* when dispersing the shape. Defaults to 0.
-            xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
-            yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
-            zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
-            alpha: Rotation of the ellipsoid about its z-axis. It must be in the range [0, 360] degrees.
-            beta: Rotation of the ellipsoid around its y-axis. It must be in the range [0, 180] degrees.
-            gamma: Rotation of the ellipsoid around its x-axis. It must be in the range [0, 360] degrees.
         """
         self.id = id
         self.xc = xc
@@ -555,6 +588,14 @@ class Ellipsoid(BaseShape):
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
+
+    @property
+    def analytical_volume(self):
+        """Volume of the ellipsoid calculated using the analytical equation
+        :math:`\\frac{4}{3}\\pi a b c`,
+        where :math:`a`, :math:`b`, and :math:`c` are the semi-axes.
+        Because of the voxel meshing, actual volume will be different."""
+        return (4 * pi * self.a * self.b * self.c) / 3
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
