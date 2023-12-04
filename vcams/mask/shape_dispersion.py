@@ -5,7 +5,7 @@ import time
 from abc import ABC
 from copy import deepcopy
 from itertools import count
-from numpy import squeeze, full, copy, logical_or, logical_and, var, std, mean, random, any, ndarray, max, abs
+from numpy import squeeze, full, copy, logical_or, logical_and, var, std, mean, random, any, ndarray, max, abs, isscalar
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +209,8 @@ class ShapeDispersionArray:
 
         self._mask = full(mask_shape, False, dtype=bool)  # Private attribute for the mask property.
         self.shapes = dict()
-        """TODO"""
+        """A dictionary containing the shapes in the :class:`ShapeDispersionArray` object.
+        Keys are integer shape IDs, and values are subclasses of :class:`.shape.BaseShape`."""
 
         self.shape_requests = []
         """A list of shapes shape classes and related parameters that should be dispersed.
@@ -312,6 +313,30 @@ class ShapeDispersionArray:
             self._add_to_mask(
                 new_mask=new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size, boundary_on=False))
             return True
+
+    def remove_shape(self, id_list):
+        """Remove shapes from the :class:`ShapeDispersionArray` instance and update the masks.
+
+        Args:
+            id_list: ID(s) of the shapes to be removed. Can be a single ID or an iterable.
+        """
+
+        # Validate id_list.
+        if isscalar(id_list):
+            id_list = (id_list,)
+        for id in id_list:
+            if id not in self.shapes.keys():
+                raise ValueError(f'{id} is not a valid shape ID.')
+
+        # Delete all shapes from id_list from the shapes dictionary.
+        for id in id_list:
+            del self.shapes[id]
+
+
+        # Update the masks.
+
+
+        pass
 
     def add_shape_request(self, cls, num_shapes: int = 1, **kwargs):
         """Add a request for a one or more shapes of a class to be added
