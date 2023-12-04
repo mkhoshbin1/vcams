@@ -69,6 +69,7 @@ class BaseShape(ABC):
         else:
             return self._real_volume
 
+    @property
     def real_volume_fraction(self):
         """Real volume fraction of the voxelized shape,
         calculated and set by the :meth:`calculate_mask` function.
