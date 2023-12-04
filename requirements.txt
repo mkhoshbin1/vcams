@@ -1,7 +1,7 @@
 numpy
+scipy
 tabulate
 scikit-image
-imagecodecs
 matplotlib
 PyQt5
 pyinstaller
