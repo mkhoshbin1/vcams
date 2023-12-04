@@ -2,9 +2,10 @@
 
 import logging
 import time
+from abc import ABC
 from copy import deepcopy
 from itertools import count
-from numpy import squeeze, logical_or, full, copy, logical_and, var, std, mean, random, any, number, ndarray
+from numpy import squeeze, full, copy, logical_or, logical_and, var, std, mean, random, any, ndarray, max, abs
 
 logger = logging.getLogger(__name__)
 
@@ -27,35 +28,69 @@ class TooManyDispersionTrialsError(Exception):
     pass
 
 
-class DispersionList(list):
+class BaseDispersion(ABC):
+    """Abstract base class for a dispersion list.
+    Subclasses are used for defining various dispersion.
+    """
+
+    def plot(self, num_bins):
+        """Plot a histogram of the dispersion object."""
+        # noinspection PyUnresolvedReferences
+        if self.__len__() < 1:
+            raise ValueError('The object is empty. Has it been initialized?')
+        import matplotlib.pyplot as plt
+        plt.hist(self, num_bins, density=True)
+        plt.xlabel('Value')
+        plt.ylabel('Frequency')
+        plt.show()
+
+
+class DispersionList(BaseDispersion, list):
     """A Dispersion list defined using a list.
     This is simply a list and is only created to have a uniform naming.
     """
 
-    def __call__(self):
-        return self.pop()
-
     def __repr__(self):
+        max_whole_length = len(str(int(max(abs((mean(self), std(self), var(self))))))) + 1
+        max_whole_length += 4  # Number of decimal places is set to 4.
         return f"""{self.__class__}
         Number of Values: {len(self)}
-        Actual SD:        {mean(self)}
-        Actual SD:        {std(self)}
-        Actual Variance:  {var(self)}
+        Actual Mean:      {mean(self):{max_whole_length}.4f}
+        Actual SD:        {std(self):{max_whole_length}.4f}
+        Actual Variance:  {var(self):{max_whole_length}.4f}
         """
 
 
-class DispersionNormalDistribution:
+class DispersionNormalDistribution(BaseDispersion):
     """A Dispersion list defined using mean and standard deviation.
     The list is created randomly based on a random generator when the object is created
-    and iterating over it is equivalent to iterating over it's *values* attribute."""
+    and iterating over it is equivalent to iterating over it's *values* attribute.
 
-    def __init__(self, target_mean: float, target_sd: float, num_values: int):
+    Alternatively, generation of the list can be deferred
+    and done using the :meth:`generate_values` method."""
+
+    def __init__(self, target_mean: float, target_sd: float, num_values: int = None):
+        """
+
+        Args:
+            target_mean: Target mean for the randomly generated values.
+                         Actual mean will be stored in *actual_mean*.
+            target_sd: Target standard deviation for the randomly generated values.
+                       Actual standard deviation will be stored in *actual_mean*.
+            num_values: Number of values to be generated and stored in the *values* property.
+                        Defaults to *None* which requires a call to :meth:`generate_values`
+                        to generate the values.
+        """
         self.target_mean = target_mean
         self.target_sd = target_sd
-        self.values = random.default_rng().normal(loc=target_mean, scale=target_sd, size=num_values)
-        self.actual_mean = mean(self.values)
-        self.actual_sd = std(self.values)
-        self.actual_variance = var(self.values)
+
+        if num_values is not None:
+            self.generate_values(num_values)
+        else:
+            self.values = []
+            self.actual_mean = None
+            self.actual_sd = None
+            self.actual_variance = None
 
     def __iter__(self):
         return self.values.__iter__()
@@ -70,14 +105,31 @@ class DispersionNormalDistribution:
         return DispersionList(self.values * other)
 
     def __repr__(self):
+        max_whole_length = len(str(int(max(abs((self.target_mean, self.actual_mean,
+                                                self.target_sd, self.actual_sd,
+                                                self.actual_variance)))))) + 1
+        max_whole_length += 4  # Number of decimal places is set to 4.
+        mean_pct_error = 100 * (self.actual_mean - self.target_mean) / self.target_mean
+        sd_pct_error = 100 * (self.actual_sd - self.target_sd) / self.target_sd
         return f"""{self.__class__}
         Number of Values: {len(self.values)}
-        Target Mean:      {self.target_mean}
-        Actual Mean:      {self.actual_mean}
-        Target SD:        {self.target_sd}
-        Actual SD:        {self.actual_sd}
-        Actual Variance:  {self.actual_variance}
+        Target Mean:      {self.target_mean:{max_whole_length}.4f}
+        Actual Mean:      {self.actual_mean:{max_whole_length}.4f} ({mean_pct_error:+.4f}%)
+        Target SD:        {self.target_sd:{max_whole_length}.4f}
+        Actual SD:        {self.actual_sd:{max_whole_length}.4f} ({sd_pct_error:+.4f}%)
+        Actual Variance:  {self.actual_variance:{max_whole_length}.4f}
         """
+
+    def generate_values(self, num_values: int):
+        """Generate values randomly with the given mean and standard deviation.
+
+        Args:
+            num_values: Number of values to be generated and stored in the *values* property.
+        """
+        self.values = random.default_rng().normal(loc=self.target_mean, scale=self.target_sd, size=num_values)
+        self.actual_mean = mean(self.values)
+        self.actual_sd = std(self.values)
+        self.actual_variance = var(self.values)
 
 
 class DispersionRandom:
@@ -94,10 +146,14 @@ class DispersionRandom:
         Actual High: {self.high}
         """
 
+    def plot(self, num_bins):
+        raise RuntimeError('This function is not available for the DispersionRandom class '
+                           'because it only return a random scalar.')
+
 
 class ShapeDispersionArray:
     """TODO: doc
-    TODO: if part is specified, it's used as background."""
+    TODO: if part is specified, it's used as background. Is this a question or a statement??"""
 
     def __init__(self, dim: str, part=None,
                  mask_shape: tuple[int, int, int] = None,
@@ -258,26 +314,36 @@ class ShapeDispersionArray:
             return True
 
     def add_shape_request(self, cls, num_shapes: int = 1, **kwargs):
-        # check if cls is compatible
-        # check num_shapes and make sure it is equal to list kwargs.
+        """Add a request for a one or more shapes of a class to be added
+        to the :class:`ShapeDispersionArray` instance.
 
-        # Split kwargs into two groups:
-        list_kwargs = dict()
-        other_kwargs = dict()
+        Args:
+            cls: The shape class that should be placed. Arguments are passed as *kwargs*.
+            num_shapes: Number of shapes that are requested.
+            **kwargs: A dictionary where the keys are the arguments for the shape class
+                      and the values are either dispersion objects or scalars.
+        """
+
+        # check if cls is compatible
+
+        # Split the kwargs dictionary into two groups,
+        # each mapping the argument's name to its value.
+        # These are then passed to the placement function.
+        list_kwargs = dict()  # The dictionary value will be a list of scalars.
+        other_kwargs = dict()  # The dictionary value will be a single scalar.
         for k, v in kwargs.items():
-            # list_kwargs are lists of values.
-            # They are passed one by one to shapes and must have
-            # exactly the same number of values as num_shapes.
-            if isinstance(v, (DispersionList, DispersionNormalDistribution)):
-                if len(v) != num_shapes:
-                    raise ValueError(f'{k} has {len(v)} elements but num_shapes={num_shapes}.')  # TODO: test.
-                list_kwargs[k] = v
-            # other_kwargs are either scalars or are randomly generated using DispersionRandom
-            # which acts like a scalar. They can be directly passed to the placement function.
-            else:
+            if isinstance(v, (DispersionList, DispersionNormalDistribution)):  # Act as lists.
+                if len(v) == 0:  # It has not been initiated yet.
+                    v.generate_values(num_shapes)
+                    list_kwargs[k] = v
+                elif len(v) == num_shapes:
+                    list_kwargs[k] = v
+                else:
+                    raise ValueError(f'{k} has {len(v)} elements but num_shapes={num_shapes}.')
+            else:  # Act as scalars.
                 other_kwargs[k] = v
 
-            # Test one of the shapes to make sure it's OK.
+            # TODO: maybe here we can test one of the shapes to make sure kwargs is OK.
 
         self.shape_requests.append([cls, num_shapes, list_kwargs, other_kwargs])
         self._num_requested_shapes += num_shapes
@@ -303,9 +369,9 @@ class ShapeDispersionArray:
         scalar_dict = dict()
         random_object_dict = dict()
         for k, v in kwargs.items():
-            if isinstance(v, DispersionRandom):
+            if isinstance(v, DispersionRandom):  # TODO: does it work with subclasses?
                 random_object_dict[k] = v
-            else:  # Assume it's a scalar.
+            else:  # Assume it's a scalar.  #TODO: is it actually a scalar? I don't think so.
                 scalar_dict[k] = v
 
         # Try to run the process max_trials times.
@@ -314,7 +380,7 @@ class ShapeDispersionArray:
         for attempt_number in range(1, max_attempts + 1):
             random_value_dict = dict()
             for k, v in random_object_dict.items():
-                random_value_dict[k] = v()
+                random_value_dict[k] = v()  # Note that the dispersion object is *called* here.
             self.print_placement_message(cls, attempt_number, shape_number, scalar_dict,
                                          random_value_dict, trial_number)
             # Try to add a shape to the ShapeArray. shape_status is True if successful.
@@ -438,4 +504,3 @@ class ShapeDispersionArray:
     #             selected_list_kwargs[k] = v[i]
     #         self.place_shape_randomly(cls=cls, shape_number=i + 1, max_attempts=max_attempts,
     #                                   **selected_list_kwargs, **other_kwargs)
-

@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
-from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze
+from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze, pi, count_nonzero, prod
 
 from vcams.mask.function import mask_from_function
 
@@ -27,12 +27,58 @@ class BaseShape(ABC):
     It must be compatible with :func:`vcams.mask.function.mask_from_function`.
     """
 
+    def __init__(self):
+        self._num_voxels = None
+        self._real_volume = None
+        self._real_volume_fraction = None
+
     # TODO: implement buffer zone.
     @property
     @abstractmethod
     def dim(self):
         """The dimensionality of the shape. Must be defined by subclasses to be '2D' or '3D'."""
         pass
+
+    @property
+    @abstractmethod
+    def analytical_volume(self):
+        """Volume of the shape calculated using analytical equations.
+        For 2D shapes, surface area is returned. This should only be used as an approximation as
+        it does not take into account voxelization errors and contacts with the boundary."""
+        pass
+
+    @property
+    def num_voxels(self):
+        """Number of voxels in the voxelized shape,
+        calculated and set by the :meth:`calculate_mask` function.
+        It is initially set to *None* which raises an error when accessed."""
+        if self._num_voxels is None:
+            raise RuntimeError('The number of voxels in the object has not been calculated. '
+                               'Has calculate_mask() been called yet?')
+        else:
+            return self._num_voxels
+
+    @property
+    def real_volume(self):
+        """Volume of the voxelized shape,
+        calculated and set by the :meth:`calculate_mask` function.
+        It is initially set to *None* which raises an error when accessed."""
+        if self._real_volume is None:
+            raise RuntimeError("The object's real volume has not been calculated. "
+                               "Has calculate_mask() been called yet?")
+        else:
+            return self._real_volume
+
+    @property
+    def real_volume_fraction(self):
+        """Real volume fraction of the voxelized shape,
+        calculated and set by the :meth:`calculate_mask` function.
+        It is initially set to *None* which raises an error when accessed."""
+        if self._num_voxels is None:
+            raise RuntimeError("The object's real volume fraction has not been calculated. "
+                               "Has calculate_mask() been called yet?")
+        else:
+            return self._real_volume_fraction
 
     @abstractmethod
     def func(self, x: Union[float, ndarray],
@@ -68,17 +114,28 @@ class BaseShape(ABC):
 
         Args:
             part_shape: A tuple containing three integers which determine
-                        the shape of the returned boolean mask. Ignored if *part* is passed.
+                        the shape of the returned boolean mask.
             voxel_size: A tuple containing three floats which determine the size of a voxel
-                        in the x, y, and z directions. Ignored if *part* is passed.
+                        in the x, y, and z directions.
             boundary_on: A boolean specifying whether shape boundary
                          must be considered when evaluating the function.
 
         Returns:
             A numpy ndarray with a dtype of bool representing the current shape.
         """
-        return mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size,
-                                  func=self.func, boundary_on=boundary_on)
+        # TODO: doesn't work with two element voxel_size.
+        # Shape mask is calculated here but is not stored to save memory.
+        shape_mask = mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size,
+                                        func=self.func, boundary_on=boundary_on)
+        # Calculate shape properties related to its volume.
+        self._num_voxels = count_nonzero(shape_mask)
+        if self.dim == '2D':
+            self._real_volume = self._num_voxels * prod(voxel_size[:2])
+            self._real_volume_fraction = self._num_voxels / prod(part_shape[:2])
+        else:
+            self._real_volume = self._num_voxels * prod(voxel_size)
+            self._real_volume_fraction = self._num_voxels / prod(part_shape)
+        return shape_mask
 
 
 class ShapeArray:
@@ -208,6 +265,7 @@ class Circle(BaseShape):
             r: Radius of the circle. It must be positive.
             br: Radial boundary added to *r* when dispersing the shape. Defaults to 0.
         """
+        super().__init__()
         self.id = id
         self.xc = xc
         self.yc = yc
@@ -219,6 +277,15 @@ class Circle(BaseShape):
 
     dim: str = '2D'
     """This class attribute means that shape can be used for 2D models."""
+
+    @property
+    def analytical_volume(self):
+        """Volume of the circle calculated using the analytical equation :math:`\\pi r^2`.
+        Because of the voxel meshing, actual volume will be different.
+        This should only be used as an approximation as
+        it does not take into account voxelization errors and contacts with the boundary.
+        Note that the word volume is used instead of surface to simplify the interface."""
+        return pi * self.r ** 2
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
@@ -245,6 +312,7 @@ class Sphere(BaseShape):
             r: Radius of the sphere. It must be positive.
             br: Radial boundary added to *r* when dispersing the shape. Defaults to 0.
         """
+        super().__init__()
         self.id = id
         self.xc = xc
         self.yc = yc
@@ -257,6 +325,14 @@ class Sphere(BaseShape):
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
+
+    @property
+    def analytical_volume(self):
+        """Volume of the sphere calculated using the analytical equation
+        :math:`\\frac{4}{3} \\pi r ^3`.
+        This should only be used as an approximation as
+        it does not take into account voxelization errors and contacts with the boundary."""
+        return (4 * pi * self.r ** 3) / 3
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
@@ -277,6 +353,7 @@ class Cylinder(BaseShape):
     # TODO: 2D cylinder (rectangle)
     # TODO: capped cylinder (half-circle vs line vs infinite)
     # TODO: update predefined structures to add new shapes.
+    # TODO: add boundary.
 
     def __init__(self, id, dir: str, a: float, b: Union[float, None], c: Union[float, None], r: Union[float, None]):
         """
@@ -288,6 +365,7 @@ class Cylinder(BaseShape):
             c:   y-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
             r:   Radius of the cylinder.
         """
+        super().__init__()
         if dir.lower() not in ('x', 'y', 'z'):
             raise ValueError("dir must be one of 'x', 'y', or 'z'.")
         self.dir = dir.lower()
@@ -300,8 +378,13 @@ class Cylinder(BaseShape):
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
 
+    @property
+    def analytical_volume(self):
+        raise NotImplementedError('This functionality has not been implemented.')
+
     def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray]) -> Union[float, ndarray]:
+             y: Union[float, ndarray], z: Union[float, ndarray],
+             boundary_on: bool = False) -> Union[float, ndarray]:
         if self.dir == 'x':
             return (x - x) + (y - self.b) ** 2 + (z - self.c) ** 2 - self.r ** 2
         elif self.dir == 'y':
@@ -335,18 +418,20 @@ class Ellipse(BaseShape):
     See the docs for that class for a general ellipsoid.
     """
 
-    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float, b: float, ba: float = 0, bb: float = 0):
+    def __init__(self, id: int, alpha: float, xc: float, yc: float,
+                 a: float, b: float, ba: float = 0, bb: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
+            xc: x-coordinate of the center of the ellipse where semi-axes meet.
+            yc: y-coordinate of the center of the ellipse where semi-axes meet.
             a: Semi-axis of the ellipse along the unrotated x-axis. It must be positive.
             b: Semi-axis of the ellipse along the unrotated y-axis. It must be positive.
             ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
             bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
-            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
-            xc: x-coordinate of the center of the ellipse where semi-axes meet.
-            yc: y-coordinate of the center of the ellipse where semi-axes meet.
         """
+        super().__init__()
         self.id = id
         self.xc = xc
         self.yc = yc
@@ -368,6 +453,15 @@ class Ellipse(BaseShape):
     dim: str = '2D'
     """This class attribute means that shape can be used for 2D models."""
 
+    @property
+    def analytical_volume(self):
+        """Volume of the ellipse calculated using the analytical equation :math:`\\pi a b`,
+        where :math:`a` and :math:`b` are the semi-axes.
+        This should only be used as an approximation as
+        it does not take into account voxelization errors and contacts with the boundary.
+        Note that the word volume is used instead of surface to simplify the interface."""
+        return pi * self.a * self.b
+
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
              boundary_on: bool = False) -> Union[float, ndarray]:
@@ -382,43 +476,36 @@ class Ellipse(BaseShape):
 class EllipseFromAspectRatio(Ellipse):
     """Class describing a 2D Ellipse defined using one axis and the ellipse's aspect ratio.
 
-    See #TODO for the main class.
+    See :class:`.Ellipse` for the parent class.
     """
 
-    # noinspection PyMissingConstructor
-    def __init__(self, id: int, alpha: float, xc: float, yc: float, a: float,
-                 aspect_ratio: float, ba: float = 0, bb: float = 0):
+    def __init__(self, id: int, alpha: float, xc: float, yc: float,
+                 a: float, aspect_ratio: float, ba: float = 0, bb: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
+            xc: x-coordinate of the center of the ellipse where semi-axes meet.
+            yc: y-coordinate of the center of the ellipse where semi-axes meet.
             a: Semi-axis of the ellipse along the unrotated x-axis. It must be positive.
             aspect_ratio: The ratio b/a.
                           The attribute b (the semi-axes along the unrotated y-axis) is
                           calculated as aspect_ratio × a.
             ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
             bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
-            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
-            xc: x-coordinate of the center of the ellipse where semi-axes meet.
-            yc: y-coordinate of the center of the ellipse where semi-axes meet.
         """
-        self.id = id
-        self.xc = xc
-        self.yc = yc
-        self.ba = ba
-        self.bb = bb
+
+        # Everything is checked in Ellipse.__init__().
+        # We only need to check a and calculate b and then pass it to that function.
         if a <= 0:
             raise ValueError(f'a must be positive but is {a:.6f}')
-        else:
-            self.a = a
         if aspect_ratio < 0:
             raise ValueError(f'aspect_ratio must be positive but is {aspect_ratio:.6f}')
         else:
             self.aspect_ratio = aspect_ratio
-            self.b = self.a * aspect_ratio
-        if alpha > 360 or alpha < 0:
-            raise ValueError(f'alpha must be in the range [0, 360], but is {alpha:.6f}')
-        else:
-            self.alpha = radians(alpha)
+            b = a * aspect_ratio
+        super().__init__(id=id, alpha=alpha, xc=xc, yc=yc,
+                         a=a, b=b, ba=ba, bb=bb)
 
 
 class Ellipsoid(BaseShape):
@@ -501,26 +588,27 @@ class Ellipsoid(BaseShape):
     performed in :mod:`~vcams.mask.function` module.
     """
 
-    def __init__(self, id: int, a: float, b: float, c: float,
+    def __init__(self, id: int, alpha: float, beta: float, gamma: float,
                  xc: float, yc: float, zc: float,
-                 alpha: float, beta: float, gamma: float,
+                 a: float, b: float, c: float,
                  ba: float = 0, bb: float = 0, bc: float = 0):
         """
         Args:
             id: ID of the shape which should be must be unique.
+            alpha: Rotation of the ellipsoid about its z-axis. It must be in the range [0, 360] degrees.
+            beta: Rotation of the ellipsoid around its y-axis. It must be in the range [0, 180] degrees.
+            gamma: Rotation of the ellipsoid around its x-axis. It must be in the range [0, 360] degrees.
+            xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
+            yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
+            zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
             a: Semi-axis of the ellipsoid along the unrotated x-axis. It must be positive.
             b: Semi-axis of the ellipsoid along the unrotated y-axis. It must be positive.
             c: Semi-axis of the ellipsoid along the unrotated z-axis. It must be positive.
             ba: Boundary added to *a* when dispersing the shape. Defaults to 0.
             bb: Boundary added to *b* when dispersing the shape. Defaults to 0.
             bc: Boundary added to *c* when dispersing the shape. Defaults to 0.
-            xc: x-coordinate of the center of the ellipsoid where semi-axes meet.
-            yc: y-coordinate of the center of the ellipsoid where semi-axes meet.
-            zc: z-coordinate of the center of the ellipsoid where semi-axes meet.
-            alpha: Rotation of the ellipsoid about its z-axis. It must be in the range [0, 360] degrees.
-            beta: Rotation of the ellipsoid around its y-axis. It must be in the range [0, 180] degrees.
-            gamma: Rotation of the ellipsoid around its x-axis. It must be in the range [0, 360] degrees.
         """
+        super().__init__()
         self.id = id
         self.xc = xc
         self.yc = yc
@@ -555,6 +643,15 @@ class Ellipsoid(BaseShape):
 
     dim: str = '3D'
     """This class attribute means that shape can be used for 3D models."""
+
+    @property
+    def analytical_volume(self):
+        """Volume of the ellipsoid calculated using the analytical equation
+        :math:`\\frac{4}{3}\\pi a b c`,
+        where :math:`a`, :math:`b`, and :math:`c` are the semi-axes.
+        This should only be used as an approximation as
+        it does not take into account voxelization errors and contacts with the boundary."""
+        return (4 * pi * self.a * self.b * self.c) / 3
 
     def func(self, x: Union[float, ndarray],
              y: Union[float, ndarray], z: Union[float, ndarray],
