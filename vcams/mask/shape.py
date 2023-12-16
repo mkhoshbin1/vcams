@@ -260,7 +260,8 @@ class ShapeArray:
 
         # Make sure there are shapes in the ShapeArray.
         if len(self) == 0:
-            raise ValueError('The boolean mask cannot be calculated because the shape array is empty.')
+            self._mask = None
+            self._full_mask = None
 
         if (self._mask is None) or (shape_id is None):  # All masks need to be calculated.
             recalculate_all = True
@@ -312,10 +313,14 @@ class ShapeArray:
         self._backup_dict = dict()  # Remove previous backup.
         self._backup_dict['id_iter'] = deepcopy(self.id_iter)
         self._backup_dict['base_mask'] = ndarray.copy(self.base_mask)
-        self._backup_dict['mask'] = ndarray.copy(self.mask)
-        self._backup_dict['full_mask'] = ndarray.copy(self.full_mask)
         self._backup_dict['shapes'] = deepcopy(self.shapes)
-        if len(self._ignored_masks) != 0:
+        if len(self.shapes) == 0:  # Set mask and full_mask the same as self.__init__().
+            self._backup_dict['mask'] = None
+            self._backup_dict['full_mask'] = None
+        else:
+            self._backup_dict['mask'] = ndarray.copy(self.mask)
+            self._backup_dict['full_mask'] = ndarray.copy(self.full_mask)
+        if len(self._ignored_masks) != 0:  # It is emptied by mask() and full_mask().
             raise RuntimeError("The instance's _ignored_masks attribute"
                                "is not an empty list, but it should be.")
 
@@ -328,7 +333,7 @@ class ShapeArray:
         In case of a mistake in the *ShapeArray*, start from scratch."""
         if not self._backup_dict:
             raise RuntimeError("The instance's _backup_dict property is empty."
-                               "Has _backup_state() been called before? This may also happen after"
+                               "Has _backup_state() been called before? This may also happen after "
                                "a successful run of ShapeDispersionArray.disperse_shapes().")
         self.id_iter = deepcopy(self._backup_dict['id_iter'])
         self.base_mask = ndarray.copy(self._backup_dict['base_mask'])

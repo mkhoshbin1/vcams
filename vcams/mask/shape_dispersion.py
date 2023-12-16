@@ -69,6 +69,9 @@ class DispersionNormalDistribution(BaseDispersion):
     Alternatively, generation of the list can be deferred
     and done using the :meth:`generate_values` method."""
 
+    # FIXME: sometimes the values are negative. Fix this or inherit a class.
+    # FIXME: change name to gaussian
+
     def __init__(self, target_mean: float, target_sd: float, num_values: int = None):
         """
 
@@ -201,7 +204,7 @@ class ShapeDispersionArray(ShapeArray):
         return sum([sr[1] for sr in self.shape_requests])
 
     def _backup_state(self):
-        super()._restore_state()
+        super()._backup_state()
         self._backup_dict['shape_requests'] = deepcopy(self.shape_requests)
 
     def _restore_state(self):
@@ -240,10 +243,6 @@ class ShapeDispersionArray(ShapeArray):
             else:  # Assume it's a scalar.
                 scalar_dict[k] = v
 
-        # FIXME: this is a test. remove after testing.
-        for i in scalar_dict.values():
-            print(isscalar(i))
-
         # Try to place randomly max_attempts times.
         # Return if successful. Otherwise, raise an error in the end.
         for attempt_number in range(1, max_attempts + 1):
@@ -253,7 +252,7 @@ class ShapeDispersionArray(ShapeArray):
             self._print_placement_message(cls, attempt_number, shape_number,
                                           scalar_dict, random_value_dict, trial_number)
             # Try to add a shape to the array. shape_status will be True if successful.
-            shape_status = self.add_shape(cls, **scalar_dict, **random_value_dict)
+            shape_status = self.add_shape(cls, intersect_ok=False, **scalar_dict, **random_value_dict)
             self._print_shape_status_message(shape_status)
             if shape_status:
                 return
@@ -266,13 +265,13 @@ class ShapeDispersionArray(ShapeArray):
         if trial_number is None:
             trial_str = ''
         else:
-            trial_str = f'Trial {trial_number: 4d}, '
+            trial_str = f'Trial {trial_number:4d}, '
         if self.part_name is None:
             name_str = ''
         else:
             name_str = f"Part '{self.part_name}': "
 
-        shape_num_str = f'Shape {shape_number: {len(str(self.num_requested_shapes))}d}/{self.num_requested_shapes}'
+        shape_num_str = f'Shape {shape_number:{len(str(self.num_requested_shapes))}d}/{self.num_requested_shapes}'
         attempt_num_str = f'Attempt {attempt_number:4d}'
         if self.short_msg:
             print(f'{name_str}{trial_str}{shape_num_str}, {attempt_num_str}, Type {cls.__name__} ', end='')
@@ -345,13 +344,20 @@ class ShapeDispersionArray(ShapeArray):
 
         # Try to create a shape with a set of kwargs.
         iter0_dict_temp = dict()
+        scalar_dict_temp = dict()
         for (k, v) in iterable_kwargs.items():
             iter0_dict_temp[k] = v[0]
-        try:  # FIXME: test this. possible error. Print all.
-            _ = cls(id=-1, **iter0_dict_temp, **scalar_kwargs)
+        for (k, v) in scalar_kwargs.items():
+            if isinstance(v, DispersionRandom):
+                scalar_dict_temp[k] = v()
+            else:
+                scalar_dict_temp[k] = v
+        try:
+            _ = cls(id=-1, **iter0_dict_temp, **scalar_dict_temp)
         except Exception as err:
-            exception_msg = 'The given **kwargs cannot be used with the given cls.'
-            # TODO: add the **kwargs and cls to the message.
+            exception_msg = (f'The given **kwargs cannot be used with class {cls.__name__}. They are:\n'
+                             f'First element of each iterable keyword argument:\n  {iter0_dict_temp}\n'
+                             f'Scalar and sample random keyword arguments:\n  {scalar_dict_temp}')
             raise Exception(exception_msg).with_traceback(err.__traceback__)
 
         # Add the shape request as a tuple to the instance's shape_requests list.
@@ -415,7 +421,14 @@ class ShapeDispersionArray(ShapeArray):
         else:
             raise TooManyDispersionTrialsError(f'Dispersion has been unsuccessful after {max_trials} trials.')
 
+    def find_suitable_num_shapes(self):
+        # find num_shapes
+        # regenerate normal distribution
+
+        #  self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
+        #  (cls, num_shapes, list_kwargs, other_kwargs) = req
+        pass
+
     # FIXME: add knapsack here.
     # It should use the analytical volume for finding the optimal numner of shapes.
     # then use that to disperse and apply the knapsack algorithm to find a good list of shapes.
-
