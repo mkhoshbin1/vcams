@@ -7,15 +7,19 @@ See the :ref:`predefined-shape` section for a complete explanation
 of the basic concepts.
 """
 from collections.abc import Iterable
+from copy import deepcopy
 from itertools import count
 from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
-from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze, pi, count_nonzero, prod
+from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze, pi, count_nonzero, \
+    prod, isscalar
 
 from vcams.mask.function import mask_from_function
 
+# TODO: see if this can be used for annotating the instances where subclasses are passed.
+#  https://stackoverflow.com/questions/38791739/
 
 class BaseShape(ABC):
     """Abstract base class describing a shape.
@@ -165,16 +169,48 @@ class ShapeArray:
         if dim.upper() not in ['2D', '3D']:
             raise ValueError("dim can only be one of '2D' or '3D'.")
         self.dim = dim.upper()
+        """TODO"""
+        # TODO: for 2d, voxel_size should be OK with (x,y) but it isn't.
+
         if part:
+            self.part_name = part.name
             self.mask_shape = part.size
             self.voxel_size = part.voxel_size
+            self.base_mask = (part.data == 0)  # TODO: check this with a TPMS.
+            # TODO: check the above equality. I think it should be !=.
+            # TODO: document that this only works for empty space.
         else:
+            self.part_name = None
+            """Name of the part for which the ShapeArray is created.
+            If a pert is not passed, it is set to *None* and it is not used."""
             self.mask_shape = mask_shape
+            """See :meth:`.__init__`."""
             self.voxel_size = voxel_size
+            """See :meth:`.__init__`."""
+            self.base_mask = full(mask_shape, False, dtype=bool)
+            """A Boolean mask for the part which contains the background where the shapes are dispersed.
+            If a VoxelPart instance is passed, its nonzero elements are considered occupied,
+            otherwise a blank part is used.
+            Also boundary pixels, as determined by the *num_bound_pixels*
+            variable, are considered occupied."""
+            # TODO: do something about bounddary and its doc.
+
         self.is_mask_calculation_lazy = is_mask_calculation_lazy
-        self._ignored_masks = []
-        self._mask = None
+        """See :meth:`.__init__`."""
+        self._ignored_masks = []  # TODO: maybe rename to deferred_masks? FIXME
+        """TODO"""
+        self._mask = None  # Private attribute for the mask property.
+        self._full_mask = None  # Private attribute for the _full_mask property.
+        # FIXME: do mask and full mask have sphinx docs?
         self.shapes = dict()
+        """A dictionary containing the shapes in the instance.
+        Keys are integer shape IDs, and values are subclasses of :class:`.shape.BaseShape`."""
+
+        self._backup_dict = dict()
+        """A dictionary containing the state of the instance
+        which is used by :meth:`_backup_state` and :meth:`_restore_state`."""
+
+        # TODO: maybe add boundary pixels? this is used for when we have a base mask.
 
     def __len__(self):
         return len(self.shapes)
@@ -184,16 +220,81 @@ class ShapeArray:
 
     @property
     def mask(self):
-        """The boolean mask representing the union (logical OR) of the shapes in ShapeArray.
+        """A Boolean mask representing the union (logical OR) of the shapes in ShapeArray.
         This is guaranteed to be up-to-date.
         """
         if self._ignored_masks or (self._mask is None):
             self._calculate_mask(shape_id=self._ignored_masks)
+            # Updates both self._mask and self._full_mask.
         return self._mask
 
-    def add_shape_obj(self, shape_obj):
+    @property
+    def full_mask(self):
+        """A Boolean containing both the background and current dispersed shapes.
+        It is a union (logical OR) of the ShapeArray's :attr:`base_mask` and :attr:`mask` attributes
+        and is stored to reduce repetitive computations. This is guaranteed to be up-to-date.
+        """
+        if self._ignored_masks or (self._mask is None):
+            self._calculate_mask(shape_id=self._ignored_masks)
+            # Updates both self._mask and self._full_mask.
+        return self._full_mask
+
+    def _check_shape_class(self, shape):
+        """Validate the given shape class or instance.
+         Currently, only its dimensionality (*dim* attribute)
+         is checked against that of the shape array."""
+        if shape.dim != self.dim:
+            raise ValueError(
+                'The specified shape is %s, but the shape array has been defined for %s shapes.'
+                % (shape.dim, self.dim))
+
+    def _calculate_mask(self, shape_id: int | Iterable | None = None):
+        """Calculate the Boolean mask for the entire ShapeArray or only the given shapes.
+
+        Args:
+            shape_id: An integer ID or iterable of IDs of shapes for which Boolean masks
+                      need to be calculated and added to the shape.
+                      If set to *None*, all shapes will have their Boolean masks recalculated.
+                      Defaults to *None*.
+        """
+
+        # Make sure there are shapes in the ShapeArray.
+        if len(self) == 0:
+            self._mask = None
+            self._full_mask = None
+
+        if (self._mask is None) or (shape_id is None):  # All masks need to be calculated.
+            recalculate_all = True
+            # Create an empty boolean array for the mask.
+            self._mask = full(self.mask_shape, False, dtype=bool)
+            # Get id_list from the shapes dictionary.
+            id_list = list(self.shapes.keys())
+        else:  # Some masks need to be calculated.
+            recalculate_all = False
+            if isscalar(shape_id):
+                shape_id = (shape_id,)
+            id_list = shape_id
+
+        # FIXME: add background mask here
+        # Either way, we iterate over id_list and call logical_or.
+        for i in id_list:
+            self._mask = logical_or(self._mask,
+                                    self.shapes[i].calculate_mask(
+                                        self.mask_shape, self.voxel_size))
+            try:
+                self._ignored_masks.remove(i)
+            except ValueError:
+                pass
+
+        # If all is calculated, empty _ignored_masks.
+        if recalculate_all:
+            self._ignored_masks = []
+
+        # Update self._full_mask.  #TODO:recheck the entire function. FIXME
+        self._full_mask = logical_or(self._mask, self.base_mask)
+
+    def _add_shape_obj(self, shape_obj):
         """Add an existing shape object to the ShapeArray."""
-        self._check_shape(shape_obj)
         idd = next(self.id_iter)
         shape_obj.id = idd
         self.shapes[idd] = shape_obj
@@ -202,49 +303,107 @@ class ShapeArray:
         else:
             self._ignored_masks.append(idd)
 
-    def add_shape(self, cls, **kwargs):
-        """Add a shape to the ShapeArray using its class.
-         The arguments are passed as *\*\*kwargs* and the shape ID is set automatically.
-         """
-        self._check_shape(cls)
-        self.add_shape_obj(shape_obj=cls(id=-1, **kwargs))
+    def _backup_state(self):
+        """Backup the state of the instance, so it can be restored later.
 
-    def _calculate_mask(self, shape_id=None):
-        """Calculate the mask for the entire ShapeArray or only a single shape."""
-        if (self._mask is None) or (shape_id is None):
-            if len(self) == 0:
-                raise ValueError('The boolean mask cannot be calculated because the shape array '
-                                 'is empty.')
-            # All masks need to be calculated.
-            self._mask = self.shapes[0].calculate_mask(self.mask_shape, self.voxel_size)
-            if len(self) > 1:
-                id_list = list(self.shapes.keys())
-                id_list.remove(0)
-                for i in id_list:
-                    self._mask = logical_or(self._mask,
-                                            self.shapes[i].calculate_mask(
-                                                self.mask_shape, self.voxel_size))
+        This is a private function intended for use by the methods of
+        the :class:`~.shape_dispersion.ShapeDispersionArray` subclass
+        and should not be directly called by the users.
+        In case of a mistake in the *ShapeArray*, start from scratch."""
+        self._backup_dict = dict()  # Remove previous backup.
+        self._backup_dict['id_iter'] = deepcopy(self.id_iter)
+        self._backup_dict['base_mask'] = ndarray.copy(self.base_mask)
+        self._backup_dict['shapes'] = deepcopy(self.shapes)
+        if len(self.shapes) == 0:  # Set mask and full_mask the same as self.__init__().
+            self._backup_dict['mask'] = None
+            self._backup_dict['full_mask'] = None
         else:
-            # Only the shape with shape_id needs to be added to the mask.
-            for i in list(shape_id):
-                if i not in self.shapes.keys():
-                    raise ValueError('shape_id %i is not in the shape array.')
-                if i not in self._ignored_masks:
-                    raise ValueError('shape_id %i in not one of the ignored masks. This means '
-                                     'that either it has already been accounted for or you are '
-                                     'truing to recalculate the mask for that shape. Either way, '
-                                     'you should do a complete recalculation of the mask.')
-                self._mask = logical_or(self._mask,
-                                        self.shapes[i].calculate_mask(
-                                            self.mask_shape, self.voxel_size))
-                self._ignored_masks.remove(i)
+            self._backup_dict['mask'] = ndarray.copy(self.mask)
+            self._backup_dict['full_mask'] = ndarray.copy(self.full_mask)
+        if len(self._ignored_masks) != 0:  # It is emptied by mask() and full_mask().
+            raise RuntimeError("The instance's _ignored_masks attribute"
+                               "is not an empty list, but it should be.")
 
-    def _check_shape(self, shape):
-        """Check the given shape class or instance to make sure its dim matches the shape array."""
-        if shape.dim != self.dim:
-            raise ValueError(
-                'The specified shape is %s, but the shape array has been defined for %s shapes.'
-                % (shape.dim, self.dim))
+    def _restore_state(self):
+        """Restore the state of the instance to the previous backup.
+
+        This is a private function intended for use by the methods of
+        the :class:`~.shape_dispersion.ShapeDispersionArray` subclass
+        and should not be directly called by the users.
+        In case of a mistake in the *ShapeArray*, start from scratch."""
+        if not self._backup_dict:
+            raise RuntimeError("The instance's _backup_dict property is empty."
+                               "Has _backup_state() been called before? This may also happen after "
+                               "a successful run of ShapeDispersionArray.disperse_shapes().")
+        self.id_iter = deepcopy(self._backup_dict['id_iter'])
+        self.base_mask = ndarray.copy(self._backup_dict['base_mask'])
+        self._mask = ndarray.copy(self._backup_dict['mask'])
+        self._full_mask = ndarray.copy(self._backup_dict['full_mask'])
+        self.shapes = deepcopy(self._backup_dict['shapes'])
+
+    def add_shape(self, cls, intersect_ok=True, **kwargs) -> bool:
+        """Add a shape to the ShapeArray using its class,
+        while checking for intersection with other shapes.
+        The arguments are passed as *\*\*kwargs* and the shape ID is set automatically.
+
+        Args:
+            cls: The shape class that should be added. Arguments are passed as *kwargs*.
+            intersect_ok: Whether intersection of the new shape with the rest is OK.
+                          If *True*, shapes are added without checking for intersection.
+                          If *False*, the function checks the union (logical OR)
+                          of the new shape's Boolean mask and the ShapeArray's :attr:`full_mask`
+                          and if they intersect, the shape is not added.
+                          Defaults to *True*.
+            **kwargs: A dictionary where the keys are the arguments for the shape class
+                      and the values are either dispersion objects or scalars.
+
+        Returns:
+            *True* if the shape was added and *False* otherwise.
+        """
+
+        # Validate the shape class.
+        self._check_shape_class(cls)
+        # Create the new shape object.
+        new_shape_obj = cls(id=-1, **kwargs)
+
+        if intersect_ok:
+            # Just add the shape.
+            self._add_shape_obj(shape_obj=new_shape_obj)
+            return True
+        else:
+            # Calculate the new shape's mask and
+            # add only if the shape does not intersect existing shapes or the background.
+            new_shape_mask = new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size, boundary_on=True)
+            if any(logical_and(self.full_mask, new_shape_mask)):
+                # If they intersect, return False for an unsuccessful operation.
+                # The shape will be discarded.
+                return False
+            else:
+                # If they don't intersect, return True for a successful operation,
+                # and add the shape to the array.
+                self._add_shape_obj(shape_obj=new_shape_obj)
+                return True
+
+    def remove_shape(self, id_list: int | Iterable[int]):  # TODO: test in script.
+        """Remove shapes from the :class:`ShapeDispersionArray` instance and update the masks.
+
+        Args:
+            id_list: ID(s) of the shapes to be removed.
+        """
+
+        # Validate id_list.
+        if isscalar(id_list):
+            id_list = (id_list,)
+        for shape_id in id_list:
+            if shape_id not in self.shapes.keys():
+                raise ValueError(f'{shape_id} is not a valid shape ID.')
+
+        # Delete all shapes from id_list from the shapes dictionary.
+        for shape_id in id_list:
+            del self.shapes[shape_id]
+
+        # Recalculate self._mask and self._full_mask.
+        self._calculate_mask()  # shape_id defaults to None which recalculates all.
 
 
 class Circle(BaseShape):

@@ -19,7 +19,7 @@ shape_disp_array_obj = ShapeDispersionArray(dim='2D', part=part,
                                             short_msg=True)
 
 # Request circles.
-num_circles = 10
+num_circles = 5
 circle_r = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03, num_values=num_circles)
 circle_xc = DispersionRandom(0, part.real_size[0], max(circle_r) + bound)
 circle_yc = DispersionRandom(0, part.real_size[1], max(circle_r) + bound)
@@ -27,7 +27,7 @@ shape_disp_array_obj.add_shape_request(num_shapes=num_circles, cls=Circle,
                                        xc=circle_xc, yc=circle_yc, r=circle_r, br=bound)
 
 # Request ellipses.
-num_ellipse = 10
+num_ellipse = 5
 ellipse_a = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03, num_values=num_ellipse)
 ellipse_aspect_ratio = DispersionNormalDistribution(target_mean=3, target_sd=1, num_values=num_ellipse)
 ellipse_xc = DispersionRandom(0, part.real_size[0])
