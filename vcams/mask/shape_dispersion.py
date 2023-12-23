@@ -39,7 +39,7 @@ class BaseDispersion(ABC):
         if self.__len__() < 1:
             raise ValueError('The object is empty. Has it been initialized?')
         import matplotlib.pyplot as plt
-        plt.hist(self, num_bins, density=True)
+        plt.hist(self, num_bins, density=True)  # FIXME
         plt.xlabel('Value')
         plt.ylabel('Frequency')
         plt.show()
@@ -107,7 +107,7 @@ class DispersionNormalDistribution(BaseDispersion):
     def __mul__(self, other):
         return DispersionList(self.values * other)
 
-    def __repr__(self):
+    def __repr__(self):  # FIXME: add conditional for empty list.
         max_whole_length = len(str(int(max(abs((self.target_mean, self.actual_mean,
                                                 self.target_sd, self.actual_sd,
                                                 self.actual_variance)))))) + 1
@@ -201,7 +201,11 @@ class ShapeDispersionArray(ShapeArray):
     @property
     def num_requested_shapes(self):  # TODO: test
         """Total number of shapes requested in :meth:`shape_requests`."""
-        return sum([sr[1] for sr in self.shape_requests])
+        num_shapes_list = [sr[1] for sr in self.shape_requests]
+        if None in num_shapes_list:
+            return '???'
+        else:
+            return sum(num_shapes_list)
 
     def _backup_state(self):
         super()._backup_state()
@@ -301,6 +305,29 @@ class ShapeDispersionArray(ShapeArray):
         print(f"\nPart '{self.part_name}': {self.num_requested_shapes} shapes dispersed "
               f"successfully in {elapsed_time:.2f} seconds.")
 
+    @staticmethod
+    def _test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs):
+        """Try to create a shape with a set of iterable_kwargs and scalar_kwargs
+        to make sure they are valid. It raises an error if unsuccessful and is otherwise silent."""
+        iter0_dict_temp = dict()
+        scalar_dict_temp = dict()
+        for (k, v) in iterable_kwargs.items():
+            if isinstance(v, DispersionNormalDistribution) and (len(v) == 0):
+                v.generate_values(1)
+            iter0_dict_temp[k] = v[0]
+        for (k, v) in scalar_kwargs.items():
+            if isinstance(v, DispersionRandom):
+                scalar_dict_temp[k] = v()
+            else:
+                scalar_dict_temp[k] = v
+        try:
+            _ = cls(id=-1, **iter0_dict_temp, **scalar_dict_temp)
+        except Exception as err:
+            exception_msg = (f'The given **kwargs cannot be used with class {cls.__name__}. They are:\n'
+                             f'First element of each iterable keyword argument:\n  {iter0_dict_temp}\n'
+                             f'Scalar and sample random keyword arguments:\n  {scalar_dict_temp}')
+            raise Exception(exception_msg).with_traceback(err.__traceback__)
+
     def add_shape_request(self, cls, num_shapes: int = 1, **kwargs):
         """Add a request for a one or more shapes of a class to be added to the instance.
 
@@ -342,23 +369,76 @@ class ShapeDispersionArray(ShapeArray):
             else:
                 raise ValueError(f'{k} is neither a scalar nor a valid subclass of BaseDispersion.')
 
-        # Try to create a shape with a set of kwargs.
-        iter0_dict_temp = dict()
-        scalar_dict_temp = dict()
-        for (k, v) in iterable_kwargs.items():
-            iter0_dict_temp[k] = v[0]
-        for (k, v) in scalar_kwargs.items():
-            if isinstance(v, DispersionRandom):
-                scalar_dict_temp[k] = v()
+        # Try to create a shape with iterable_kwargs and scalar_kwargs to make sure they're valid.
+        ShapeDispersionArray._test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs)
+
+        # Add the shape request as a tuple to the instance's shape_requests list.
+        self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
+
+    # def add_shape_request_no_nums(self, cls, **kwargs):
+    #     # Validate the shape class.
+    #     self._check_shape_class(cls)
+    #
+    #     # Split the kwargs dictionary into two groups,
+    #     # that will each be passed to the placement function differently.
+    #     # The keys are the arguments' names.
+    #     # In iterable_kwargs, the value is an iterable whose contents will be passed one by one;
+    #     # and in other_kwargs, the value is a single scalar which will be passed each time.
+    #     iterable_kwargs = dict()
+    #     scalar_kwargs = dict()
+    #     for k, v in kwargs.items():
+    #         if isinstance(v, DispersionList):
+    #             raise ValueError(f'{k} is a DispersionList which is not allowed '
+    #                              'for the add_shape_request_no_nums() function.')
+    #         elif isinstance(v, DispersionNormalDistribution):
+    #             iterable_kwargs[k] = v
+    #         elif isscalar(v) or isinstance(v, DispersionRandom):
+    #             scalar_kwargs[k] = v
+    #         else:
+    #             raise ValueError(f'{k} is neither a scalar nor a valid subclass of BaseDispersion.')
+    #
+    #     # Try to create a shape with iterable_kwargs and scalar_kwargs to make sure they're valid.
+    #     ShapeDispersionArray._test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs)
+    #
+    #     # Add the shape request as a tuple to the instance's shape_requests list.
+    #     self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
+    #     pass
+
+    def add_shape_request2(self, cls, num_shapes: int | None, **kwargs):
+        # TODO: add doc. document possibility of num_shapes being None.
+        # Validate the shape class.
+        self._check_shape_class(cls)
+
+        # Split the kwargs dictionary into two groups,
+        # that will each be passed to the placement function differently.
+        # The keys are the arguments' names.
+        # In iterable_kwargs, the value is an iterable whose contents will be passed one by one;
+        # and in other_kwargs, the value is a single scalar which will be passed each time.
+        iterable_kwargs = dict()
+        scalar_kwargs = dict()
+        for k, v in kwargs.items():
+            if isinstance(v, DispersionList):
+                if num_shapes is None:
+                    raise ValueError(f'{k} is a DispersionList which is not allowed '
+                                     'when num_shapes is None.')
+                elif len(v) != num_shapes:
+                    raise ValueError(f'{k} is a DispersionList with {len(v)} elements '
+                                     f'but num_shapes is {num_shapes}. They should be equal.')
+                else:
+                    iterable_kwargs[k] = v
+            elif isinstance(v, DispersionNormalDistribution):
+                if (len(v) == 0) and (num_shapes is not None):
+                    raise ValueError(f'{k} is an uninitialized DispersionNormalDistribution. '
+                                     f'Specify num_shapes when defining it.')
+                # If len(v)==0 and num_shapes is None, it's OK.
+                iterable_kwargs[k] = v
+            elif isscalar(v) or isinstance(v, DispersionRandom):
+                scalar_kwargs[k] = v
             else:
-                scalar_dict_temp[k] = v
-        try:
-            _ = cls(id=-1, **iter0_dict_temp, **scalar_dict_temp)
-        except Exception as err:
-            exception_msg = (f'The given **kwargs cannot be used with class {cls.__name__}. They are:\n'
-                             f'First element of each iterable keyword argument:\n  {iter0_dict_temp}\n'
-                             f'Scalar and sample random keyword arguments:\n  {scalar_dict_temp}')
-            raise Exception(exception_msg).with_traceback(err.__traceback__)
+                raise ValueError(f'{k} is neither a scalar nor a valid subclass of BaseDispersion.')
+
+        # Try to create a shape with iterable_kwargs and scalar_kwargs to make sure they're valid.
+        ShapeDispersionArray._test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs)
 
         # Add the shape request as a tuple to the instance's shape_requests list.
         self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
@@ -384,6 +464,11 @@ class ShapeDispersionArray(ShapeArray):
         if max_trials < 1:
             raise ValueError('max_trials should be >= 1.')
 
+        num_shapes_list = [sr[1] for sr in self.shape_requests]
+        if None in num_shapes_list:
+            raise ValueError(f'Some of the num_shapes in shape_requests are None.'
+                             f'The list is: {num_shapes_list}')
+
         # Backup the state of the ShapeDispersionArray object.
         begin_time = time.perf_counter()
         self._backup_state()
@@ -393,17 +478,17 @@ class ShapeDispersionArray(ShapeArray):
                 dispersion_success = False  # This isn't strictly necessary. TODO: try removing it.
                 shape_number = 0
                 for req in self.shape_requests:
-                    (cls, num_shapes, list_kwargs, other_kwargs) = req
+                    (cls, num_shapes, iterable_kwargs, scalar_kwargs) = req
                     # Loop through the list kwargs.
                     for i in range(num_shapes):
                         shape_number += 1
-                        # Put the shape's list_kwargs into a single dict to be passed as scalars.
+                        # Put the shape's iterable_kwargs into a single dict to be passed as scalars.
                         shape_list_kwargs = dict()
-                        for k, v in list_kwargs.items():
+                        for k, v in iterable_kwargs.items():
                             shape_list_kwargs[k] = v[i]
                         # Try to place the shape. Raises TooManyDispersionAttempts if unsuccessful.
                         self._place_shape_randomly(cls, shape_number, max_attempts, trial_number,
-                                                   **shape_list_kwargs, **other_kwargs)
+                                                   **shape_list_kwargs, **scalar_kwargs)
                 # Both loops have run out and dispersion is successful.
                 dispersion_success = True
                 break
@@ -421,7 +506,40 @@ class ShapeDispersionArray(ShapeArray):
         else:
             raise TooManyDispersionTrialsError(f'Dispersion has been unsuccessful after {max_trials} trials.')
 
-    def find_suitable_num_shapes(self):
+    def find_suitable_num_shapes(self, start_num_shapes: int = 1):
+        """Brute force"""
+
+        num_shapes_list = [sr[1] for sr in self.shape_requests]
+        if None not in num_shapes_list:
+            raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
+                             f'If you want to find suitable num_shapes, they should all start as None.'
+                             f'The list is: {num_shapes_list}')
+
+        for num_shapes in range(start_num_shapes, start_num_shapes + 1000):
+            shape_list = []  # Note that this is a simple list and not a ShapeArray instance.
+            for req in self.shape_requests:
+                (cls, _, iterable_kwargs, scalar_kwargs) = req
+                # Regenerate the DispersionList instances with num_shapes values.
+                for k, v in iterable_kwargs.items():
+                    if isinstance(v, DispersionList):
+                        raise ValueError(f'{k} is a DispersionList which is not allowed '
+                                         'when finding num_shapes.')
+                    v.generate_values(num_shapes)
+
+                for i in range(num_shapes):
+                    # Put the shape's iterable_kwargs into a single dict to be passed as scalars.
+                    shape_list_kwargs = dict()
+                    for k, v in iterable_kwargs.items():
+                        shape_list_kwargs[k] = v[i]
+                    # Try to place the shape. Raises TooManyDispersionAttempts if unsuccessful.
+                    shape_list.append(cls(id=i + 1, **shape_list_kwargs, **scalar_kwargs))
+
+                print(f'num_shapes={num_shapes:4d}, total_vol={sum(i.analytical_volume for i in shape_list):.6f}')
+
+        # We now have all the shapes. Find their volume.
+        # Test up to here. Does it make the shapes?
+        pass
+
         # find num_shapes
         # regenerate normal distribution
 
