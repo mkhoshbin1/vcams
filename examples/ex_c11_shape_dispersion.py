@@ -1,8 +1,8 @@
 """Script for Example C-4: Shape Array."""
 from vcams.voxelpart import VoxelPart
 from vcams.mask.shape import Circle, Ellipse, EllipseFromAspectRatio
-from vcams.mask.shape_dispersion import ShapeDispersionArray, DispersionRandom, DispersionNormalDistribution, \
-    DispersionList
+from vcams.mask.shape_dispersion import ShapeDispersionArray, RandomDispersion, NormalDistributionDispersion, \
+    ManualListDispersion
 
 # Create the part.
 part = VoxelPart(size=(250, 250), base_material=1,
@@ -20,19 +20,19 @@ shape_disp_array_obj = ShapeDispersionArray(dim='2D', part=part,
 
 # Request circles.
 num_circles = 5
-circle_r = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03, num_values=num_circles)
-circle_xc = DispersionRandom(0, part.real_size[0], max(circle_r) + bound)
-circle_yc = DispersionRandom(0, part.real_size[1], max(circle_r) + bound)
+circle_r = NormalDistributionDispersion(target_mean=0.10, target_sd=0.03, num_values=num_circles)
+circle_xc = RandomDispersion(0, part.real_size[0], max(circle_r) + bound)
+circle_yc = RandomDispersion(0, part.real_size[1], max(circle_r) + bound)
 shape_disp_array_obj.add_shape_request(num_shapes=num_circles, cls=Circle,
                                        xc=circle_xc, yc=circle_yc, r=circle_r, br=bound)
 
 # Request ellipses.
 num_ellipse = 5
-ellipse_a = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03, num_values=num_ellipse)
-ellipse_aspect_ratio = DispersionNormalDistribution(target_mean=3, target_sd=1, num_values=num_ellipse)
-ellipse_xc = DispersionRandom(0, part.real_size[0])
-ellipse_yc = DispersionRandom(0, part.real_size[1])
-ellipse_alpha = DispersionRandom(low=0, high=360)
+ellipse_a = NormalDistributionDispersion(target_mean=0.10, target_sd=0.03, num_values=num_ellipse)
+ellipse_aspect_ratio = NormalDistributionDispersion(target_mean=3, target_sd=1, num_values=num_ellipse)
+ellipse_xc = RandomDispersion(0, part.real_size[0])
+ellipse_yc = RandomDispersion(0, part.real_size[1])
+ellipse_alpha = RandomDispersion(low=0, high=360)
 shape_disp_array_obj.add_shape_request(num_shapes=num_ellipse, cls=EllipseFromAspectRatio,
                                        xc=ellipse_xc, yc=ellipse_yc, alpha=ellipse_alpha,
                                        a=ellipse_a, aspect_ratio=ellipse_aspect_ratio,

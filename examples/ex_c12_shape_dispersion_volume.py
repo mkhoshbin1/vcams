@@ -1,8 +1,8 @@
 """Script for Example C-4: Shape Array."""
 from vcams.voxelpart import VoxelPart
 from vcams.mask.shape import Circle, Ellipse, EllipseFromAspectRatio
-from vcams.mask.shape_dispersion import ShapeDispersionArray, DispersionRandom, DispersionNormalDistribution, \
-    DispersionList
+from vcams.mask.shape_dispersion import ShapeDispersionArray, RandomDispersion, NormalDistributionDispersion, \
+    ManualListDispersion, TruncatedNormalDistributionDispersion
 
 import numpy as np
 from scipy import optimize
@@ -22,26 +22,28 @@ shape_disp_array_obj = ShapeDispersionArray(dim='2D', part=part,
                                             num_bound_pixels=num_bound_pixels,
                                             short_msg=True)
 
+min_valid_r = 4 * part.voxel_size[0]
 num_shapes = 7
 # Request circles.
-circle_r = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03)
-circle_xc = DispersionRandom(0, part.real_size[0], bound)
-circle_yc = DispersionRandom(0, part.real_size[1], bound)
+circle_r = TruncatedNormalDistributionDispersion(target_mean=0.10, target_std=0.03, bound_a=min_valid_r)
+circle_xc = RandomDispersion(0, part.real_size[0], bound)
+circle_yc = RandomDispersion(0, part.real_size[1], bound)
 shape_disp_array_obj.add_shape_request2(num_shapes=None, cls=Circle,
                                         xc=circle_xc, yc=circle_yc, r=circle_r, br=bound)
 
 # # Request ellipses.
-# ellipse_a = DispersionNormalDistribution(target_mean=0.10, target_sd=0.03)
-# ellipse_aspect_ratio = DispersionNormalDistribution(target_mean=3, target_sd=1)
-# ellipse_xc = DispersionRandom(0, part.real_size[0])
-# ellipse_yc = DispersionRandom(0, part.real_size[1])
-# ellipse_alpha = DispersionRandom(low=0, high=360)
+# ellipse_a = NormalDistributionDispersion(target_mean=0.10, target_sd=0.03)
+# ellipse_aspect_ratio = NormalDistributionDispersion(target_mean=3, target_sd=1)
+# ellipse_xc = RandomDispersion(0, part.real_size[0])
+# ellipse_yc = RandomDispersion(0, part.real_size[1])
+# ellipse_alpha = RandomDispersion(low=0, high=360)
 # shape_disp_array_obj.add_shape_request2(num_shapes=num_shapes, cls=EllipseFromAspectRatio,
 #                                         xc=ellipse_xc, yc=ellipse_yc, alpha=ellipse_alpha,
 #                                         a=ellipse_a, aspect_ratio=ellipse_aspect_ratio,
 #                                         ba=bound, bb=bound)
 
-shape_disp_array_obj.find_suitable_num_shapes()
+shape_disp_array_obj.find_suitable_num_shapes(10)
+
 # #
 # #
 # # # The offending ones can be removed from the shapes dict
