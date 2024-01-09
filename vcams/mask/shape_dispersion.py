@@ -36,6 +36,10 @@ class TooManyValueGenerationAttemptsError(Exception):
     pass
 
 
+class SuitableNumShapesNotFoundError(Exception):
+    pass
+
+
 class BaseListDispersion(ABC):
     """Abstract base class for dispersions that contain a list of values.
     Subclasses are used for defining various dispersions.
@@ -254,7 +258,7 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
         """
         for i in range(max_attempts):
             try:
-                self._generate_values_once(num_values=num_values,qc_results=qc_results)
+                self._generate_values_once(num_values=num_values, qc_results=qc_results)
                 return
             except TooMuchDeviationError:
                 continue
@@ -755,16 +759,39 @@ class ShapeDispersionArray(ShapeArray):
         else:
             raise TooManyDispersionTrialsError(f'Dispersion has been unsuccessful after {max_trials} trials.')
 
-    def find_suitable_num_shapes(self, start_num_shapes: int = 1):
-        """Brute force"""
+    def find_suitable_num_shapes(self, target_vf: float, max_vf_diff: float,
+                                 start_num_shapes: int = 5, max_num_shapes: int = 1000,
+                                 print_progress=False) -> int:
+        """Brute force TODO doc
 
+        Args:
+            target_vf: Target volume fraction.
+            max_vf_diff: Maximum difference between the reached volume fraction and *target_vf*.
+                         It should be a float greater than 1E-4.
+            start_num_shapes: The initial value of *num_shapes* investigated by the function.
+            max_num_shapes: The maximum value of *num_shapes* investigated by the function.
+            print_progress: If True, the values of total volume, volume fraction, and vf_diff
+                            are printed for each value of num_shapes. Defaults to False.
+
+        Returns:
+            A suitable value for *num_shapes* that can be used in conjunction with the knapsack algorithm.
+        """
+
+        # Validate input.
+        if target_vf <= 0:
+            raise ValueError('target_volume_fraction should be a positive number.')
+        if max_vf_diff < 1E-6:
+            raise ValueError('max_vf_diff should be None or a float greater than 1E-4.')
+        if max_num_shapes <= start_num_shapes:
+            raise ValueError('max_num_shapes should be greater than start_num_shapes.')
+        # Make sure all num_shapes in the shape requests are None.
         num_shapes_list = [sr[1] for sr in self.shape_requests]
-        if None not in num_shapes_list:
+        if not all(ns is None for ns in num_shapes_list):
             raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
-                             f'If you want to find suitable num_shapes, they should all start as None.'
+                             f'If you want to find suitable num_shapes, they should *all* start as None.'
                              f'The list is: {num_shapes_list}')
 
-        for num_shapes in range(start_num_shapes, start_num_shapes + 1000):
+        for num_shapes in range(start_num_shapes, max_num_shapes + 1):
             shape_list = []  # Note that this is a simple list and not a ShapeArray instance.
             for req in self.shape_requests:
                 (cls, _, iterable_kwargs, scalar_kwargs) = req
@@ -775,27 +802,34 @@ class ShapeDispersionArray(ShapeArray):
                                          'when finding num_shapes.')
                     v.generate_values(num_shapes)
 
+                # Create the shapes as single independent instances in shape_list.
                 for i in range(num_shapes):
                     # Put the shape's iterable_kwargs into a single dict to be passed as scalars.
                     shape_list_kwargs = dict()
                     for k, v in iterable_kwargs.items():
                         shape_list_kwargs[k] = v[i]
-                    # Try to place the shape. Raises TooManyDispersionAttempts if unsuccessful.
+                    # Create the shape.
+                    # Note that a shape instance is not placed anywhere and simply exists.
+                    # In fact, the coordinate variable should have a RandomDispersion instance
+                    # as the value which will raise an error if used.
+                    # But we only need to calculate the analytical volume so this is OK.
                     shape_list.append(cls(id=i + 1, **shape_list_kwargs, **scalar_kwargs))
 
-                print(f'num_shapes={num_shapes:4d}, total_vol={sum(i.analytical_volume for i in shape_list):.6f}')
-
-        # We now have all the shapes. Find their volume.
-        # Test up to here. Does it make the shapes?
-        pass
-        why does it stop? when should it stop? define a target value.
-
-        # find num_shapes
-        # regenerate normal distribution
-
-        #  self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
-        #  (cls, num_shapes, list_kwargs, other_kwargs) = req
-        pass
+            # Calculate the sum of analytical volumes for the shapes in shape_list.
+            total_analytical_volume = sum(i.analytical_volume for i in shape_list)
+            # Calculate volume fraction and the difference between it and target_vf.
+            current_vf = total_analytical_volume / self.part_volume
+            vf_diff = current_vf - target_vf
+            if print_progress:
+                print(f'num_shapes={num_shapes:4d}, total_vol={total_analytical_volume:.6f}, '
+                      f'vf={current_vf:.6f}, target_vf={target_vf:.6}, '
+                      f'vf_diff={vf_diff:+.6f}, max_vf_diff={max_vf_diff:.6}.')
+            # If within acceptable range, return here.
+            if abs(vf_diff) < max_vf_diff:
+                return num_shapes
+        # If we are here, all values have been checked. Raise error.
+        raise SuitableNumShapesNotFoundError(
+            f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
 
     # FIXME: add knapsack here.
     # It should use the analytical volume for finding the optimal numner of shapes.

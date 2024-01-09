@@ -42,7 +42,8 @@ shape_disp_array_obj.add_shape_request2(num_shapes=None, cls=Circle,
 #                                         a=ellipse_a, aspect_ratio=ellipse_aspect_ratio,
 #                                         ba=bound, bb=bound)
 
-shape_disp_array_obj.find_suitable_num_shapes(10)
+suitable_num_shapes = shape_disp_array_obj.find_suitable_num_shapes(target_vf=0.50, max_vf_diff=0.01, print_progress=True)
+print(suitable_num_shapes)
 
 # #
 # #

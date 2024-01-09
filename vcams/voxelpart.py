@@ -184,6 +184,7 @@ class VoxelPart:
     @property
     def real_size(self):
         """Real size of the part which is ``part.size * voxel_size``."""
+        # TODO: how does this behave in case of 2D and 3D?
         return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])
 
     @property

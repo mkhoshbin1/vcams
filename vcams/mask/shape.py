@@ -195,6 +195,11 @@ class ShapeArray:
             variable, are considered occupied."""
             # TODO: do something about bounddary and its doc.
 
+        if dim.upper() == '2D':
+            self.part_volume = prod(self.mask_shape * self.voxel_size[:2])
+        else:
+            self.part_volume = self.mask_shape * prod(self.voxel_size)
+
         self.is_mask_calculation_lazy = is_mask_calculation_lazy
         """See :meth:`.__init__`."""
         self._ignored_masks = []  # TODO: maybe rename to deferred_masks? FIXME
