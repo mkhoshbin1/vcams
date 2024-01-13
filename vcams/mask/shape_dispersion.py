@@ -696,7 +696,7 @@ class ShapeDispersionArray(ShapeArray):
         # Add the shape request as a tuple to the instance's shape_requests list.
         self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
 
-    def disperse_shapes(self, max_attempts: int = 5000, max_trials: int = 100, ):
+    def disperse_shapes(self, max_attempts: int = 5000, max_trials: int = 100):
         """Disperse shapes in the *ShapeDispersionArray* instance according to
         the shape requests. All shape requests are processed and then :attr:`shape_requests`
         is emptied.
@@ -759,17 +759,100 @@ class ShapeDispersionArray(ShapeArray):
         else:
             raise TooManyDispersionTrialsError(f'Dispersion has been unsuccessful after {max_trials} trials.')
 
-    def find_suitable_num_shapes(self, target_vf: float, max_vf_diff: float,
-                                 start_num_shapes: int = 5, max_num_shapes: int = 1000,
-                                 print_progress=False) -> int:
+    def _find_vf_for_shape_number(self, num_shapes, target_vf, print_progress=False) -> float:
+        """Calculate the volume fraction (VF) for the *ShapeDispersionArray*'s requested shapes,
+        given the input number of shapes and return the difference between the actual and target VF.
+
+        This function checks if all the shape requests are without *num_shapes*,
+        then creates the requested shapes in a list.
+        In the case of multiple requests each one of them will be created in *equal* numbers.
+        Afterwards, the analytical volume of each shape will be calculated
+        using the shape's :attr:`~.BaseShape.analytical_volume` property
+        and these volume will be added and converted to a total VF.
+        Finally, the *target_vf* is subtracted from the actual VF and returned.
+
+        Notes:
+            - The shapes created by this function may not be necessarily
+              dispersable in a ShapeDispersionArray. This function is only about the VFs.
+            - The nature of shape generation is stochastic. This means that no two calls
+              will have an equal output. This is generally OK as the results are expected
+              to be used in a knapsack algorithm.
+            - The volume used is the analytical volume of each shape
+              which is fast but inaccurate for larger voxel sizes.
+            - The volume of each voxel is calculated individually.
+              This means that overlapping shapes and contact with the boundary
+              will cause different VFs. A different function needs to be used for those cases.
+
+        Args:
+            num_shapes: Number of shapes to be created and investigated by the function.
+            target_vf: Target volume fraction.
+            print_progress: If True, the values of total volume, volume fraction, and vf_diff
+                            are printed for each value of num_shapes. Defaults to False.
+
+        Returns:
+            The difference between the actual VF and *target_vf*.
+        """
+
+        # Validate input.
+        if target_vf <= 0:
+            raise ValueError('target_volume_fraction should be a positive number.')
+        # Make sure all num_shapes in the shape requests are None.
+        num_shapes_list = [sr[1] for sr in self.shape_requests]
+        if not all(ns is None for ns in num_shapes_list):
+            raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
+                             f'If you want to find suitable num_shapes, they should *all* start as None.'
+                             f'The list is: {num_shapes_list}')
+
+        shape_list = []  # Note that this is a simple list and not a ShapeArray instance.
+        for req in self.shape_requests:
+            (cls, _, iterable_kwargs, scalar_kwargs) = req
+            # Regenerate the ManualListDispersion instances with num_shapes values.
+            for k, v in iterable_kwargs.items():
+                if isinstance(v, ManualListDispersion):
+                    raise ValueError(f'{k} is a ManualListDispersion which is not allowed '
+                                     'when finding num_shapes.')
+                v.generate_values(num_shapes)
+
+            # Create the shapes as single independent instances in shape_list.
+            for i in range(num_shapes):
+                # Put the shape's iterable_kwargs into a single dict to be passed as scalars.
+                shape_list_kwargs = dict()
+                for k, v in iterable_kwargs.items():
+                    shape_list_kwargs[k] = v[i]
+                # Create the shape.
+                # Note that a shape instance is not placed anywhere and simply exists.
+                # In fact, the coordinate variable should have a RandomDispersion instance
+                # as the value which will raise an error if used.
+                # But we only need to calculate the analytical volume so this is OK.
+                shape_list.append(cls(id=i + 1, **shape_list_kwargs, **scalar_kwargs))
+
+        # Calculate the sum of analytical volumes for the shapes in shape_list.
+        total_analytical_volume = sum(i.analytical_volume for i in shape_list)
+        # Calculate volume fraction and the difference between it and target_vf.
+        current_vf = total_analytical_volume / self.part_volume
+        vf_diff = current_vf - target_vf
+        if print_progress:
+            print(f'num_shapes={num_shapes:4d}, total_vol={total_analytical_volume:10.6f}, '
+                  f'vf={current_vf:9.6f}, target_vf={target_vf:.6}, '
+                  f'vf_diff={vf_diff:+10.6f}')
+        return vf_diff
+
+    def _find_suitable_num_shapes(self, target_vf: float, vf_tolerance: float,
+                                  start_num_shapes: int = 5, max_num_shapes: int = 5000,
+                                  solver_mode: str = 'BISECTION', print_progress=False) -> int:
         """Brute force TODO doc
 
         Args:
             target_vf: Target volume fraction.
-            max_vf_diff: Maximum difference between the reached volume fraction and *target_vf*.
-                         It should be a float greater than 1E-4.
+            vf_tolerance: Maximum tolerable difference between the reached volume fraction and *target_vf*.
+                          It should be a float greater than 1E-4.
             start_num_shapes: The initial value of *num_shapes* investigated by the function.
             max_num_shapes: The maximum value of *num_shapes* investigated by the function.
+            solver_mode: The solver used for finding the suitable number of shapes.
+                         If set to *'BRUTE FORCE'*, all values from *start_num_shapes* to *max_num_shapes*
+                         are tested and if set to *'BISECTION'*, the bisection method
+                         is used to find the suitable value.
+                         Defaults to *'BISECTION'* which is faster and more reliable.
             print_progress: If True, the values of total volume, volume fraction, and vf_diff
                             are printed for each value of num_shapes. Defaults to False.
 
@@ -778,59 +861,104 @@ class ShapeDispersionArray(ShapeArray):
         """
 
         # Validate input.
-        if target_vf <= 0:
-            raise ValueError('target_volume_fraction should be a positive number.')
-        if max_vf_diff < 1E-6:
+        # target_vf and self.shape_requests are validated in self._find_vf_for_shape_number()
+        if vf_tolerance < 1E-4:
             raise ValueError('max_vf_diff should be None or a float greater than 1E-4.')
         if max_num_shapes <= start_num_shapes:
             raise ValueError('max_num_shapes should be greater than start_num_shapes.')
-        # Make sure all num_shapes in the shape requests are None.
-        num_shapes_list = [sr[1] for sr in self.shape_requests]
-        if not all(ns is None for ns in num_shapes_list):
-            raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
-                             f'If you want to find suitable num_shapes, they should *all* start as None.'
-                             f'The list is: {num_shapes_list}')
+        if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
+            raise ValueError('Invalid value for solver_mode.')
 
-        for num_shapes in range(start_num_shapes, max_num_shapes + 1):
-            shape_list = []  # Note that this is a simple list and not a ShapeArray instance.
-            for req in self.shape_requests:
-                (cls, _, iterable_kwargs, scalar_kwargs) = req
-                # Regenerate the ManualListDispersion instances with num_shapes values.
-                for k, v in iterable_kwargs.items():
-                    if isinstance(v, ManualListDispersion):
-                        raise ValueError(f'{k} is a ManualListDispersion which is not allowed '
-                                         'when finding num_shapes.')
-                    v.generate_values(num_shapes)
+        if solver_mode.upper() == 'BRUTE FORCE':
+            for num_shapes in range(start_num_shapes, max_num_shapes + 1):
+                vf_diff = self._find_vf_for_shape_number(num_shapes, target_vf, print_progress)
+                # If within acceptable range, return here.
+                if abs(vf_diff) < vf_tolerance:
+                    return num_shapes
+                # If we are here, all values have been checked. Raise error.
+                raise SuitableNumShapesNotFoundError(
+                    f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
+        elif solver_mode.upper() == 'BISECTION':
+            num_shapes = bisection_solver_integer(func=self._find_vf_for_shape_number,
+                                                  a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
+                                                  target_vf=target_vf, print_progress=print_progress)
+            return num_shapes
+        else:
+            raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
 
-                # Create the shapes as single independent instances in shape_list.
-                for i in range(num_shapes):
-                    # Put the shape's iterable_kwargs into a single dict to be passed as scalars.
-                    shape_list_kwargs = dict()
-                    for k, v in iterable_kwargs.items():
-                        shape_list_kwargs[k] = v[i]
-                    # Create the shape.
-                    # Note that a shape instance is not placed anywhere and simply exists.
-                    # In fact, the coordinate variable should have a RandomDispersion instance
-                    # as the value which will raise an error if used.
-                    # But we only need to calculate the analytical volume so this is OK.
-                    shape_list.append(cls(id=i + 1, **shape_list_kwargs, **scalar_kwargs))
+    def disperse_shapes_knapsack(self):
+        # Note that the shape request are already there. FIXME: validate this!!
 
-            # Calculate the sum of analytical volumes for the shapes in shape_list.
-            total_analytical_volume = sum(i.analytical_volume for i in shape_list)
-            # Calculate volume fraction and the difference between it and target_vf.
-            current_vf = total_analytical_volume / self.part_volume
-            vf_diff = current_vf - target_vf
-            if print_progress:
-                print(f'num_shapes={num_shapes:4d}, total_vol={total_analytical_volume:.6f}, '
-                      f'vf={current_vf:.6f}, target_vf={target_vf:.6}, '
-                      f'vf_diff={vf_diff:+.6f}, max_vf_diff={max_vf_diff:.6}.')
-            # If within acceptable range, return here.
-            if abs(vf_diff) < max_vf_diff:
-                return num_shapes
-        # If we are here, all values have been checked. Raise error.
-        raise SuitableNumShapesNotFoundError(
-            f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
+        # Find the suitable number of shapes.
+        num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance,
+                                                    start_num_shapes, max_num_shapes,
+                                                    solver_mode, print_progress)
+
+        # Create and disperse that number of shapes in the structure.
+        # self.disperse_shapes(max_attempts=5000, max_trials=100)
 
     # FIXME: add knapsack here.
     # It should use the analytical volume for finding the optimal numner of shapes.
     # then use that to disperse and apply the knapsack algorithm to find a good list of shapes.
+
+
+def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
+    """A solver for finding the root of the function *F()* function using
+    the `bisection method <https://en.wikipedia.org/wiki/Bisection_method>`_.
+    The main difference between this and a regular solver is that in here, everything is an integer.
+    This means that if :math:`a=b`, or if :math:`b-a<1` and :math:`F(a)` or :math:`F(b)`
+    are within the tolerances, the algorithms stops.
+
+    Note that since the function :math:`F()` is stochastic in nature, there will always be
+    an error associated with the result. This is OK as the result is used in a knapsack algorithm.
+
+    Args:
+        func: The continuous function :math:`F()` to be solved. This solver is meant for and tested with
+              the :meth:`ShapeDispersionArray._find_vf_for_shape_number` function,
+              but should work for other functions.
+              Note that :math:`F(a)` and :math:`F(b)` should have opposing signs.
+        a: The start of the range where the search takes place. Should be an integer less than *b*.
+        b: The end of the range where the search takes place. Should be an integer greater than *a*.
+        tolerance: The tolerance for finding the root of the function.
+        kwargs: The keyword arguments to be passed to *func*.
+
+    Returns:
+        An integer root for the function.
+    """
+    # Validate everything.
+    if (int(a) != a) or (a < 1):
+        raise ValueError(f'a must be an integer greater than 1, but is {a}.')
+    if (int(b) != b) or (b < 1):
+        raise ValueError(f'b must be an integer greater than 1, but is {b}.')
+    if b < a:
+        raise ValueError(f'b must be greater than a.')
+    if (b - a) < 1:  # Note that b is greater than a and both are positive, so abs() is not necessary.
+        raise ValueError(f'(b-a) must be greater than 1.')
+    f_a = func(a, **kwargs)
+    f_b = func(b, **kwargs)
+    if (f_a * f_b) > 0:
+        raise ValueError('func(a) and func(b) must have opposite values. Try changing a and b.')
+
+    while True:
+        if (b - a) < 1:
+            if a == b:
+                return a
+            elif abs(f_a) < tolerance:
+                return a
+            elif abs(f_b) < tolerance:
+                return b
+            else:
+                raise RuntimeError(f'The solver reached F(a={a})={f_a} and F(b={b})={f_b}, '
+                                   f'but could not find a root with the given tolerance ({tolerance}).')
+        # Calculate the *integer* midpoint c. Note that it will not be equal to a or b because of the above check.
+        c = int((a + b) / 2)
+        f_c = func(c, **kwargs)
+
+        if abs(f_c) < tolerance:  # F(c) is OK.
+            return c
+        elif f_a * f_c < 0:  # The root is between a and c.
+            b = c
+            f_b = f_c
+        else:  # The root is between c and b.
+            a = c
+            f_a = f_c
