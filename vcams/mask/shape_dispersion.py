@@ -513,7 +513,7 @@ class ShapeDispersionArray(ShapeArray):
             self._print_shape_status_message(shape_status)
             if shape_status:
                 return
-        raise TooManyDispersionAttemptsError(f'Too many dispersion attempts for {shape_number}')
+        raise TooManyDispersionAttemptsError(f'Too many dispersion attempts for shape {shape_number}.')
 
     def _print_placement_message(self, cls, attempt_number, shape_number, scalar_dict,
                                  random_value_dict, trial_number=None):
@@ -682,7 +682,8 @@ class ShapeDispersionArray(ShapeArray):
             elif isinstance(v, BaseNormalDistributionDispersion):
                 if (len(v) == 0) and (num_shapes is not None):
                     raise ValueError(f'{k} is an uninitialized NormalDistributionDispersion. '
-                                     f'Specify num_shapes when defining it.')
+                                     f'Specify num_shapes when defining it. '
+                                     f'Did you mean to pass num_shapes=None to the method?')
                 # If len(v)==0 and num_shapes is None, it's OK.
                 iterable_kwargs[k] = v
             elif isscalar(v) or isinstance(v, RandomDispersion):
@@ -815,16 +816,24 @@ class ShapeDispersionArray(ShapeArray):
 
             # Create the shapes as single independent instances in shape_list.
             for i in range(num_shapes):
-                # Put the shape's iterable_kwargs into a single dict to be passed as scalars.
-                shape_list_kwargs = dict()
+                # Put the shape's kwargs into a single dict to be passed as scalars.
+                shape_i_kwargs = dict()
+                shape_i_list_kwargs = dict()
+                shape_i_scalar_kwargs = dict()
                 for k, v in iterable_kwargs.items():
-                    shape_list_kwargs[k] = v[i]
+                    shape_i_kwargs[k] = v[i]
+                for k, v in scalar_kwargs.items():
+                    if isinstance(v, RandomDispersion):
+                        shape_i_kwargs[k] = v()
+                    else:
+                        shape_i_kwargs[k] = v
+
                 # Create the shape.
                 # Note that a shape instance is not placed anywhere and simply exists.
                 # In fact, the coordinate variable should have a RandomDispersion instance
                 # as the value which will raise an error if used.
                 # But we only need to calculate the analytical volume so this is OK.
-                shape_list.append(cls(id=i + 1, **shape_list_kwargs, **scalar_kwargs))
+                shape_list.append(cls(id=i + 1, **shape_i_kwargs))
 
         # Calculate the sum of analytical volumes for the shapes in shape_list.
         total_analytical_volume = sum(i.analytical_volume for i in shape_list)
@@ -832,7 +841,8 @@ class ShapeDispersionArray(ShapeArray):
         current_vf = total_analytical_volume / self.part_volume
         vf_diff = current_vf - target_vf
         if print_progress:
-            print(f'num_shapes={num_shapes:4d}, total_vol={total_analytical_volume:10.6f}, '
+            print(f'num_shapes={num_shapes:4d}x{len(self.shape_requests)}, '
+                  f'total_vol={total_analytical_volume:10.6f}, '
                   f'vf={current_vf:9.6f}, target_vf={target_vf:.6}, '
                   f'vf_diff={vf_diff:+10.6f}')
         return vf_diff
@@ -840,7 +850,13 @@ class ShapeDispersionArray(ShapeArray):
     def _find_suitable_num_shapes(self, target_vf: float, vf_tolerance: float,
                                   start_num_shapes: int = 5, max_num_shapes: int = 5000,
                                   solver_mode: str = 'BISECTION', print_progress=False) -> int:
-        """Brute force TODO doc
+        """Find a suitable number of shapes for the *ShapeDispersionArray*'s requested shapes.
+
+        This function first makes sure that all the shape requests are without *num_shapes*,
+        then finds a suitable number of shapes that satisfies a *target_vf*.
+        In the case of multiple requests each of them will be assumed to have an equal number of shapes.
+
+        Read the documentation for the :meth:`_find_vf_for_shape_number` for more information.
 
         Args:
             target_vf: Target volume fraction.
@@ -858,10 +874,20 @@ class ShapeDispersionArray(ShapeArray):
 
         Returns:
             A suitable value for *num_shapes* that can be used in conjunction with the knapsack algorithm.
+
+        Raises:
+            SuitableNumShapesNotFoundError: If a suitable number of shapes is not found in the given range.
         """
 
         # Validate input.
-        # target_vf and self.shape_requests are validated in self._find_vf_for_shape_number()
+        if target_vf <= 0:
+            raise ValueError('target_volume_fraction should be a positive number.')
+        # Make sure all num_shapes in the shape requests are None.
+        num_shapes_list = [sr[1] for sr in self.shape_requests]
+        if not all(ns is None for ns in num_shapes_list):
+            raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
+                             f'If you want to find suitable num_shapes, they should *all* start as None.'
+                             f'The list is: {num_shapes_list}')
         if vf_tolerance < 1E-4:
             raise ValueError('max_vf_diff should be None or a float greater than 1E-4.')
         if max_num_shapes <= start_num_shapes:
@@ -886,16 +912,21 @@ class ShapeDispersionArray(ShapeArray):
         else:
             raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
 
-    def disperse_shapes_knapsack(self):
+    def disperse_shapes_knapsack(self, target_vf: float, vf_tolerance: float,
+                                 start_num_shapes: int = 5, max_num_shapes: int = 5000,
+                                 solver_mode: str = 'BISECTION', print_progress=False):
         # Note that the shape request are already there. FIXME: validate this!!
 
         # Find the suitable number of shapes.
         num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance,
                                                     start_num_shapes, max_num_shapes,
                                                     solver_mode, print_progress)
+        # Set num_shapes in all shape requests.
+        for sr in self.shape_requests:
+            sr[1] = num_shapes
 
         # Create and disperse that number of shapes in the structure.
-        # self.disperse_shapes(max_attempts=5000, max_trials=100)
+        self.disperse_shapes(max_attempts=300, max_trials=100)
 
     # FIXME: add knapsack here.
     # It should use the analytical volume for finding the optimal numner of shapes.

@@ -342,8 +342,14 @@ class ShapeArray:
                                "a successful run of ShapeDispersionArray.disperse_shapes().")
         self.id_iter = deepcopy(self._backup_dict['id_iter'])
         self.base_mask = ndarray.copy(self._backup_dict['base_mask'])
-        self._mask = ndarray.copy(self._backup_dict['mask'])
-        self._full_mask = ndarray.copy(self._backup_dict['full_mask'])
+        if self._backup_dict['mask'] is None:
+            self._mask = None
+        else:
+            self._mask = ndarray.copy(self._backup_dict['mask'])
+        if self._backup_dict['mask'] is None:
+            self._full_mask = None
+        else:
+            self._full_mask = ndarray.copy(self._backup_dict['full_mask'])
         self.shapes = deepcopy(self._backup_dict['shapes'])
 
     def add_shape(self, cls, intersect_ok=True, **kwargs) -> bool:
@@ -609,6 +615,7 @@ class Ellipse(BaseShape):
             raise ValueError(f'b must be positive but is {b:.6f}')
         else:
             self.b = b
+        # print(alpha)
         if alpha > 360 or alpha < 0:
             raise ValueError(f'alpha must be in the range [0, 360], but is {alpha:.6f}')
         else:
