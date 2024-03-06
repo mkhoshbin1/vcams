@@ -46,8 +46,9 @@ shape_disp_array_obj.add_shape_request2(num_shapes=None, cls=EllipseFromAspectRa
 #                                                                      print_progress=True)
 # shape_disp_array_obj.disperse_shapes_knapsack(suitable_num_shapes)
 
-shape_disp_array_obj.disperse_shapes_knapsack(target_vf=0.30, vf_tolerance=0.01,
-                                            print_progress=True)
+shape_disp_array_obj.disperse_shapes_vf(target_vf=0.20, vf_tolerance=0.01,
+                                        max_attempts=100, max_trials=100,
+                                        print_progress=True)
 
 # #
 # #

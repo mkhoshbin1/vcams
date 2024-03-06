@@ -583,3 +583,5 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: update to Python 3.10.
 # TODO: In Python 3.10, use | instead of Union for type hints.
 #       See https://medium.com/techtofreedom/8-levels-of-using-type-hints-in-python-a6717e28f8fd
+# TODO: type annotation can be used for specific values.
+#  See https://stackoverflow.com/q/58114837 and https://stackoverflow.com/q/39398138

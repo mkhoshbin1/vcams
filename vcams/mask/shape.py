@@ -18,6 +18,7 @@ from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full
 
 from vcams.mask.function import mask_from_function
 
+
 # TODO: see if this can be used for annotating the instances where subclasses are passed.
 #  https://stackoverflow.com/questions/38791739/
 
@@ -32,11 +33,14 @@ class BaseShape(ABC):
     """
 
     def __init__(self):
-        self._num_voxels = None
-        self._real_volume = None
-        self._real_volume_fraction = None
+        self.part_shape = None
+        self.voxel_size = None
+        self.voxel_volume = None
+        self.num_workspace_voxels = None
+        self._num_true_voxels = None
+        self._real_shape_volume = None
+        self._shape_volume_fraction = None
 
-    # TODO: implement buffer zone.
     @property
     @abstractmethod
     def dim(self):
@@ -52,37 +56,53 @@ class BaseShape(ABC):
         pass
 
     @property
-    def num_voxels(self):
-        """Number of voxels in the voxelized shape,
+    def num_true_voxels(self):
+        """Number of *True* voxels in the voxelized shape (:math:`N_{Shape}^{True}`),
         calculated and set by the :meth:`calculate_mask` function.
         It is initially set to *None* which raises an error when accessed."""
-        if self._num_voxels is None:
-            raise RuntimeError('The number of voxels in the object has not been calculated. '
+        if self._num_true_voxels is None:
+            raise RuntimeError('The number of voxels in the object has not been calculated yet. '
                                'Has calculate_mask() been called yet?')
         else:
-            return self._num_voxels
+            return self._num_true_voxels
 
     @property
-    def real_volume(self):
-        """Volume of the voxelized shape,
-        calculated and set by the :meth:`calculate_mask` function.
-        It is initially set to *None* which raises an error when accessed."""
-        if self._real_volume is None:
-            raise RuntimeError("The object's real volume has not been calculated. "
-                               "Has calculate_mask() been called yet?")
-        else:
-            return self._real_volume
+    def real_shape_volume(self):
+        """Real volume of the voxelized shape calculated as :math:`N_{Shape}^{True} \\times V_{Voxel}`
+        where :math:`N_{Shape}^{True}` is :attr:`num_true_voxels`
+        and :math:`V_{Voxel}` is the volume of each voxel.
+
+        The :meth:`calculate_mask` function needs to be called first, otherwise an error is raised."""
+        return self.num_true_voxels * self.voxel_volume
 
     @property
-    def real_volume_fraction(self):
-        """Real volume fraction of the voxelized shape,
-        calculated and set by the :meth:`calculate_mask` function.
-        It is initially set to *None* which raises an error when accessed."""
-        if self._num_voxels is None:
-            raise RuntimeError("The object's real volume fraction has not been calculated. "
-                               "Has calculate_mask() been called yet?")
+    def real_workspace_volume(self):
+        """Real volume of the voxelized workspace (the :class:`~.voxelpart.VoxelPart` object)
+        containing the shape.
+        It is calculated as :math:`\\prod_{i=x,y,z} N_i L_i`
+        where for each dimension :math:`i`, :math:`N_i` is the number of voxels
+        and :math:`L_i` is the length of voxels in that direction.
+
+        The :meth:`calculate_mask` function needs to be called first, otherwise an error is raised."""
+        if self.voxel_volume is None:
+            raise RuntimeError("The object's calculate_mask() has not been called yet.")
         else:
-            return self._real_volume_fraction
+            return self.num_workspace_voxels * self.voxel_volume
+
+    @property
+    def shape_volume_fraction(self):
+        """Volume fraction of the voxelized shape.
+        It is calculated as :math:`\\frac{N_{Shape}^{True}}{N_{Workspace}}`
+        where :math:`N_{Shape}^{True}` is the number of *True* voxels
+        in the shape (See :attr:`num_true_voxels`)
+        and :math:`N_{Workspace}` is the total number of voxels in the workspace.
+        Size of each voxel is not relevant to the calculation.
+
+        The :meth:`calculate_mask` function needs to be called first, otherwise an error is raised."""
+        if self.num_workspace_voxels is None:
+            raise RuntimeError("The object's calculate_mask() has not been called yet.")
+        else:
+            return self.num_true_voxels / self.num_workspace_voxels
 
     @abstractmethod
     def func(self, x: Union[float, ndarray],
@@ -110,58 +130,77 @@ class BaseShape(ABC):
 
     pass
 
-    def calculate_mask(self, part_shape: tuple[int, int, int],
-                       voxel_size: tuple[float, float, float],
+    def calculate_mask(self, part=None,
+                       part_shape: tuple[int, int, int] = None,
+                       voxel_size: tuple[float, float, float] = None,
                        boundary_on: bool = False) -> ndarray:
         """Calculate the boolean mask based on this shape.
         This is a wrapper for :func:`vcams.mask.function.mask_from_function`.
 
         Args:
+            part (VoxelPart | None): The :class:`~.voxelpart.VoxelPart` based on which a mask is created.
+                                     If *None*, *part_shape* and *voxel_size* must be specified
+                                     otherwise they are ignored. Defaults to *None*.
             part_shape: A tuple containing three integers which determine
                         the shape of the returned boolean mask.
+                        Defaults to *None* and ignored if *part* is passed.
             voxel_size: A tuple containing three floats which determine the size of a voxel
                         in the x, y, and z directions.
+                        Defaults to *None* and ignored if *part* is passed.
             boundary_on: A boolean specifying whether shape boundary
                          must be considered when evaluating the function.
 
         Returns:
             A numpy ndarray with a dtype of bool representing the current shape.
         """
-        # TODO: doesn't work with two element voxel_size.
+
+        # Set part_shape and voxel_size.
+        if part:
+            part_shape = part.size
+            voxel_size = part.voxel_size
+        self.part_shape = part_shape
+        self.voxel_size = voxel_size
+
         # Shape mask is calculated here but is not stored to save memory.
         shape_mask = mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size,
                                         func=self.func, boundary_on=boundary_on)
-        # Calculate shape properties related to its volume.
-        self._num_voxels = count_nonzero(shape_mask)
+        self._num_true_voxels = count_nonzero(shape_mask)
+        # Calculate shape properties related to voxel_size and part shape.
         if self.dim == '2D':
-            self._real_volume = self._num_voxels * prod(voxel_size[:2])
-            self._real_volume_fraction = self._num_voxels / prod(part_shape[:2])
+            self.voxel_volume = prod(voxel_size[:2])
+            self.num_workspace_voxels = prod(part_shape[:2])
         else:
-            self._real_volume = self._num_voxels * prod(voxel_size)
-            self._real_volume_fraction = self._num_voxels / prod(part_shape)
+            self.voxel_volume = prod(voxel_size)
+            self.num_workspace_voxels = prod(part_shape)
         return shape_mask
 
 
 class ShapeArray:
     """Class for an array of shapes.
     The array may contain any number of shapes of any class as long as they have the same *dim* attribute.
-    # TODO: doc what is _ignored_masks?
     """
 
     def __init__(self, dim: str, part=None,
-                 mask_shape: tuple[int, int, int] = None,
+                 part_shape: tuple[int, int, int] = None,
                  voxel_size: tuple[float, float, float] = None,
                  is_mask_calculation_lazy: bool = True):
         """
         Args:
-            part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
-                                     If None, *mask_shape* and *voxel_size* must be specified (%TODO: enforce).
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
+            part (VoxelPart | None): The :class:`~.voxelpart.VoxelPart` based on which a mask is created.
+                                     If *None*, *part_shape* and *voxel_size* must be specified
+                                     otherwise they are ignored. Defaults to *None*.
+            part_shape: A tuple containing three integers which determine
+                        the shape of the returned boolean mask.
+                        Defaults to *None* and ignored if *part* is passed.
+            voxel_size: A tuple containing three floats which determine the size of a voxel
+                        in the x, y, and z directions.
+                        Defaults to *None* and ignored if *part* is passed.
             is_mask_calculation_lazy: If True, the ShapeArray's private *_mask* property is updated
                                       only when necessary which greatly improves performance.
                                       Otherwise, it is updated everytime a shape is added to the array.
-            mask_shape: A tuple containing three integers which determines
+            part_shape: A tuple containing three integers which determines
                         the shape of the returned boolean mask. Ignored if *part* is passed.
             voxel_size: A tuple containing three floats which determine the size of a voxel
                         in the x, y, and z directions. Ignored if *part* is passed.
@@ -174,7 +213,7 @@ class ShapeArray:
 
         if part:
             self.part_name = part.name
-            self.mask_shape = part.size
+            self.part_shape = part.size
             self.voxel_size = part.voxel_size
             self.base_mask = (part.data == 0)  # TODO: check this with a TPMS.
             # TODO: check the above equality. I think it should be !=.
@@ -183,11 +222,11 @@ class ShapeArray:
             self.part_name = None
             """Name of the part for which the ShapeArray is created.
             If a pert is not passed, it is set to *None* and it is not used."""
-            self.mask_shape = mask_shape
+            self.part_shape = part_shape  # TODO: make sure that len is OK for 2D/3D.
             """See :meth:`.__init__`."""
             self.voxel_size = voxel_size
             """See :meth:`.__init__`."""
-            self.base_mask = full(mask_shape, False, dtype=bool)
+            self.base_mask = full(part_shape, False, dtype=bool)
             """A Boolean mask for the part which contains the background where the shapes are dispersed.
             If a VoxelPart instance is passed, its nonzero elements are considered occupied,
             otherwise a blank part is used.
@@ -196,9 +235,9 @@ class ShapeArray:
             # TODO: do something about bounddary and its doc.
 
         if dim.upper() == '2D':
-            self.part_volume = prod(self.mask_shape * self.voxel_size[:2])
+            self.part_volume = prod(self.part_shape * self.voxel_size[:2])
         else:
-            self.part_volume = self.mask_shape * prod(self.voxel_size)
+            self.part_volume = prod(self.part_shape * self.voxel_size)
 
         self.is_mask_calculation_lazy = is_mask_calculation_lazy
         """See :meth:`.__init__`."""
@@ -244,6 +283,14 @@ class ShapeArray:
             # Updates both self._mask and self._full_mask.
         return self._full_mask
 
+    @property
+    def shape_array_volume_fraction(self):
+        """Ratio of the occupied (*True*) voxels in the instance
+        to the instance's total number of voxels.
+        This only includes the voxels in :attr:`mask` and the voxels
+        in the background (:attr:`base_mask`) are not included."""
+        return np.count_nonzero(self.mask) / prod(self.part_shape)
+
     def _check_shape_class(self, shape):
         """Validate the given shape class or instance.
          Currently, only its dimensionality (*dim* attribute)
@@ -271,7 +318,7 @@ class ShapeArray:
         if (self._mask is None) or (shape_id is None):  # All masks need to be calculated.
             recalculate_all = True
             # Create an empty boolean array for the mask.
-            self._mask = full(self.mask_shape, False, dtype=bool)
+            self._mask = full(self.part_shape, False, dtype=bool)
             # Get id_list from the shapes dictionary.
             id_list = list(self.shapes.keys())
         else:  # Some masks need to be calculated.
@@ -285,7 +332,7 @@ class ShapeArray:
         for i in id_list:
             self._mask = logical_or(self._mask,
                                     self.shapes[i].calculate_mask(
-                                        self.mask_shape, self.voxel_size))
+                                        part_shape=self.part_shape, voxel_size=self.voxel_size))
             try:
                 self._ignored_masks.remove(i)
             except ValueError:
@@ -329,28 +376,37 @@ class ShapeArray:
             raise RuntimeError("The instance's _ignored_masks attribute"
                                "is not an empty list, but it should be.")
 
-    def _restore_state(self):
+    def _restore_state(self, backup_dict=None):
         """Restore the state of the instance to the previous backup.
 
         This is a private function intended for use by the methods of
         the :class:`~.shape_dispersion.ShapeDispersionArray` subclass
         and should not be directly called by the users.
-        In case of a mistake in the *ShapeArray*, start from scratch."""
-        if not self._backup_dict:
+        In case of a mistake in the *ShapeArray*, start from scratch.
+
+        Args:
+            backup_dict: The :attr:`_backup_dict` dictionary.
+                         If set to *None*, the instance's *_backup_dict* is used.
+                         Otherwise, another dictionary can be passed which should
+                         ideally be a deep copy of an existing _backup_dict.
+        """
+        if backup_dict is None:
+            backup_dict = self._backup_dict
+        if not backup_dict:
             raise RuntimeError("The instance's _backup_dict property is empty."
                                "Has _backup_state() been called before? This may also happen after "
                                "a successful run of ShapeDispersionArray.disperse_shapes().")
-        self.id_iter = deepcopy(self._backup_dict['id_iter'])
-        self.base_mask = ndarray.copy(self._backup_dict['base_mask'])
-        if self._backup_dict['mask'] is None:
+        self.id_iter = deepcopy(backup_dict['id_iter'])
+        self.base_mask = ndarray.copy(backup_dict['base_mask'])
+        if backup_dict['mask'] is None:
             self._mask = None
         else:
-            self._mask = ndarray.copy(self._backup_dict['mask'])
-        if self._backup_dict['mask'] is None:
+            self._mask = ndarray.copy(backup_dict['mask'])
+        if backup_dict['mask'] is None:
             self._full_mask = None
         else:
-            self._full_mask = ndarray.copy(self._backup_dict['full_mask'])
-        self.shapes = deepcopy(self._backup_dict['shapes'])
+            self._full_mask = ndarray.copy(backup_dict['full_mask'])
+        self.shapes = deepcopy(backup_dict['shapes'])
 
     def add_shape(self, cls, intersect_ok=True, **kwargs) -> bool:
         """Add a shape to the ShapeArray using its class,
@@ -384,7 +440,8 @@ class ShapeArray:
         else:
             # Calculate the new shape's mask and
             # add only if the shape does not intersect existing shapes or the background.
-            new_shape_mask = new_shape_obj.calculate_mask(self.mask_shape, self.voxel_size, boundary_on=True)
+            new_shape_mask = new_shape_obj.calculate_mask(
+                part_shape=self.part_shape, voxel_size=self.voxel_size, boundary_on=True)
             if any(logical_and(self.full_mask, new_shape_mask)):
                 # If they intersect, return False for an unsuccessful operation.
                 # The shape will be discarded.

@@ -464,9 +464,11 @@ class ShapeDispersionArray(ShapeArray):
         super()._backup_state()
         self._backup_dict['shape_requests'] = deepcopy(self.shape_requests)
 
-    def _restore_state(self):
+    def _restore_state(self, backup_dict=None):
         super()._restore_state()
-        self.shape_requests = deepcopy(self._backup_dict['shape_requests'])
+        if backup_dict is None:
+            backup_dict = self._backup_dict
+        self.shape_requests = deepcopy(backup_dict['shape_requests'])
 
     def _place_shape_randomly(self, cls, shape_number: int, max_attempts: int,
                               trial_number: int = None, **kwargs):
@@ -581,12 +583,16 @@ class ShapeDispersionArray(ShapeArray):
                              f'Scalar and sample random keyword arguments:\n  {scalar_dict_temp}')
             raise Exception(exception_msg).with_traceback(err.__traceback__)
 
-    def add_shape_request(self, cls, num_shapes: int = 1, **kwargs):
+    def add_shape_request2(self, cls, num_shapes: int | None, **kwargs):
         """Add a request for a one or more shapes of a class to be added to the instance.
 
         Args:
             cls: The shape class that should be placed. Arguments are passed as *kwargs*.
             num_shapes: Number of shapes that are requested with the given arguments.
+                        Should either be an integer or *None* so it can be determined using
+                        the instance's :meth:`_find_suitable_num_shapes()` method.
+                        If set to *None*, all other shape requests must also have this argument
+                        set to *None*. Defaults to *None*.
             **kwargs: A dictionary where the keys are the arguments for the shape class
                       and the values are either dispersion objects or scalars.
                       The function separates the dictionary into two dictionaries,
@@ -595,70 +601,6 @@ class ShapeDispersionArray(ShapeArray):
                       must be equal to *num_shapes*.
         """
 
-        # Validate the shape class.
-        self._check_shape_class(cls)
-
-        # Split the kwargs dictionary into two groups,
-        # that will each be passed to the placement function differently.
-        # The keys are the arguments' names.
-        # In iterable_kwargs, the value is an iterable whose contents will be passed one by one;
-        # and in other_kwargs, the value is a single scalar which will be passed each time.
-        iterable_kwargs = dict()
-        scalar_kwargs = dict()
-        for k, v in kwargs.items():
-            if isinstance(v, BaseListDispersion):  # are iterables.
-                if len(v) == 0:  # It has not been initiated yet.
-                    if isinstance(v, BaseNormalDistributionDispersion):
-                        v.generate_values(num_shapes)
-                        iterable_kwargs[k] = v
-                    else:
-                        raise ValueError(f'{k} is empty but should have {num_shapes} elements.')
-                elif len(v) == num_shapes:
-                    iterable_kwargs[k] = v
-                else:
-                    raise ValueError(f'{k} has {len(v)} elements but num_shapes={num_shapes}.')
-            elif isscalar(v) or isinstance(v, RandomDispersion):
-                scalar_kwargs[k] = v
-            else:
-                raise ValueError(f'{k} is neither a scalar nor a valid subclass of BaseListDispersion.')
-
-        # Try to create a shape with iterable_kwargs and scalar_kwargs to make sure they're valid.
-        ShapeDispersionArray._test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs)
-
-        # Add the shape request as a tuple to the instance's shape_requests list.
-        self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
-
-    # def add_shape_request_no_nums(self, cls, **kwargs):
-    #     # Validate the shape class.
-    #     self._check_shape_class(cls)
-    #
-    #     # Split the kwargs dictionary into two groups,
-    #     # that will each be passed to the placement function differently.
-    #     # The keys are the arguments' names.
-    #     # In iterable_kwargs, the value is an iterable whose contents will be passed one by one;
-    #     # and in other_kwargs, the value is a single scalar which will be passed each time.
-    #     iterable_kwargs = dict()
-    #     scalar_kwargs = dict()
-    #     for k, v in kwargs.items():
-    #         if isinstance(v, ManualListDispersion):
-    #             raise ValueError(f'{k} is a ManualListDispersion which is not allowed '
-    #                              'for the add_shape_request_no_nums() function.')
-    #         elif isinstance(v, NormalDistributionDispersion):
-    #             iterable_kwargs[k] = v
-    #         elif isscalar(v) or isinstance(v, RandomDispersion):
-    #             scalar_kwargs[k] = v
-    #         else:
-    #             raise ValueError(f'{k} is neither a scalar nor a valid subclass of BaseListDispersion.')
-    #
-    #     # Try to create a shape with iterable_kwargs and scalar_kwargs to make sure they're valid.
-    #     ShapeDispersionArray._test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs)
-    #
-    #     # Add the shape request as a tuple to the instance's shape_requests list.
-    #     self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
-    #     pass
-
-    def add_shape_request2(self, cls, num_shapes: int | None, **kwargs):
-        # TODO: add doc. document possibility of num_shapes being None.
         # Validate the shape class.
         self._check_shape_class(cls)
 
@@ -680,11 +622,15 @@ class ShapeDispersionArray(ShapeArray):
                 else:
                     iterable_kwargs[k] = v
             elif isinstance(v, BaseNormalDistributionDispersion):
-                if (len(v) == 0) and (num_shapes is not None):
-                    raise ValueError(f'{k} is an uninitialized NormalDistributionDispersion. '
+                if num_shapes is None:  # Values should not be generated for v. Current values are inconsequential.
+                    pass
+                elif len(v) != 0:  # v is uninitialized and should have its values generated.
+                    v.generate_values(num_values=num_shapes)
+                else:
+                    raise ValueError(f'{k} is an uninitialized subclass of '
+                                     f'BaseNormalDistributionDispersion. '
                                      f'Specify num_shapes when defining it. '
                                      f'Did you mean to pass num_shapes=None to the method?')
-                # If len(v)==0 and num_shapes is None, it's OK.
                 iterable_kwargs[k] = v
             elif isscalar(v) or isinstance(v, RandomDispersion):
                 scalar_kwargs[k] = v
@@ -701,6 +647,13 @@ class ShapeDispersionArray(ShapeArray):
         """Disperse shapes in the *ShapeDispersionArray* instance according to
         the shape requests. All shape requests are processed and then :attr:`shape_requests`
         is emptied.
+
+        The function uses the :meth:`_place_shape_randomly()` function to place each shape
+        in a random position. Placement is tried *max_attempts* number of times
+        and if the attempts run out, the *trial* ends and a new trial begins with
+        a clean ShapeArray, and the same shapes will be dispersed again.
+        If after the given maximum number of trials (*max_trials*) all shapes are not placed,
+        :class:`TooManyDispersionTrialsError` will be raised to indicate an error.
 
         Args:
             max_attempts: The maximum number of attempts for placement of a shape.
@@ -729,10 +682,10 @@ class ShapeDispersionArray(ShapeArray):
         dispersion_success = False
         for trial_number in range(1, max_trials + 1):
             try:  # Try to run a trial.
-                dispersion_success = False  # This isn't strictly necessary. TODO: try removing it.
+                dispersion_success = False
                 shape_number = 0
-                for req in self.shape_requests:
-                    (cls, num_shapes, iterable_kwargs, scalar_kwargs) = req
+                for sr in self.shape_requests:
+                    (cls, num_shapes, iterable_kwargs, scalar_kwargs) = sr
                     # Loop through the list kwargs.
                     for i in range(num_shapes):
                         shape_number += 1
@@ -743,7 +696,7 @@ class ShapeDispersionArray(ShapeArray):
                         # Try to place the shape. Raises TooManyDispersionAttempts if unsuccessful.
                         self._place_shape_randomly(cls, shape_number, max_attempts, trial_number,
                                                    **shape_list_kwargs, **scalar_kwargs)
-                # Both loops have run out and dispersion is successful.
+                # Both loops have run out without error and dispersion is successful.
                 dispersion_success = True
                 break
             except TooManyDispersionAttemptsError:
@@ -805,21 +758,22 @@ class ShapeDispersionArray(ShapeArray):
                              f'The list is: {num_shapes_list}')
 
         shape_list = []  # Note that this is a simple list and not a ShapeArray instance.
-        for req in self.shape_requests:
-            (cls, _, iterable_kwargs, scalar_kwargs) = req
-            # Regenerate the ManualListDispersion instances with num_shapes values.
+        for sr in self.shape_requests:
+            (cls, _, iterable_kwargs, scalar_kwargs) = sr
+            # Regenerate the BaseNormalDistributionDispersion subclasses with num_shapes values.
             for k, v in iterable_kwargs.items():
                 if isinstance(v, ManualListDispersion):
                     raise ValueError(f'{k} is a ManualListDispersion which is not allowed '
                                      'when finding num_shapes.')
-                v.generate_values(num_shapes)
+                elif isinstance(v, BaseNormalDistributionDispersion):
+                    v.generate_values(num_values=num_shapes)
+                else:
+                    raise RuntimeError(f'Unexpected type {type(v)} for {k}: {v}.')
 
             # Create the shapes as single independent instances in shape_list.
             for i in range(num_shapes):
                 # Put the shape's kwargs into a single dict to be passed as scalars.
                 shape_i_kwargs = dict()
-                shape_i_list_kwargs = dict()
-                shape_i_scalar_kwargs = dict()
                 for k, v in iterable_kwargs.items():
                     shape_i_kwargs[k] = v[i]
                 for k, v in scalar_kwargs.items():
@@ -899,7 +853,7 @@ class ShapeDispersionArray(ShapeArray):
             for num_shapes in range(start_num_shapes, max_num_shapes + 1):
                 vf_diff = self._find_vf_for_shape_number(num_shapes, target_vf, print_progress)
                 # If within acceptable range, return here.
-                if abs(vf_diff) < vf_tolerance:
+                if abs(vf_diff) <= vf_tolerance:
                     return num_shapes
                 # If we are here, all values have been checked. Raise error.
                 raise SuitableNumShapesNotFoundError(
@@ -912,21 +866,71 @@ class ShapeDispersionArray(ShapeArray):
         else:
             raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
 
-    def disperse_shapes_knapsack(self, target_vf: float, vf_tolerance: float,
-                                 start_num_shapes: int = 5, max_num_shapes: int = 5000,
-                                 solver_mode: str = 'BISECTION', print_progress=False):
+    def disperse_shapes_vf(self, target_vf: float, vf_tolerance: float,
+                           start_num_shapes: int = 5, max_num_shapes: int = 5000,
+                           solver_mode: str = 'BISECTION',
+                           max_attempts: int = 5000, max_trials: int = 100,
+                           print_progress=False):
+        """FIXME
+        Disperse shapes in the *ShapeDispersionArray* instance according to
+        the shape requests. All shape requests are processed and then :attr:`shape_requests`
+        is emptied.
+
+        The function uses the :meth:`_place_shape_randomly()` function to place each shape
+        in a random position. Placement is tried *max_attempts* number of times
+        and if the attempts run out, the *trial* ends and a new trial begins with
+        a clean ShapeArray, and the same shapes will be dispersed again.
+        If after the given maximum number of trials (*max_trials*) all shapes are not placed,
+        :class:`TooManyDispersionTrialsError` will be raised to indicate an error.
+
+        Args:
+            max_attempts: The maximum number of attempts for placement of a shape.
+                          If exceeded, the trial ends and the process is restarted.
+            max_trials:   The maximum number of trials. If exceeded,
+                          :class:`TooManyDispersionTrialsError` is raised.
+
+        Raises:
+            TooManyDispersionTrialsError: Too many trials were done.
+                                          Note that each trials entails many attempts.
+        """
         # Note that the shape request are already there. FIXME: validate this!!
 
         # Find the suitable number of shapes.
         num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance,
                                                     start_num_shapes, max_num_shapes,
                                                     solver_mode, print_progress)
-        # Set num_shapes in all shape requests.
+        # Set num_shapes in all shape requests and regenerate subclasses of BaseNormalDistributionDispersion.
         for sr in self.shape_requests:
             sr[1] = num_shapes
 
-        # Create and disperse that number of shapes in the structure.
-        self.disperse_shapes(max_attempts=300, max_trials=100)
+        # self_backup = deepcopy(self._backup_dict)
+        for i in range(100):
+            # fix this. it doesn't loop properly.
+            # Regenerate subclasses of BaseNormalDistributionDispersion.
+            print('='*80)
+            print(f'Try {i}:')
+
+            for sr in self.shape_requests:
+                print('regenerating')
+                iterable_kwargs = sr[2]
+                for k, v in iterable_kwargs.items():
+                    if isinstance(v, BaseNormalDistributionDispersion):
+                        v.generate_values(num_values=sr[1])
+                        print(f'regenerated {k}.')
+            pass
+            # Create and disperse that number of shapes in the structure.
+            self.disperse_shapes(max_attempts=max_attempts, max_trials=max_trials)
+            # Compare target VF with the instance's real voxel-based VF.
+            vf_diff = abs(self.shape_array_volume_fraction - target_vf)
+            print(f'VF={self.shape_array_volume_fraction}, vf_diff={vf_diff}, vf_tolerance={vf_tolerance}')
+            print(vf_diff <= vf_tolerance)
+            if vf_diff <= vf_tolerance:
+                print('sadsfg')
+                return
+            else:
+                continue
+
+        # raise
 
     # FIXME: add knapsack here.
     # It should use the analytical volume for finding the optimal numner of shapes.
