@@ -8,6 +8,7 @@ import numpy as np
 matplotlib.use('TkAgg')  # FIXME: https://stackoverflow.com/a/73788178/7180705
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
+from pathlib import Path
 from copy import deepcopy
 from numpy import var, std, mean, random, max, abs, isscalar, sum, inf
 from scipy.stats import truncnorm
@@ -444,6 +445,9 @@ class ShapeDispersionArray(ShapeArray):
         """A list of shapes shape classes and related parameters that should be dispersed.
         This list is emptied after a successful dispersion."""  # TODO: talk about structure.
 
+        self._dispersion_log_file_path = \
+            part._log_file_path.with_stem(part._log_file_path.stem + '_shape_dispersion')  # noqa: PyProtectedMember
+
         # Add boundary to the base mask so the shapes don't touch the outside.
         if num_bound_pixels:  # FIXME: here or in ShapeArray?
             self.base_mask[:, :num_bound_pixels] = True
@@ -797,7 +801,7 @@ class ShapeDispersionArray(ShapeArray):
         if print_progress:
             print(f'num_shapes={num_shapes:4d}x{len(self.shape_requests)}, '
                   f'total_vol={total_analytical_volume:10.6f}, '
-                  f'vf={current_vf:9.6f}, target_vf={target_vf:.6}, '
+                  f'vf={current_vf:10.6f}, target_vf={target_vf:.6}, '
                   f'vf_diff={vf_diff:+10.6f}')
         return vf_diff
 

@@ -216,6 +216,7 @@ class ShapeArray:
             self.part_shape = part.size
             self.voxel_size = part.voxel_size
             self.base_mask = (part.data == 0)  # TODO: check this with a TPMS.
+            self._part_log_file_path = part._log_file_path  # noqa: PyProtectedMember
             # TODO: check the above equality. I think it should be !=.
             # TODO: document that this only works for empty space.
         else:
@@ -233,6 +234,7 @@ class ShapeArray:
             Also boundary pixels, as determined by the *num_bound_pixels*
             variable, are considered occupied."""
             # TODO: do something about bounddary and its doc.
+            self._part_log_file_path = None
 
         if dim.upper() == '2D':
             self.part_volume = prod(self.part_shape * self.voxel_size[:2])
