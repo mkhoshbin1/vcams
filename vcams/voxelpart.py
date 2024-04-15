@@ -148,21 +148,11 @@ class VoxelPart:
         self._bc_nodeset_simple = False
         self._dummy_node_dict = dict()
 
-        # # Create and configure the logger.
-        setup_logger(logger_name=__name__, log_file=Path(self.results_path) / (name + '.log'),
+        # Create and configure the logger.
+        self._log_file_path = Path(self.results_path) / (name + '.log')  # Make sure it's necessary.
+        setup_logger(logger_name=__name__, log_file=self._log_file_path, display_log=False,
                      overwrite_logs=overwrite_logs, log_debug=log_debug)
-        # filemode = 'w' if overwrite_logs else 'a'
-        # log_level = logging.DEBUG if log_debug else logging.INFO
-        # self._log_file_path = Path(self.results_path) / (name + '.log')
-        # """Path of the VoxelPart's log file."""
-        # self._log_file_handler = logging.FileHandler(self._log_file_path, filemode)
-        # """The FileHandler object used for logging the part."""
-        # formatter = logging.Formatter(fmt='%(asctime)s - %(levelname) 5s - %(message)s',
-        #                               datefmt='%Y-%m-%d %H:%M:%S')
-        # self._log_file_handler.setFormatter(formatter)
-        # root_logger = logging.getLogger()
-        # root_logger.addHandler(self._log_file_handler)
-        # root_logger.setLevel(log_level)
+        # TODO: add display_log as parameter.
 
         # Log creation of the object.
         logger.info('\n** Created using VCAMS v%s.'

@@ -5,6 +5,8 @@ import time
 import matplotlib
 import numpy as np
 
+from ..logger_conf import setup_dispersion_logger, LogWithoutFormatContext
+
 matplotlib.use('TkAgg')  # FIXME: https://stackoverflow.com/a/73788178/7180705
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
@@ -417,7 +419,7 @@ class ShapeDispersionArray(ShapeArray):
                  voxel_size: tuple[float, float, float] = None,
                  num_bound_pixels: int = 0,
                  short_msg: bool = True):
-        """
+        """A subclass of ShapeArray(TODO) which can disperse shapes inside itself.
         Args:
             part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
                                      If None, *mask_shape* and *voxel_size* must be specified (%TODO: enforce).
@@ -446,7 +448,10 @@ class ShapeDispersionArray(ShapeArray):
         This list is emptied after a successful dispersion."""  # TODO: talk about structure.
 
         self._dispersion_log_file_path = \
-            part._log_file_path.with_stem(part._log_file_path.stem + '_shape_dispersion')  # noqa: PyProtectedMember
+            part._log_file_path.with_stem(part._log_file_path.stem + '_dispersion_log')  # noqa: PyProtectedMember
+        self.dispersion_logger = setup_dispersion_logger(part.name, log_file=self._dispersion_log_file_path,
+                                                         display_log=True)
+        # TODO: make concise
 
         # Add boundary to the base mask so the shapes don't touch the outside.
         if num_bound_pixels:  # FIXME: here or in ShapeArray?
@@ -482,11 +487,11 @@ class ShapeDispersionArray(ShapeArray):
             cls: The shape class that should be placed. Arguments are passed as *kwargs*.
             shape_number: The number of this shape.
                           This number keeps track of the shapes that are dispersed
-                          and is used for printing the progress messages.
+                          and is used for logging the progress.
                           it is *not* the shape's eventual ID.
             max_attempts: The maximum number of attempts for placement of a shape.
                           If exceeded, :class:`TooManyDispersionAttemptsError` is raised.
-            trial_number: The number for this trial. Used for printing the progress messages.
+            trial_number: The number for this trial. Used for logging the progress.
             **kwargs:     A dictionary where the keys are the arguments for the shape class
                           and the values are either dispersion objects or scalars.
                           Coordinate arguments should be passes as :class:`RandomDispersion` instances.
@@ -512,57 +517,46 @@ class ShapeDispersionArray(ShapeArray):
             random_value_dict = dict()
             for k, v in random_object_dict.items():
                 random_value_dict[k] = v()  # Note that v (being a RandomDispersion) is *called* here.
-            self._print_placement_message(cls, attempt_number, shape_number,
-                                          scalar_dict, random_value_dict, trial_number)
+            self._log_placement(cls, attempt_number, shape_number, scalar_dict, random_value_dict, trial_number)
             # Try to add a shape to the array. shape_status will be True if successful.
             shape_status = self.add_shape(cls, intersect_ok=False, **scalar_dict, **random_value_dict)
-            self._print_shape_status_message(shape_status)
+            self._log_shape_placement_status(shape_status)
             if shape_status:
                 return
         raise TooManyDispersionAttemptsError(f'Too many dispersion attempts for shape {shape_number}.')
 
-    def _print_placement_message(self, cls, attempt_number, shape_number, scalar_dict,
-                                 random_value_dict, trial_number=None):
-        """Print the placement message for a shape."""
-        # TODO: add logging here.
+    def _log_placement(self, cls, attempt_number, shape_number, scalar_dict,
+                       random_value_dict, trial_number=None):
+        """Log the placement of the shape."""
         if trial_number is None:
             trial_str = ''
         else:
             trial_str = f'Trial {trial_number:4d}, '
-        if self.part_name is None:
-            name_str = ''
-        else:
-            name_str = f"Part '{self.part_name}': "
-
         shape_num_str = f'Shape {shape_number:{len(str(self.num_requested_shapes))}d}/{self.num_requested_shapes}'
         attempt_num_str = f'Attempt {attempt_number:4d}'
+        msg_str = f'{trial_str}{shape_num_str}, {attempt_num_str}'
         if self.short_msg:
-            print(f'{name_str}{trial_str}{shape_num_str}, {attempt_num_str}, Type {cls.__name__} ', end='')
+            msg_str = msg_str + f', Type {cls.__name__} ... '
         else:
-            s_k_str = ', '.join(scalar_dict.keys())
-            s_v_str = ', '.join(f'{x:2.4f}' for x in scalar_dict.values())
-            r_k_str = ', '.join(random_value_dict.keys())
-            r_v_str = ', '.join(f'{x:2.4f}' for x in random_value_dict.values())
-            print(f'{name_str}{trial_str}{shape_num_str}, {attempt_num_str}: '
-                  f'Trying to place {cls.__name__} with ({s_k_str})=({s_v_str}) '
-                  f'at ({r_k_str})=({r_v_str}) ... ', end='')
+            scalar_items_str = ', '.join(f'{k}={v:2.4f}' for k, v in scalar_dict.items())
+            random_items_str = ', '.join(f'{k}={v:2.4f}' for k, v in random_value_dict.items())
+            msg_str = msg_str + f', Type {cls.__name__}({scalar_items_str}, {random_items_str}) ... '
+        self.dispersion_logger.debug(msg_str)
 
-    def _print_shape_status_message(self, shape_status):
-        """Print the status message after the shape's placement message."""
-        # TODO: add logging here.
-        if self.short_msg:
-            # Return the carriage so the current placement message can be overwritten by the next.
-            print('\r', end='')
+    def _log_shape_placement_status(self, shape_status):
+        """Log the placement status of shape."""
+        if shape_status:
+            with LogWithoutFormatContext(self.dispersion_logger):
+                self.dispersion_logger.debug('Success!\r')
         else:
-            # Print status with a newline so the next placement message is written to the next line.
-            if shape_status:
-                print('Success!')
-            else:
-                print('Failed!')
+            with LogWithoutFormatContext(self.dispersion_logger):
+                self.dispersion_logger.debug(' Failed!\r')
 
-    def _print_dispersion_success_message(self, elapsed_time):
-        print(f"\nPart '{self.part_name}': {self.num_requested_shapes} shapes dispersed "
-              f"successfully in {elapsed_time:.2f} seconds.")
+    def _log_dispersion_success(self, elapsed_time):
+        """Log the success of the dispersion process."""
+        self.dispersion_logger.debug(f"Part '{self.part_name}': "
+                                     f"{self.num_requested_shapes} shapes dispersed "
+                                     f"successfully in {elapsed_time:.2f} seconds.\n")
 
     @staticmethod
     def _test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs):
@@ -711,7 +705,7 @@ class ShapeDispersionArray(ShapeArray):
         # or it has ended which means we have run out of trials without success.
         if dispersion_success:
             elapsed_time = time.perf_counter() - begin_time
-            self._print_dispersion_success_message(elapsed_time)
+            self._log_dispersion_success(elapsed_time)
             self.shape_requests = []
             self._backup_dict = dict()
         else:
@@ -733,7 +727,7 @@ class ShapeDispersionArray(ShapeArray):
             - The shapes created by this function may not be necessarily
               dispersable in a ShapeDispersionArray. This function is only about the VFs.
             - The nature of shape generation is stochastic. This means that no two calls
-              will have an equal output. This is generally OK as the results are expected
+              will not have an equal output. This is generally OK as the results are expected
               to be used in a knapsack algorithm.
             - The volume used is the analytical volume of each shape
               which is fast but inaccurate for larger voxel sizes.
@@ -751,6 +745,7 @@ class ShapeDispersionArray(ShapeArray):
             The difference between the actual VF and *target_vf*.
         """
 
+        # self.dispersion_logger.debug('Calculating ')!!
         # Validate input.
         if target_vf <= 0:
             raise ValueError('target_volume_fraction should be a positive number.')
@@ -836,7 +831,10 @@ class ShapeDispersionArray(ShapeArray):
         Raises:
             SuitableNumShapesNotFoundError: If a suitable number of shapes is not found in the given range.
         """
-
+        begin_log_msg = 'Trying to find a suitable number of shapes ' \
+                        'for the given shape requests and target volume fraction.'
+        self.dispersion_logger.debug(begin_log_msg)
+        logger.info(begin_log_msg)
         # Validate input.
         if target_vf <= 0:
             raise ValueError('target_volume_fraction should be a positive number.')
@@ -852,12 +850,16 @@ class ShapeDispersionArray(ShapeArray):
             raise ValueError('max_num_shapes should be greater than start_num_shapes.')
         if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
             raise ValueError('Invalid value for solver_mode.')
+        with LogWithoutFormatContext(self.dispersion_logger):
+            self.dispersion_logger.debug(f' Using the {solver_mode.title()} solver mode.\n')
 
         if solver_mode.upper() == 'BRUTE FORCE':
             for num_shapes in range(start_num_shapes, max_num_shapes + 1):
                 vf_diff = self._find_vf_for_shape_number(num_shapes, target_vf, print_progress)
                 # If within acceptable range, return here.
                 if abs(vf_diff) <= vf_tolerance:
+                    self.dispersion_logger.debug(f'Suitable number of shapes was found'
+                                                 f'to be {num_shapes}x{len(self.shape_requests)}.\n')
                     return num_shapes
                 # If we are here, all values have been checked. Raise error.
                 raise SuitableNumShapesNotFoundError(
@@ -866,6 +868,8 @@ class ShapeDispersionArray(ShapeArray):
             num_shapes = bisection_solver_integer(func=self._find_vf_for_shape_number,
                                                   a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
                                                   target_vf=target_vf, print_progress=print_progress)
+            self.dispersion_logger.debug(f'Suitable number of shapes was found'
+                                         f'to be {num_shapes}x{len(self.shape_requests)}.\n')
             return num_shapes
         else:
             raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
@@ -911,7 +915,7 @@ class ShapeDispersionArray(ShapeArray):
         for i in range(100):
             # fix this. it doesn't loop properly.
             # Regenerate subclasses of BaseNormalDistributionDispersion.
-            print('='*80)
+            print('=' * 80)
             print(f'Try {i}:')
 
             for sr in self.shape_requests:
