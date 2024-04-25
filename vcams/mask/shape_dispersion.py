@@ -479,6 +479,29 @@ class ShapeDispersionArray(ShapeArray):
             backup_dict = self._backup_dict
         self.shape_requests = deepcopy(backup_dict['shape_requests'])
 
+    @staticmethod
+    def _test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs):
+        """Try to create a shape with a set of iterable_kwargs and scalar_kwargs
+        to make sure they are valid. It raises an error if unsuccessful and is otherwise silent."""
+        iter0_dict_temp = dict()
+        scalar_dict_temp = dict()
+        for (k, v) in iterable_kwargs.items():
+            if isinstance(v, BaseNormalDistributionDispersion) and (len(v) == 0):
+                v.generate_values(1, qc_results=False)  # QC is turned off.
+            iter0_dict_temp[k] = v[0]
+        for (k, v) in scalar_kwargs.items():
+            if isinstance(v, RandomDispersion):
+                scalar_dict_temp[k] = v()
+            else:
+                scalar_dict_temp[k] = v
+        try:
+            _ = cls(id=-1, **iter0_dict_temp, **scalar_dict_temp)
+        except Exception as err:
+            exception_msg = (f'The given **kwargs cannot be used with class {cls.__name__}. They are:\n'
+                             f'First element of each iterable keyword argument:\n  {iter0_dict_temp}\n'
+                             f'Scalar and sample random keyword arguments:\n  {scalar_dict_temp}')
+            raise Exception(exception_msg).with_traceback(err.__traceback__)
+
     def _place_shape_randomly(self, cls, shape_number: int, max_attempts: int,
                               trial_number: int = None, **kwargs):
         """Place a shape in a random position. Placement is tried *max_attempts* number of times.
@@ -552,36 +575,7 @@ class ShapeDispersionArray(ShapeArray):
             with LogWithoutFormatContext(self.dispersion_logger):
                 self.dispersion_logger.debug(' Failed!\r')
 
-    def _log_dispersion_success(self, elapsed_time):
-        """Log the success of the dispersion process."""
-        self.dispersion_logger.debug(f"Part '{self.part_name}': "
-                                     f"{self.num_requested_shapes} shapes dispersed "
-                                     f"successfully in {elapsed_time:.2f} seconds.\n")
-
-    @staticmethod
-    def _test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs):
-        """Try to create a shape with a set of iterable_kwargs and scalar_kwargs
-        to make sure they are valid. It raises an error if unsuccessful and is otherwise silent."""
-        iter0_dict_temp = dict()
-        scalar_dict_temp = dict()
-        for (k, v) in iterable_kwargs.items():
-            if isinstance(v, BaseNormalDistributionDispersion) and (len(v) == 0):
-                v.generate_values(1, qc_results=False)  # QC is turned off.
-            iter0_dict_temp[k] = v[0]
-        for (k, v) in scalar_kwargs.items():
-            if isinstance(v, RandomDispersion):
-                scalar_dict_temp[k] = v()
-            else:
-                scalar_dict_temp[k] = v
-        try:
-            _ = cls(id=-1, **iter0_dict_temp, **scalar_dict_temp)
-        except Exception as err:
-            exception_msg = (f'The given **kwargs cannot be used with class {cls.__name__}. They are:\n'
-                             f'First element of each iterable keyword argument:\n  {iter0_dict_temp}\n'
-                             f'Scalar and sample random keyword arguments:\n  {scalar_dict_temp}')
-            raise Exception(exception_msg).with_traceback(err.__traceback__)
-
-    def add_shape_request2(self, cls, num_shapes: int | None, **kwargs):
+    def add_shape_request(self, cls, num_shapes: int | None, **kwargs):
         """Add a request for a one or more shapes of a class to be added to the instance.
 
         Args:
@@ -640,11 +634,17 @@ class ShapeDispersionArray(ShapeArray):
 
         # Add the shape request as a tuple to the instance's shape_requests list.
         self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
+        # logger.debug(f'Adding a shape request for the {cls} class, ')  TODO: main logger doesn't work.
 
     def disperse_shapes(self, max_attempts: int = 5000, max_trials: int = 100):
         """Disperse shapes in the *ShapeDispersionArray* instance according to
-        the shape requests. All shape requests are processed and then :attr:`shape_requests`
-        is emptied.
+        the shape requests. All shape requests are processed
+        and then :attr:`shape_requests` is emptied.
+
+        It is necessary for the instance's shape requests (TODO)
+        to have valid *num_shapes*, otherwise an error is raised.
+        If you need to disperse without knowing the number of shapes
+        (based on volume fraction), use the TODO method instead.
 
         The function uses the :meth:`_place_shape_randomly()` function to place each shape
         in a random position. Placement is tried *max_attempts* number of times
@@ -664,6 +664,8 @@ class ShapeDispersionArray(ShapeArray):
                                           Note that each trials entails many attempts.
         """
 
+        self.dispersion_logger.debug('Dispersing shapes in the ShapeDispersionArray.\n')
+        logger.debug('Dispersing shapes in the ShapeDispersionArray.')
         if max_attempts < 1:
             raise ValueError('max_attempts should be >= 1.')
         if max_trials < 1:
@@ -711,7 +713,88 @@ class ShapeDispersionArray(ShapeArray):
         else:
             raise TooManyDispersionTrialsError(f'Dispersion has been unsuccessful after {max_trials} trials.')
 
-    def _find_vf_for_shape_number(self, num_shapes, target_vf, print_progress=False) -> float:
+    def _log_dispersion_success(self, elapsed_time):
+        """Log the success of the dispersion process."""
+        self.dispersion_logger.debug(f"Part '{self.part_name}': "
+                                     f"{self.num_requested_shapes} shapes dispersed "
+                                     f"successfully in {elapsed_time:.2f} seconds.\n")
+
+    def _find_suitable_num_shapes(self, target_vf: float, vf_tolerance: float,
+                                  start_num_shapes: int = 5, max_num_shapes: int = 5000,
+                                  solver_mode: str = 'BISECTION') -> int:
+        """Find a suitable number of shapes for the *ShapeDispersionArray*'s requested shapes.
+
+        This function first makes sure that all the shape requests are without *num_shapes*,
+        then finds a suitable number of shapes that satisfies a *target_vf*.
+        In the case of multiple requests each of them will be assumed to have an equal number of shapes.
+
+        Read the documentation for the :meth:`_find_vf_for_shape_number` for more information.
+
+        Args:
+            target_vf: Target volume fraction.
+            vf_tolerance: Maximum tolerable difference between the reached volume fraction and *target_vf*.
+                          It should be a float greater than 1E-4.
+            start_num_shapes: The initial value of *num_shapes* investigated by the function.
+            max_num_shapes: The maximum value of *num_shapes* investigated by the function.
+            solver_mode: The solver used for finding the suitable number of shapes.
+                         If set to *'BRUTE FORCE'*, all values from *start_num_shapes* to *max_num_shapes*
+                         are tested and if set to *'BISECTION'*, the bisection method
+                         is used to find the suitable value.
+                         Defaults to *'BISECTION'* which is faster and more reliable.
+
+        Returns:
+            A suitable value for *num_shapes* that can be used in conjunction with the knapsack algorithm.
+
+        Raises:
+            SuitableNumShapesNotFoundError: If a suitable number of shapes is not found in the given range.
+        """
+        begin_log_msg = 'Trying to find a suitable number of shapes ' \
+                        'for the given shape requests and target volume fraction.'
+        self.dispersion_logger.debug(begin_log_msg)
+        logger.info(begin_log_msg)
+        # Validate input.
+        if target_vf <= 0:
+            raise ValueError('target_volume_fraction should be a positive number.')
+        # Make sure all num_shapes in the shape requests are None.
+        num_shapes_list = [sr[1] for sr in self.shape_requests]
+        if not all(ns is None for ns in num_shapes_list):
+            raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
+                             f'If you want to find suitable num_shapes, they should *all* start as None.'
+                             f'The list is: {num_shapes_list}')
+        if vf_tolerance < 1E-4:
+            raise ValueError('max_vf_diff should be None or a float greater than 1E-4.')
+        if max_num_shapes <= start_num_shapes:
+            raise ValueError('max_num_shapes should be greater than start_num_shapes.')
+        if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
+            raise ValueError('Invalid value for solver_mode.')
+        with LogWithoutFormatContext(self.dispersion_logger):
+            self.dispersion_logger.debug(f' Using the {solver_mode.title()} solver mode.\n')
+
+        line_str = ('=' * 80) + '\n'
+        if solver_mode.upper() == 'BRUTE FORCE':
+            # TODO: consider making a function.
+            # TODO: test this option.
+            for num_shapes in range(start_num_shapes, max_num_shapes + 1):
+                vf_diff = self._find_vf_for_shape_number(num_shapes, target_vf)
+                # If within acceptable range, return here.
+                if abs(vf_diff) <= vf_tolerance:
+                    self.dispersion_logger.debug(f'Suitable number of shapes was found '
+                                                 f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
+                    return num_shapes
+                # If we are here, all values have been checked. Raise error.
+                raise SuitableNumShapesNotFoundError(
+                    f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
+        elif solver_mode.upper() == 'BISECTION':
+            num_shapes = bisection_solver_integer(func=self._find_vf_for_shape_number,
+                                                  a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
+                                                  target_vf=target_vf)
+            self.dispersion_logger.debug(f'Suitable number of shapes was found '
+                                         f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
+            return num_shapes
+        else:
+            raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
+
+    def _find_vf_for_shape_number(self, num_shapes, target_vf) -> float:
         """Calculate the volume fraction (VF) for the *ShapeDispersionArray*'s requested shapes,
         given the input number of shapes and return the difference between the actual and target VF.
 
@@ -727,7 +810,7 @@ class ShapeDispersionArray(ShapeArray):
             - The shapes created by this function may not be necessarily
               dispersable in a ShapeDispersionArray. This function is only about the VFs.
             - The nature of shape generation is stochastic. This means that no two calls
-              will not have an equal output. This is generally OK as the results are expected
+              will have an equal output. This is generally OK as the results are expected
               to be used in a knapsack algorithm.
             - The volume used is the analytical volume of each shape
               which is fast but inaccurate for larger voxel sizes.
@@ -738,14 +821,14 @@ class ShapeDispersionArray(ShapeArray):
         Args:
             num_shapes: Number of shapes to be created and investigated by the function.
             target_vf: Target volume fraction.
-            print_progress: If True, the values of total volume, volume fraction, and vf_diff
-                            are printed for each value of num_shapes. Defaults to False.
 
         Returns:
             The difference between the actual VF and *target_vf*.
         """
+        # TODO: What about overlap? at least raise an error somewhere.
+        # TODO: this can get better. Maybe a switch for analytical / real volume?
 
-        # self.dispersion_logger.debug('Calculating ')!!
+        # This function is used many times and therefore logs nothing.
         # Validate input.
         if target_vf <= 0:
             raise ValueError('target_volume_fraction should be a positive number.')
@@ -793,92 +876,17 @@ class ShapeDispersionArray(ShapeArray):
         # Calculate volume fraction and the difference between it and target_vf.
         current_vf = total_analytical_volume / self.part_volume
         vf_diff = current_vf - target_vf
-        if print_progress:
-            print(f'num_shapes={num_shapes:4d}x{len(self.shape_requests)}, '
-                  f'total_vol={total_analytical_volume:10.6f}, '
-                  f'vf={current_vf:10.6f}, target_vf={target_vf:.6}, '
-                  f'vf_diff={vf_diff:+10.6f}')
+        self.dispersion_logger.debug(
+            f'Tried num_shapes={num_shapes:4d}x{len(self.shape_requests)}, '
+            f'Total Vol={total_analytical_volume:10.6f}, '
+            f'VF={current_vf:10.6f}, Target VF={target_vf:.6} -> '
+            f'Delta VF={vf_diff:+11.6f}\n')
         return vf_diff
-
-    def _find_suitable_num_shapes(self, target_vf: float, vf_tolerance: float,
-                                  start_num_shapes: int = 5, max_num_shapes: int = 5000,
-                                  solver_mode: str = 'BISECTION', print_progress=False) -> int:
-        """Find a suitable number of shapes for the *ShapeDispersionArray*'s requested shapes.
-
-        This function first makes sure that all the shape requests are without *num_shapes*,
-        then finds a suitable number of shapes that satisfies a *target_vf*.
-        In the case of multiple requests each of them will be assumed to have an equal number of shapes.
-
-        Read the documentation for the :meth:`_find_vf_for_shape_number` for more information.
-
-        Args:
-            target_vf: Target volume fraction.
-            vf_tolerance: Maximum tolerable difference between the reached volume fraction and *target_vf*.
-                          It should be a float greater than 1E-4.
-            start_num_shapes: The initial value of *num_shapes* investigated by the function.
-            max_num_shapes: The maximum value of *num_shapes* investigated by the function.
-            solver_mode: The solver used for finding the suitable number of shapes.
-                         If set to *'BRUTE FORCE'*, all values from *start_num_shapes* to *max_num_shapes*
-                         are tested and if set to *'BISECTION'*, the bisection method
-                         is used to find the suitable value.
-                         Defaults to *'BISECTION'* which is faster and more reliable.
-            print_progress: If True, the values of total volume, volume fraction, and vf_diff
-                            are printed for each value of num_shapes. Defaults to False.
-
-        Returns:
-            A suitable value for *num_shapes* that can be used in conjunction with the knapsack algorithm.
-
-        Raises:
-            SuitableNumShapesNotFoundError: If a suitable number of shapes is not found in the given range.
-        """
-        begin_log_msg = 'Trying to find a suitable number of shapes ' \
-                        'for the given shape requests and target volume fraction.'
-        self.dispersion_logger.debug(begin_log_msg)
-        logger.info(begin_log_msg)
-        # Validate input.
-        if target_vf <= 0:
-            raise ValueError('target_volume_fraction should be a positive number.')
-        # Make sure all num_shapes in the shape requests are None.
-        num_shapes_list = [sr[1] for sr in self.shape_requests]
-        if not all(ns is None for ns in num_shapes_list):
-            raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
-                             f'If you want to find suitable num_shapes, they should *all* start as None.'
-                             f'The list is: {num_shapes_list}')
-        if vf_tolerance < 1E-4:
-            raise ValueError('max_vf_diff should be None or a float greater than 1E-4.')
-        if max_num_shapes <= start_num_shapes:
-            raise ValueError('max_num_shapes should be greater than start_num_shapes.')
-        if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
-            raise ValueError('Invalid value for solver_mode.')
-        with LogWithoutFormatContext(self.dispersion_logger):
-            self.dispersion_logger.debug(f' Using the {solver_mode.title()} solver mode.\n')
-
-        if solver_mode.upper() == 'BRUTE FORCE':
-            for num_shapes in range(start_num_shapes, max_num_shapes + 1):
-                vf_diff = self._find_vf_for_shape_number(num_shapes, target_vf, print_progress)
-                # If within acceptable range, return here.
-                if abs(vf_diff) <= vf_tolerance:
-                    self.dispersion_logger.debug(f'Suitable number of shapes was found'
-                                                 f'to be {num_shapes}x{len(self.shape_requests)}.\n')
-                    return num_shapes
-                # If we are here, all values have been checked. Raise error.
-                raise SuitableNumShapesNotFoundError(
-                    f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
-        elif solver_mode.upper() == 'BISECTION':
-            num_shapes = bisection_solver_integer(func=self._find_vf_for_shape_number,
-                                                  a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
-                                                  target_vf=target_vf, print_progress=print_progress)
-            self.dispersion_logger.debug(f'Suitable number of shapes was found'
-                                         f'to be {num_shapes}x{len(self.shape_requests)}.\n')
-            return num_shapes
-        else:
-            raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
 
     def disperse_shapes_vf(self, target_vf: float, vf_tolerance: float,
                            start_num_shapes: int = 5, max_num_shapes: int = 5000,
                            solver_mode: str = 'BISECTION',
-                           max_attempts: int = 5000, max_trials: int = 100,
-                           print_progress=False):
+                           max_attempts: int = 5000, max_trials: int = 100):
         """FIXME
         Disperse shapes in the *ShapeDispersionArray* instance according to
         the shape requests. All shape requests are processed and then :attr:`shape_requests`
@@ -902,35 +910,53 @@ class ShapeDispersionArray(ShapeArray):
                                           Note that each trials entails many attempts.
         """
         # Note that the shape request are already there. FIXME: validate this!!
-
+        # self.dispersion_logger.debug('Dispersing shapes in the ShapeDispersionArray.\n')
+        # logger.debug('Dispersing shapes in the ShapeDispersionArray.')
         # Find the suitable number of shapes.
         num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance,
                                                     start_num_shapes, max_num_shapes,
-                                                    solver_mode, print_progress)
+                                                    solver_mode)
         # Set num_shapes in all shape requests and regenerate subclasses of BaseNormalDistributionDispersion.
         for sr in self.shape_requests:
             sr[1] = num_shapes
 
         # self_backup = deepcopy(self._backup_dict)
-        for i in range(100):
+        self.dispersion_logger.debug(f"Trying to disperse shapes in part '{self.part_name}'.\n"
+                                     f"{' '*11}Shape requests will be regenerated a maximum of {10} times.\n"
+                                     f"{' '*11}Each generation will be dispersed for {max_trials} tries,\n"
+                                     f"{' '*11}in which {max_attempts} placement attempts will be made for each shape.\n")
+        for gen_number in range(10):
             # fix this. it doesn't loop properly.
-            # Regenerate subclasses of BaseNormalDistributionDispersion.
-            print('=' * 80)
-            print(f'Try {i}:')
-
+            # Regenerate all shape requests (subclasses of BaseNormalDistributionDispersion).
+            self.dispersion_logger.debug(f'** Generation {gen_number}: Regenerating shape requests ... ')
             for sr in self.shape_requests:
-                print('regenerating')
                 iterable_kwargs = sr[2]
                 for k, v in iterable_kwargs.items():
                     if isinstance(v, BaseNormalDistributionDispersion):
                         v.generate_values(num_values=sr[1])
-                        print(f'regenerated {k}.')
-            pass
-            # Create and disperse that number of shapes in the structure.
+            with LogWithoutFormatContext(self.dispersion_logger):
+                self.dispersion_logger.debug('Done. **\n')
+
+            # Try to disperse this generation of shapes in the structure.
             self.disperse_shapes(max_attempts=max_attempts, max_trials=max_trials)
+
             # Compare target VF with the instance's real voxel-based VF.
             vf_diff = abs(self.shape_array_volume_fraction - target_vf)
-            print(f'VF={self.shape_array_volume_fraction}, vf_diff={vf_diff}, vf_tolerance={vf_tolerance}')
+            if vf_diff <= vf_tolerance:
+                vf_dispersion_status = True
+                dispersion_status_str = '... Accepted!'
+            else:
+                vf_dispersion_status = False
+                dispersion_status_str = '... Rejected!'
+
+            self.dispersion_logger.debug(
+                f"Generation {gen_number} dispersed. "
+                f"VF={self.shape_array_volume_fraction:.6f}, "
+                f"Target VF={target_vf:.6}, Delta VF={vf_diff:.6f} "
+                f"{'<' if vf_dispersion_status else '>'} {vf_tolerance} "
+                f"{dispersion_status_str}\n")
+
+            raise
             print(vf_diff <= vf_tolerance)
             if vf_diff <= vf_tolerance:
                 print('sadsfg')

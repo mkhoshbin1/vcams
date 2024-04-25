@@ -28,8 +28,8 @@ num_shapes = 7
 circle_r = TruncatedNormalDistributionDispersion(target_mean=0.10, target_std=0.03, bound_a=min_valid_r)
 circle_xc = RandomDispersion(0, part.real_size[0], bound)
 circle_yc = RandomDispersion(0, part.real_size[1], bound)
-shape_disp_array_obj.add_shape_request2(num_shapes=None, cls=Circle,
-                                        xc=circle_xc, yc=circle_yc, r=circle_r, br=bound)
+shape_disp_array_obj.add_shape_request(num_shapes=None, cls=Circle,
+                                       xc=circle_xc, yc=circle_yc, r=circle_r, br=bound)
 
 # Request ellipses.
 ellipse_a = TruncatedNormalDistributionDispersion(target_mean=0.10, target_std=0.03, bound_a=min_valid_r)
@@ -37,18 +37,17 @@ ellipse_aspect_ratio = TruncatedNormalDistributionDispersion(target_mean=1.5, ta
 ellipse_xc = RandomDispersion(0, part.real_size[0])
 ellipse_yc = RandomDispersion(0, part.real_size[1])
 ellipse_alpha = RandomDispersion(low=0, high=360)
-shape_disp_array_obj.add_shape_request2(num_shapes=None, cls=EllipseFromAspectRatio,
-                                        xc=ellipse_xc, yc=ellipse_yc, alpha=ellipse_alpha,
-                                        a=ellipse_a, aspect_ratio=ellipse_aspect_ratio,
-                                        ba=bound, bb=bound)
+shape_disp_array_obj.add_shape_request(num_shapes=None, cls=EllipseFromAspectRatio,
+                                       xc=ellipse_xc, yc=ellipse_yc, alpha=ellipse_alpha,
+                                       a=ellipse_a, aspect_ratio=ellipse_aspect_ratio,
+                                       ba=bound, bb=bound)
 
 # suitable_num_shapes = shape_disp_array_obj._find_suitable_num_shapes(target_vf=0.30, vf_tolerance=0.01,
 #                                                                      print_progress=True)
 # shape_disp_array_obj.disperse_shapes_knapsack(suitable_num_shapes)
 
 shape_disp_array_obj.disperse_shapes_vf(target_vf=0.20, vf_tolerance=0.01,
-                                        max_attempts=100, max_trials=100,
-                                        print_progress=True)
+                                        max_attempts=100, max_trials=100)
 
 # #
 # #
@@ -98,6 +97,8 @@ part.apply_mask(mask=shape_disp_array_obj.mask, value=2)
 #
 # len(part.data[part.data==2]) / part.data.size
 #
+part.add_bc(bc_type='Periodic')
+
 # # Output the part.
 part.output_abaqus_inp(file_name='ex_c12_shape_dispersion_volume',
                        elem_code='CPE4R', dim='2D',
