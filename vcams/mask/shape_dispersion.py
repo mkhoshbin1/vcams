@@ -30,6 +30,9 @@ class TooManyDispersionAttemptsError(Exception):
 class TooManyDispersionTrialsError(Exception):
     pass
 
+class TooManyDispersionGenerationsError(Exception):
+    pass
+
 
 class TooMuchDeviationError(Exception):
     pass
@@ -474,7 +477,7 @@ class ShapeDispersionArray(ShapeArray):
         self._backup_dict['shape_requests'] = deepcopy(self.shape_requests)
 
     def _restore_state(self, backup_dict=None):
-        super()._restore_state()
+        super()._restore_state(backup_dict)
         if backup_dict is None:
             backup_dict = self._backup_dict
         self.shape_requests = deepcopy(backup_dict['shape_requests'])
@@ -886,7 +889,8 @@ class ShapeDispersionArray(ShapeArray):
     def disperse_shapes_vf(self, target_vf: float, vf_tolerance: float,
                            start_num_shapes: int = 5, max_num_shapes: int = 5000,
                            solver_mode: str = 'BISECTION',
-                           max_attempts: int = 5000, max_trials: int = 100):
+                           max_attempts: int = 5000, max_trials: int = 100,
+                           max_generations: int = 100):
         """FIXME
         Disperse shapes in the *ShapeDispersionArray* instance according to
         the shape requests. All shape requests are processed and then :attr:`shape_requests`
@@ -920,12 +924,19 @@ class ShapeDispersionArray(ShapeArray):
         for sr in self.shape_requests:
             sr[1] = num_shapes
 
-        # self_backup = deepcopy(self._backup_dict)
+
         self.dispersion_logger.debug(f"Trying to disperse shapes in part '{self.part_name}'.\n"
                                      f"{' '*11}Shape requests will be regenerated a maximum of {10} times.\n"
                                      f"{' '*11}Each generation will be dispersed for {max_trials} tries,\n"
                                      f"{' '*11}in which {max_attempts} placement attempts will be made for each shape.\n")
-        for gen_number in range(10):
+        # TODO: add VF to the logger.
+        # TODO: main logger.
+        # Backup the shape array instance's state.
+        # Note that the instance's _backup_dict will be overwritten
+        # as part of the process and so we have to create a copy for this loop.
+        self._backup_state()
+        vf_dispersion_backup = deepcopy(self._backup_dict)
+        for gen_number in range(max_generations):
             # fix this. it doesn't loop properly.
             # Regenerate all shape requests (subclasses of BaseNormalDistributionDispersion).
             self.dispersion_logger.debug(f'** Generation {gen_number}: Regenerating shape requests ... ')
@@ -956,15 +967,15 @@ class ShapeDispersionArray(ShapeArray):
                 f"{'<' if vf_dispersion_status else '>'} {vf_tolerance} "
                 f"{dispersion_status_str}\n")
 
-            raise
-            print(vf_diff <= vf_tolerance)
-            if vf_diff <= vf_tolerance:
-                print('sadsfg')
+            if vf_dispersion_status:
+                self.dispersion_logger.debug(f'Dispersion based on volume fraction '
+                                             f'was successful within the given tolerance '
+                                             f'after {gen_number} generations.')
                 return
             else:
+                self._restore_state(backup_dict=vf_dispersion_backup)
                 continue
-
-        # raise
+        raise TooManyDispersionGenerationsError(f'Dispersion failed after {max_generations} generations.')
 
     # FIXME: add knapsack here.
     # It should use the analytical volume for finding the optimal numner of shapes.

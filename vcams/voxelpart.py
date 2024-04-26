@@ -13,7 +13,7 @@ from numpy import ndarray, rot90
 
 from . import __version__, __website__
 from .helper import is_name_valid, return_default_results_path, read_configuration
-from .logger_conf import setup_logger
+from .logger_conf import setup_main_logger
 from .mask.function import mask_from_function
 from .mask.image import mask_from_image, mask_from_image_sequence
 from .mask.shape import ShapeArray, Circle, Sphere
@@ -150,8 +150,8 @@ class VoxelPart:
 
         # Create and configure the logger.
         self._log_file_path = Path(self.results_path) / (name + '.log')  # Make sure it's necessary.
-        setup_logger(logger_name=__name__, log_file=self._log_file_path, display_log=False,
-                     overwrite_logs=overwrite_logs, log_debug=log_debug)
+        setup_main_logger(log_file=self._log_file_path, display_log=True,
+                          overwrite_logs=overwrite_logs, log_debug=log_debug)
         # TODO: add display_log as parameter.
 
         # Log creation of the object.

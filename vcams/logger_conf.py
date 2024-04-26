@@ -3,13 +3,10 @@ import logging
 from pathlib import Path
 
 
-# self._log_file_path = Path(self.results_path) / (name + '.log')
-
-# Create and configure the logger.
-def setup_logger(logger_name: str, log_file: Path, display_log: bool = False,
-                 overwrite_logs: bool = True, log_debug: bool = False):
+def setup_main_logger(log_file: Path, display_log: bool = False,
+                      overwrite_logs: bool = True, log_debug: bool = False):
     """TODO: doc"""
-    logger_obj = logging.getLogger(logger_name)
+    logger_obj = logging.getLogger()
     filemode = 'w' if overwrite_logs else 'a'
 
     log_level = logging.DEBUG if log_debug else logging.INFO
@@ -61,7 +58,7 @@ class LogWithoutFormatContext():
     # See Python Logging Cookbook.
     bare_handler_formatter = logging.Formatter(fmt='')
 
-    def __init__(self, logger_obj):  #, level=None, handler=None, close=True):
+    def __init__(self, logger_obj):  # , level=None, handler=None, close=True):
         self.logger_obj = logger_obj
         self.old_formatter_list = []
 
@@ -74,12 +71,11 @@ class LogWithoutFormatContext():
         for hndlr in self.logger_obj.handlers:
             hndlr.setFormatter(self.old_formatter_list.pop(0))
 
-
 # def log_without_format(logger_obj, handler_class=None):
-    # bare_handler_formatter = logging.Formatter(fmt='')
-    # for hndlr in logger_obj.handlers:
-    #     if (handler_class is None) or isinstance(hndlr, handler_class):
-    #         old_formatter = hndlr.formatter
-    #         hndlr.setFormatter(bare_handler_formatter)
-    #         logger_obj.debug('sadsfg')
-    #         hndlr.setFormatter(old_formatter)
+# bare_handler_formatter = logging.Formatter(fmt='')
+# for hndlr in logger_obj.handlers:
+#     if (handler_class is None) or isinstance(hndlr, handler_class):
+#         old_formatter = hndlr.formatter
+#         hndlr.setFormatter(bare_handler_formatter)
+#         logger_obj.debug('sadsfg')
+#         hndlr.setFormatter(old_formatter)
