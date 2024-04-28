@@ -637,7 +637,7 @@ class ShapeDispersionArray(ShapeArray):
 
         # Add the shape request as a tuple to the instance's shape_requests list.
         self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
-        # logger.debug(f'Adding a shape request for the {cls} class, ')  TODO: main logger doesn't work.
+        logger.debug(f'Adding a shape request for the {cls.__name__} class.')
 
     def disperse_shapes(self, max_attempts: int = 5000, max_trials: int = 100):
         """Disperse shapes in the *ShapeDispersionArray* instance according to

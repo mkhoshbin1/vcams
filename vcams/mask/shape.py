@@ -163,7 +163,7 @@ class BaseShape(ABC):
 
         # Shape mask is calculated here but is not stored to save memory.
         shape_mask = mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size,
-                                        func=self.func, boundary_on=boundary_on)
+                                        func=self.func, boundary_on=boundary_on, do_log=False)
         self._num_true_voxels = count_nonzero(shape_mask)
         # Calculate shape properties related to voxel_size and part shape.
         if self.dim == '2D':

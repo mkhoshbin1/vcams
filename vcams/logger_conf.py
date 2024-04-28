@@ -6,7 +6,8 @@ from pathlib import Path
 def setup_main_logger(log_file: Path, display_log: bool = False,
                       overwrite_logs: bool = True, log_debug: bool = False):
     """TODO: doc"""
-    logger_obj = logging.getLogger()
+    logger_name = 'vcams'  # This will become the root for all library-level logs.
+    logger_obj = logging.getLogger(logger_name)
     filemode = 'w' if overwrite_logs else 'a'
 
     log_level = logging.DEBUG if log_debug else logging.INFO
