@@ -30,6 +30,7 @@ class TooManyDispersionAttemptsError(Exception):
 class TooManyDispersionTrialsError(Exception):
     pass
 
+
 class TooManyDispersionGenerationsError(Exception):
     pass
 
@@ -639,7 +640,7 @@ class ShapeDispersionArray(ShapeArray):
         self.shape_requests.append([cls, num_shapes, iterable_kwargs, scalar_kwargs])
         logger.debug(f'Adding a shape request for the {cls.__name__} class.')
 
-    def disperse_shapes(self, max_attempts: int = 5000, max_trials: int = 100):
+    def disperse_shapes(self, max_attempts: int = 5000, max_trials: int = 100, log_main: bool = True):
         """Disperse shapes in the *ShapeDispersionArray* instance according to
         the shape requests. All shape requests are processed
         and then :attr:`shape_requests` is emptied.
@@ -661,14 +662,16 @@ class ShapeDispersionArray(ShapeArray):
                           If exceeded, the trial ends and the process is restarted.
             max_trials:   The maximum number of trials. If exceeded,
                           :class:`TooManyDispersionTrialsError` is raised.
+            log_main:     TODO
 
         Raises:
             TooManyDispersionTrialsError: Too many trials were done.
                                           Note that each trials entails many attempts.
         """
-
-        self.dispersion_logger.debug('Dispersing shapes in the ShapeDispersionArray.\n')
-        logger.debug('Dispersing shapes in the ShapeDispersionArray.')
+        begin_msg = 'Dispersing shapes in the ShapeDispersionArray.'
+        self.dispersion_logger.debug(begin_msg + '\n')
+        if log_main:
+            logger.debug(begin_msg)
         if max_attempts < 1:
             raise ValueError('max_attempts should be >= 1.')
         if max_trials < 1:
@@ -710,17 +713,19 @@ class ShapeDispersionArray(ShapeArray):
         # or it has ended which means we have run out of trials without success.
         if dispersion_success:
             elapsed_time = time.perf_counter() - begin_time
-            self._log_dispersion_success(elapsed_time)
+            self._log_dispersion_success(elapsed_time, log_main)
             self.shape_requests = []
             self._backup_dict = dict()
         else:
             raise TooManyDispersionTrialsError(f'Dispersion has been unsuccessful after {max_trials} trials.')
 
-    def _log_dispersion_success(self, elapsed_time):
+    def _log_dispersion_success(self, elapsed_time, log_main):
         """Log the success of the dispersion process."""
-        self.dispersion_logger.debug(f"Part '{self.part_name}': "
-                                     f"{self.num_requested_shapes} shapes dispersed "
-                                     f"successfully in {elapsed_time:.2f} seconds.\n")
+        success_msg = (f'{self.num_requested_shapes} shapes dispersed successfully '
+                       f'in {elapsed_time:.2f} seconds.')
+        self.dispersion_logger.debug(success_msg + '\n')
+        if log_main:
+            logger.info(success_msg)
 
     def _find_suitable_num_shapes(self, target_vf: float, vf_tolerance: float,
                                   start_num_shapes: int = 5, max_num_shapes: int = 5000,
@@ -924,19 +929,21 @@ class ShapeDispersionArray(ShapeArray):
         for sr in self.shape_requests:
             sr[1] = num_shapes
 
-
         self.dispersion_logger.debug(f"Trying to disperse shapes in part '{self.part_name}'.\n"
-                                     f"{' '*11}Shape requests will be regenerated a maximum of {10} times.\n"
-                                     f"{' '*11}Each generation will be dispersed for {max_trials} tries,\n"
-                                     f"{' '*11}in which {max_attempts} placement attempts will be made for each shape.\n")
-        # TODO: add VF to the logger.
-        # TODO: main logger.
+                                     f"{' ' * 11}Target volume fraction is {target_vf:.6} "
+                                     f"and tolerance is {vf_tolerance}.\n"
+                                     f"{' ' * 11}Shape requests will be regenerated a maximum of {10} times.\n"
+                                     f"{' ' * 11}Each generation will be dispersed for {max_trials} tries,\n"
+                                     f"{' ' * 11}in which {max_attempts} placement attempts "
+                                     f"will be made for each shape.\n")
+        logger.info(f"Trying to disperse shapes in part '{self.part_name}'. "
+                    f"Target volume fraction is {target_vf:.6} and tolerance is {vf_tolerance}.")
         # Backup the shape array instance's state.
         # Note that the instance's _backup_dict will be overwritten
-        # as part of the process and so we have to create a copy for this loop.
+        # as part of the process so we have to create a copy for this loop.
         self._backup_state()
         vf_dispersion_backup = deepcopy(self._backup_dict)
-        for gen_number in range(max_generations):
+        for gen_number in range(1, max_generations+1):
             # fix this. it doesn't loop properly.
             # Regenerate all shape requests (subclasses of BaseNormalDistributionDispersion).
             self.dispersion_logger.debug(f'** Generation {gen_number}: Regenerating shape requests ... ')
@@ -949,7 +956,7 @@ class ShapeDispersionArray(ShapeArray):
                 self.dispersion_logger.debug('Done. **\n')
 
             # Try to disperse this generation of shapes in the structure.
-            self.disperse_shapes(max_attempts=max_attempts, max_trials=max_trials)
+            self.disperse_shapes(max_attempts=max_attempts, max_trials=max_trials, log_main=False)
 
             # Compare target VF with the instance's real voxel-based VF.
             vf_diff = abs(self.shape_array_volume_fraction - target_vf)
@@ -968,9 +975,10 @@ class ShapeDispersionArray(ShapeArray):
                 f"{dispersion_status_str}\n")
 
             if vf_dispersion_status:
-                self.dispersion_logger.debug(f'Dispersion based on volume fraction '
-                                             f'was successful within the given tolerance '
-                                             f'after {gen_number} generations.')
+                success_msg = (f'Dispersion based on volume fraction was successful '
+                               f'within the given tolerance after {gen_number} generations.')
+                self.dispersion_logger.debug(success_msg + '\n')
+                logger.info(success_msg)
                 return
             else:
                 self._restore_state(backup_dict=vf_dispersion_backup)
