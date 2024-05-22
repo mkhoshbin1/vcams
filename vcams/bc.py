@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TieConstraint:
     """Class for tying a master set (single node) and a slave set (multiple nodes).
-    The tie is defined using the ``\*EQUATION`` keyword with the coefficients set to +1 and -1."""
+    The tie is defined using the ``*EQUATION`` keyword with the coefficients set to +1 and -1."""
     dof: int
     """Degree of freedom used in the constraint."""
     rp_set_name: str
@@ -148,8 +148,6 @@ class Pbc3DVertexConstraint(BasePbcConstraint):
 
 @dataclass
 class Pbc2DEdgeConstraint:
-    # TODO: add shear component similar to 3d and test.
-    # TODO: document.
     part_instance_name: str
     dof: int
     dummy_names: str
@@ -217,7 +215,6 @@ def create_bc(part, dim: str) -> list:
         A list of constraint objects. The number and class of list contents
         depends on the VoxelPart object's *_bc_type* property.
     """
-    # TODO: add value of the bc.
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
 
@@ -317,7 +314,7 @@ def create_bc(part, dim: str) -> list:
         raise ValueError('Invalid value for bc_type.')
 
 
-def add_2d_pbc_constraints(part, typ: str, dof: int,
+def add_2d_pbc_constraints(part, typ: str, dof: int | None,
                            dummy_names: Union[str, tuple],
                            dummy_coeffs: Union[float, tuple],
                            set_names: tuple) -> list:
@@ -326,14 +323,18 @@ def add_2d_pbc_constraints(part, typ: str, dof: int,
     in Eq. :eq:`bc-eq-pbc2d` can be implemented using this function.
 
     Args:
-        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
+        part (VoxelPart): The *VoxelPart* object on which the operation is performed.
         typ: Type of the node sets to be constrained. Valid values are 'edge' and 'vertex'.
-        dummy_names: Tuple of the names of the sets containing the dummy nodes for the equation
-                     or in the case of ``typ==vertex``, a single string.
-        dummy_coeffs: Tuple of the values of the coefficients for the dummy nodes.
-                      or in the case of ``typ==vertex``, a single float.
+        dof: If *typ=edge*, must be either be 1 or 2, otherwise is not used. Defaults to *None*.
+        dummy_names: If *typ=edge*, a tuple containing the names of the
+                     two sets containing the dummy nodes for the equation.
+                     If *typ=vertex*, a single string denoting the name of the vertex set.
+                     Otherwise, an error is raised.
+        dummy_coeffs: If *typ=edge*, a single float or
+                      if *typ=vertex*, a tuple containing the coefficients for the dummy nodes.
+                      Otherwise, an error is raised.
         set_names: Tuple of the names of the sets of the edges or vertices to be constrained.
-                   The sets must contain the same number of nodes
+                   The sets must contain the same number of nodes,
                    and they must be in the same order.
 
     Returns:
@@ -346,6 +347,8 @@ def add_2d_pbc_constraints(part, typ: str, dof: int,
         raise ValueError("Sets '%s' and '%s' are of different lengths."
                          "This should have been caught before calling this function.")
     if typ.lower() == 'edge':
+        if dof not in (1, 2):
+            raise ValueError(f"For type='edge', dof must be 1 or 2 but is {dof}.")
         return [Pbc2DEdgeConstraint(instance_name, dof, dummy_names, dummy_coeffs, set1_ids[i], set2_ids[i])
                 for i in range(len(set1_ids))]
     elif typ.lower() == 'vertex':
@@ -406,27 +409,26 @@ def create_node_sets(part, dim: str,
         part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         dim: Dimensionality of the output part. Valid values are '2D' and '3D'.
         vertices: If True, node sets for the vertices will be created.
-        edges (bool): If True, node sets for the edges will be created.
-        faces (bool): If True, node sets for the faces will be created.
-                      If dim is set to '2D', this variable will be automatically set to False.
-        explicit_sets (bool): If True, explicit node sets are created for vertices, edges, and faces.
-                            as described in the section titled :ref:`boundary-conditions-pbc`.
-        simple_sets (bool): If True, simplified node sets are created for complete faces
-                            as described in the section titled :ref:`boundary-conditions-lin-disp`.
+        edges: If True, node sets for the edges will be created.
+        faces: If True, node sets for the faces will be created.
+               If dim is set to '2D', this variable will be automatically set to False.
+        explicit_sets: If True, explicit node sets are created for vertices, edges, and faces.
+                       as described in the section titled :ref:`boundary-conditions-pbc`.
+                       Defaults to *False*.
+        simple_sets: If True, simplified node sets are created for complete faces
+                     as described in the section titled :ref:`boundary-conditions-lin-disp`.
+                     Defaults to *True*.
     """
-    # TODO: use func for concatenation of edges and vertices and faces which correctly handles empties.
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
     if dim.upper() == '2D':
         faces = False
 
     if not any([vertices, edges, faces]):
-        raise ValueError("At least one of vertices, edges and faces must be set to True.")
+        raise ValueError('At least one of vertices, edges and faces must be set to True.')
 
     if not any([explicit_sets, simple_sets]):
-        raise ValueError("At least one of explicit_sets and simple_sets must be set to True.")
-
-    # TODO: Consider checking part.data for missing elements.
+        raise ValueError('At least one of explicit_sets and simple_sets must be set to True.')
 
     # Define a ravel function based on numpy.ravel_multi_index.
     def custom_ravel(inds):
