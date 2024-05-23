@@ -160,7 +160,7 @@ class Pbc2DEdgeConstraint:
     :math:`D` and :math:`C` are the dummy node and coefficient
     used for the equation.
 
-    Note that this class behaves differently from other similar classes.
+    Note that this class behaves differently from the children of :class:`BasePbcConstraint`.
     While they define equations for all DOFs,
     this class receives a *dof* which can either be 1 or 2,
     and sets *aux_dof* to be the other one.
@@ -169,14 +169,22 @@ class Pbc2DEdgeConstraint:
     in Eq. :eq:`bc-eq-pbc2d`. Compatible vertices and the value of coefficients
     must be taken from Eq. :eq:`bc-eq-pbc2d`.
 
-    The parameters for creating an object are similar to :class:`BasePbcConstraint`.
+    The parameters for creating an object are:
     """
     part_instance_name: str
+    """Name of the part instance that the nodes belong to."""
     dof: int
+    """The DOF for which the first equation is defined.
+    It must be 1 or 2 and the other value is assigned to *aux_dof*
+    for which the second equation is defined."""
     dummy_names: str
+    """Name of the set containing the dummy node."""
     dummy_coeffs: float
+    """Value of the coefficient for the dummy node."""
     node1_id: int
+    """ID of the first node used for the equation."""
     node2_id: int
+    """ID of the second node used for the equation."""
 
     def __post_init__(self):
         if self.dof == 1:
@@ -397,7 +405,7 @@ def add_3d_pbc_constraints(part, typ: str,
         dummy_coeffs: Tuple of the values of the coefficients for the dummy nodes.
                       or in the case of ``typ==vertex``, a single float.
         set_names: Tuple of the names of the sets of the edges or vertices to be constrained.
-                   The sets must contain the same number of nodes
+                   The sets must contain the same number of nodes,
                    and they must be in the same order.
 
     Returns:
