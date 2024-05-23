@@ -75,7 +75,8 @@ class Pbc3DFaceConstraint(BasePbcConstraint):
     and the equation is written for all DOFs, i.e. :math:`i=1,2,3`
     Note that :math:`C_j` is typically supplied as a negative value.
 
-    The parameters for creating an object are similar to :class:`BasePbcConstraint`:
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`,
+    except for the meaning of *dummy_names* and *dummy_coeffs* which are:
     """
     dummy_names: str
     """Name of the set containing the dummy node :math:`D_j`."""
@@ -107,7 +108,7 @@ class Pbc3DEdgeConstraint(BasePbcConstraint):
     in Eq. :eq:`bc-eq-pbc`. Compatible edges, dummy nodes,
     and the value of coefficients must be taken from Eq. :eq:`bc-eq-pbc`.
 
-    The parameters for creating an object are similar to :class:`BasePbcConstraint`:
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`.
     """
 
     def __repr__(self):
@@ -134,7 +135,7 @@ class Pbc3DVertexConstraint(BasePbcConstraint):
     in Eq. :eq:`bc-eq-pbc`. Compatible vertices and the value of coefficients
     must be taken from Eq. :eq:`bc-eq-pbc`.
 
-    The parameters for creating an object are similar to :class:`BasePbcConstraint`:
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`.
     """
     def __repr__(self):
         return ''.join((f'*Equation\n5\n'
@@ -148,6 +149,28 @@ class Pbc3DVertexConstraint(BasePbcConstraint):
 
 @dataclass
 class Pbc2DEdgeConstraint:
+    """Class for defining the following *two* 2D PBC constraints
+    between a dummy nodes and two nodes on vertices of a square:
+
+    .. math::
+       u_{dof}^{V2} - u_{dof}^{V1} + C u_{dof}^{D} = 0 \\\\
+       u_{aux\_dof}^{V2} - u_{aux\_dof}^{V1} = 0
+
+    where :math:`V1` and :math:`V2` are two compatible vertices,
+    :math:`D` and :math:`C` are the dummy node and coefficient
+    used for the equation.
+
+    Note that this class behaves differently from other similar classes.
+    While they define equations for all DOFs,
+    this class receives a *dof* which can either be 1 or 2,
+    and sets *aux_dof* to be the other one.
+
+    The above equation is a generalization of the vertex equations
+    in Eq. :eq:`bc-eq-pbc2d`. Compatible vertices and the value of coefficients
+    must be taken from Eq. :eq:`bc-eq-pbc2d`.
+
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`.
+    """
     part_instance_name: str
     dof: int
     dummy_names: str
@@ -188,7 +211,7 @@ class Pbc2DVertexConstraint(BasePbcConstraint):
     in Eq. :eq:`bc-eq-pbc2d`. Compatible vertices and the value of coefficients
     must be taken from Eq. :eq:`bc-eq-pbc2d`.
 
-    The parameters for creating an object are similar to :class:`BasePbcConstraint`:
+    The parameters for creating an object are similar to :class:`BasePbcConstraint`.
     """
     def __repr__(self):
         return ''.join((f'*Equation\n4\n'
