@@ -29,8 +29,8 @@ class TieConstraint:
 
     def __repr__(self):
         return (f'*Equation\n2\n'
-                f'"{self.slave_set_name}", {self.dof}, -1.0\n'
-                f'"{self.rp_set_name}", {self.dof}, +1.0\n')
+                f'"{self.slave_set_name}", {self.dof}, -1.\n'
+                f'"{self.rp_set_name}", {self.dof}, +1.\n')
 
 
 @dataclass
