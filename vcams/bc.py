@@ -8,12 +8,19 @@ of the basic concepts.
 
 import logging
 from abc import abstractmethod, ABC
-from typing import Union
+from typing import Union, Iterable
 from dataclasses import dataclass
 
-from numpy import ravel_multi_index, array, arange, meshgrid, concatenate
+from numpy import ravel_multi_index, array, arange, meshgrid, concatenate, unique, intersect1d, isin, count_nonzero
+from numpy._typing import NDArray
+
+from vcams.helper import validate_materials_to_be_output
 
 logger = logging.getLogger(__name__)
+
+
+class BcNotApplicableError(Exception):
+    pass
 
 
 @dataclass
@@ -137,6 +144,7 @@ class Pbc3DVertexConstraint(BasePbcConstraint):
 
     The parameters for creating an object are similar to :class:`BasePbcConstraint`.
     """
+
     def __repr__(self):
         return ''.join((f'*Equation\n5\n'
                         f'"{self.part_instance_name}".{self.node2_id + 1}, {dof}, 1.\n'
@@ -161,9 +169,8 @@ class Pbc2DEdgeConstraint:
     used for the equation.
 
     Note that this class behaves differently from the children of :class:`BasePbcConstraint`.
-    While they define equations for all DOFs,
-    this class receives a *dof* which can either be 1 or 2,
-    and sets *aux_dof* to be the other one.
+    While they define equations for all DOFs, this class receives a *dof* which can
+    either be 1 or 2, and sets *aux_dof* to be the other one.
 
     The above equation is a generalization of the vertex equations
     in Eq. :eq:`bc-eq-pbc2d`. Compatible vertices and the value of coefficients
@@ -221,6 +228,7 @@ class Pbc2DVertexConstraint(BasePbcConstraint):
 
     The parameters for creating an object are similar to :class:`BasePbcConstraint`.
     """
+
     def __repr__(self):
         return ''.join((f'*Equation\n4\n'
                         f'"{self.part_instance_name}".{self.node2_id + 1}, {dof}, 1.\n'
@@ -231,7 +239,8 @@ class Pbc2DVertexConstraint(BasePbcConstraint):
 
 
 # noinspection PyProtectedMember
-def create_bc(part, dim: str) -> list:
+def create_bc(part, dim: str, mat_codes_to_accept: str | int | Iterable | NDArray,
+              max_empty_border_elems: float = 0.5) -> list:
     """Create a boundary condition (BC) for a VoxelPart object.
 
     This function uses the VoxelPart object's *_bc_type* property and
@@ -241,6 +250,10 @@ def create_bc(part, dim: str) -> list:
     Args:
         part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         dim: Dimensionality of the intended output. Valid values are '2D' and '3D'.
+        max_empty_border_elems: Maximum ratio of empty elements in each border or edge.
+                                Defaults to 0.5 which means 50%.
+        mat_codes_to_accept: See the *material_list* parameter of
+                             :func:`helper.validate_materials_to_be_output`.
 
     Returns:
         A list of constraint objects. The number and class of list contents
@@ -255,7 +268,18 @@ def create_bc(part, dim: str) -> list:
         logger.info('No BCs have been created.')
         return []
 
-    elif bc_type.upper() == 'NODESET ONLY':
+    bc_applicability_status = check_border_elements(part, dim,
+                                                    mat_codes_to_accept, max_empty_border_elems)
+    if bc_applicability_status == 'OK':
+        pass
+    elif bc_applicability_status == 'WINDOW':
+        raise BcNotApplicableError("The part's boundaries contain some empty elements which invalidate BCs. "
+                                   "This can be mitigated using The Window Method,"
+                                   "which has not been implemented yet.")
+    elif bc_applicability_status == 'UNABLE':
+        raise BcNotApplicableError("The part's boundaries contain too many empty elements which invalidate BCs.")
+
+    if bc_type.upper() == 'NODESET ONLY':
         create_node_sets(part, dim, vertices=part._bc_nodeset_vertices,
                          edges=part._bc_nodeset_edges, faces=part._bc_nodeset_faces,
                          explicit_sets=part._bc_nodeset_explicit, simple_sets=part._bc_nodeset_simple)
@@ -343,6 +367,72 @@ def create_bc(part, dim: str) -> list:
 
     else:
         raise ValueError('Invalid value for bc_type.')
+
+
+def check_border_elements(part, dim: str,
+                          mat_codes_to_accept: str | int | Iterable | NDArray,
+                          max_empty_border_elems: float = 0.5) -> str:
+    """Check the border elements for empty space and return the status.
+
+    Args:
+        part (VoxelPart): The *VoxelPart* instance where operations take place.
+        dim: Dimensionality of the intended output. Valid values are '2D' and '3D'.
+        max_empty_border_elems: Maximum ratio of empty elements in each border or edge.
+                                Defaults to 0.5 which means 50%.
+        mat_codes_to_accept: See the *material_list* parameter of
+                             :func:`helper.validate_materials_to_be_output`.
+
+    Returns:
+        One of the following strings:
+
+          - *'OK'* if all border elements are non-empty and the BC can be applied as is.
+          - *'WINDOW'* if there are empty elements in some border areas,
+            but the ratio of empty to non-empty is acceptable for each border area.
+            This means that BCs can be applied using the Window Method.
+          - *'FAIL'* if the part has too many non-empty elements in the borders and
+            BCs cannot be applied.
+
+    """
+    # Validate parameters.
+    mat_codes_to_accept = validate_materials_to_be_output(part, mat_codes_to_accept)
+    if dim.upper() not in ['2D', '3D']:
+        raise ValueError("dim can only be one of '2D' or '3D'.")
+    if max_empty_border_elems <= 0.05:
+        raise ValueError('max_empty_border_elems should be greater or equal to 0.05.')
+
+    arr = part.data
+    # Create a list of arrays for each border area.
+    # Note that there is an overlap between border areas which is OK.
+    if dim.upper() == '2D':
+        border_arrays_list = (arr[0, :], arr[-1, :],
+                              arr[:, 0], arr[:, -1])
+    elif dim.upper() == '3D':
+        border_arrays_list = (arr[0, :, :], arr[-1, :, :],
+                              arr[:, 0, :], arr[:, -1, :],
+                              arr[:, :, 0], arr[:, :, -1])
+    else:
+        raise RuntimeError('Invalid Value for dim. This should have been caught earlier.')
+
+    # Count the number of rejected elements in each border array.
+    num_rejected_elems_list = []
+    num_border_elems_list = []
+    for bal in border_arrays_list:
+        num_rejected_elems_list.append(
+            count_nonzero(
+                isin(element=bal, test_elements=mat_codes_to_accept, invert=True, kind='table')))
+        num_border_elems_list.append(bal.size)
+
+    # Determine status based on the number of rejected elements.
+    # Start with OK.
+    status = 'OK'
+    # If there are any rejected border elements the window method must be used.
+    if any(array(num_rejected_elems_list) != 0):
+        status = 'WINDOW'
+    # If there are too many rejected border elements, even the window method won't work.
+    if any((array(num_rejected_elems_list) / array(num_border_elems_list)) > max_empty_border_elems):
+        status = 'UNABLE'
+
+    return status
 
 
 def add_2d_pbc_constraints(part, typ: str, dof: int | None,
