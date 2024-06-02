@@ -1,4 +1,5 @@
 """Various helper functions used throughout the library."""
+
 import csv
 from configparser import ConfigParser
 from io import StringIO
@@ -7,7 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from numpy import unique
-from numpy._typing import NDArray
+from numpy.typing import NDArray
 
 from vcams.mask.tpms import tpms_dict
 
@@ -18,7 +19,7 @@ def is_name_valid(name: str) -> bool:
     # noinspection GrazieInspection
     """Check whether a string represents a valid name.
     Abaqus™ has many rules for names (labels) in the input files.
-    Here, The most strict combination is implemented here to ensure that
+    The strictest combination is implemented here to ensure that
     a name is suitable for all purposes.
 
     This means that a name:
@@ -48,7 +49,8 @@ def is_name_valid(name: str) -> bool:
     Returns:
         Returns True for a valid name otherwise returns False.
     """
-    # TODO: consider regex: ^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$
+    # The regex ^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$
+    # MAY be useful but the following method is easier to understand.
     forbidden_chars = "$&*~!()[]{}|;\'`\",.?/\\"
     if not isinstance(name, str):
         return False
@@ -70,7 +72,8 @@ def is_name_valid(name: str) -> bool:
 
 
 def return_default_results_path(part_name: str = None) -> Path:
-    """Return a suitable path in the user's Desktop for storing the intermediate and final results of the program.
+    """Return a suitable path in the user's Desktop for storing
+    the intermediate and final results of the program.
 
     Args:
         part_name: Name of the part which is to be output
@@ -111,10 +114,10 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         file_path: Path to the configuration file.
 
     Returns:
-        A tuple of the following dictionaries (part_creation_dict, part_manipulation_dict, bc_dict, output_dict).
+        A tuple of the following dictionaries *(part_creation_dict, part_manipulation_dict, bc_dict, output_dict)*.
     """
     # Read the config file.
-    logger.debug('Trying to read configuration file at %s' % file_path)
+    logger.debug('Reading configuration file at %s' % file_path)
     config = ConfigParser()
     config.read(file_path)
 

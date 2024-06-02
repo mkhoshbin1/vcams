@@ -8,11 +8,11 @@ of the basic concepts.
 
 import logging
 from abc import abstractmethod, ABC
-from typing import Union, Iterable
 from dataclasses import dataclass
+from typing import Union, Iterable
 
-from numpy import ravel_multi_index, array, arange, meshgrid, concatenate, unique, intersect1d, isin, count_nonzero
-from numpy._typing import NDArray
+from numpy import ravel_multi_index, array, arange, meshgrid, concatenate, isin, count_nonzero
+from numpy.typing import NDArray
 
 from vcams.helper import validate_materials_to_be_output
 
@@ -383,14 +383,14 @@ def check_border_elements(part, dim: str,
                              :func:`helper.validate_materials_to_be_output`.
 
     Returns:
-        One of the following strings:
+        One of the following strings
 
-          - *'OK'* if all border elements are non-empty and the BC can be applied as is.
-          - *'WINDOW'* if there are empty elements in some border areas,
-            but the ratio of empty to non-empty is acceptable for each border area.
-            This means that BCs can be applied using the Window Method.
-          - *'FAIL'* if the part has too many non-empty elements in the borders and
-            BCs cannot be applied.
+        - *'OK'* if all border elements are non-empty and the BC can be applied as is.
+        - *'WINDOW'* if there are empty elements in some border areas,
+          but the ratio of empty to non-empty is acceptable for each border area.
+          This means that BCs can be applied using the Window Method.
+        - *'FAIL'* if the part has too many non-empty elements in the borders and
+          BCs cannot be applied.
 
     """
     # Validate parameters.
