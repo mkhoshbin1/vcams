@@ -4,6 +4,10 @@ from configparser import ConfigParser
 from io import StringIO
 from logging import getLogger
 from pathlib import Path
+from typing import Iterable
+
+from numpy import unique
+from numpy._typing import NDArray
 
 from vcams.mask.tpms import tpms_dict
 
@@ -242,3 +246,37 @@ def csv_string_to_list(csv_string: str) -> list:
     buffer_io.seek(0)
     csv_reader = csv.reader(buffer_io, dialect)
     return [row for row in csv_reader]
+
+
+def validate_materials_to_be_output(part, material_list: str | int | Iterable | NDArray):
+    """Validate the list of materials that are to be output and return a list of material codes.
+
+    Args:
+        part (VoxelPart): The *VoxelPart* instance for which the operation is performed.
+        material_list: One of the following:
+
+          + *'All'* which outputs all materials in *part*.
+          + *'Non-Empty'* which outputs all non-zero (=non-empty) materials in *part*.
+          + An integer or a tuple of integer material codes corresponding
+            to the materials that should be written to the output.
+            All material codes should exist in *part*.
+
+    Returns:
+        A list of valid integer material codes that have been selected.
+    """
+    # Validate and process material_elem_sets.
+    valid_materials = unique(part.data)
+    if isinstance(material_list, str):
+        if material_list.upper() in ['ALL', 'NON-EMPTY']:
+            selected_mats = list(valid_materials)
+            if (0 in selected_mats) and (material_list.upper() == 'NON-EMPTY'):
+                selected_mats.remove(0)
+            material_list = selected_mats
+        else:
+            raise ValueError(f"Invalid string '{material_list}' for material_list."
+                             f"Valid values are 'All' and 'Non-Empty'.")
+    else:  # Will raise most errors.
+        for mat in material_list:
+            if mat not in valid_materials:
+                raise ValueError(f'Material {mat} specified in material_list is not present in the model.')
+    return material_list

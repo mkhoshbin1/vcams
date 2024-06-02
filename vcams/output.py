@@ -90,6 +90,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     file_name = file_name + '.inp'
 
     # Validate and process material_elem_sets.
+    #TODO: use helper.validate_materials_to_be_output()
     valid_materials = unique(part.data)
     if isinstance(material_elem_sets, str):
         if material_elem_sets.upper() in ['ALL', 'NON-EMPTY']:
@@ -107,7 +108,8 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                                  'the model.' % mat)
 
     # Process BCs.
-    constraint_list = create_bc(part, dim)
+    # max_empty_border_elems has not been specified.
+    constraint_list = create_bc(part, dim, mat_codes_to_accept=material_elem_sets)
 
     # Add the dummy nodes as node sets.
     # noinspection PyProtectedMember

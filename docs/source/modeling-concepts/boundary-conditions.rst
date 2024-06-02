@@ -205,7 +205,7 @@ It is evident from Eq. :eq:`bc-eq-pbc-loading3` that only six independent values
 the actual loading to a periodic boundary condition.
 Additionally, in order to prevent rigid body motion, the vertex :math:`V_1` must be fixed in space.
 
-The procedure for applying a linear displacement BC
+The procedure for applying a periodic BC
 is demonstrated in :doc:`Example B-3 </examples/example-b3>`.
 It is recommended that the users reproduce that example as an exercise.
 

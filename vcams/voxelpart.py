@@ -13,6 +13,7 @@ from numpy import ndarray, rot90
 
 from . import __version__, __website__
 from .helper import is_name_valid, return_default_results_path, read_configuration
+from .logger_conf import setup_main_logger
 from .mask.function import mask_from_function
 from .mask.image import mask_from_image, mask_from_image_sequence
 from .mask.shape import ShapeArray, Circle, Sphere
@@ -148,18 +149,10 @@ class VoxelPart:
         self._dummy_node_dict = dict()
 
         # Create and configure the logger.
-        filemode = 'w' if overwrite_logs else 'a'
-        log_level = logging.DEBUG if log_debug else logging.INFO
-        self._log_file_path = Path(self.results_path) / (name + '.log')
-        """Path of the VoxelPart's log file."""
-        self._log_file_handler = logging.FileHandler(self._log_file_path, filemode)
-        """The FileHandler object used for logging the part."""
-        formatter = logging.Formatter(fmt='%(asctime)s - %(levelname) 5s - %(message)s',
-                                      datefmt='%Y-%m-%d %H:%M:%S')
-        self._log_file_handler.setFormatter(formatter)
-        root_logger = logging.getLogger()
-        root_logger.addHandler(self._log_file_handler)
-        root_logger.setLevel(log_level)
+        self._log_file_path = Path(self.results_path) / (name + '.log')  # Make sure it's necessary.
+        setup_main_logger(log_file=self._log_file_path, display_log=True,
+                          overwrite_logs=overwrite_logs, log_debug=log_debug)
+        # TODO: add display_log as parameter.
 
         # Log creation of the object.
         logger.info('\n** Created using VCAMS v%s.'
@@ -184,6 +177,7 @@ class VoxelPart:
     @property
     def real_size(self):
         """Real size of the part which is ``part.size * voxel_size``."""
+        # TODO: how does this behave in case of 2D and 3D?
         return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])
 
     @property
@@ -201,18 +195,17 @@ class VoxelPart:
         self._data = value.astype(dtype=self.dtype, order='C', casting='safe', subok=True, copy=True)
 
     def __del__(self):
-        """Delete the object. The respective log file is also closed."""
-        self.close_logger()
+        """Delete the object. The respective loggers are also flushed and closed."""
+        logger_list = (logging.getLogger(__name__),)
+        for lg in logger_list:
+            for h in lg.handlers:
+                # Handlers are only flushed and closed,
+                # but not removed because I don't think it's necessary.
+                h.flush()
+                h.close()
 
     def __len__(self):
         return np.prod(self.size)
-
-    def close_logger(self):
-        """Close all loggers for the part."""
-        root_logger = logging.getLogger()
-        self._log_file_handler.flush()
-        self._log_file_handler.close()
-        root_logger.removeHandler(self._log_file_handler)
 
     def output_abaqus_inp(self, file_name: str, elem_code: str, dim: str,
                           material_elem_sets: Union[str, tuple], custom_elem_sets: bool = True,
@@ -582,3 +575,5 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: update to Python 3.10.
 # TODO: In Python 3.10, use | instead of Union for type hints.
 #       See https://medium.com/techtofreedom/8-levels-of-using-type-hints-in-python-a6717e28f8fd
+# TODO: type annotation can be used for specific values.
+#  See https://stackoverflow.com/q/58114837 and https://stackoverflow.com/q/39398138

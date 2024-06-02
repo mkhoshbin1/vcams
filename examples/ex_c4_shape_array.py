@@ -18,15 +18,12 @@ shape_array_obj = ShapeArray(dim='2D', part=part)
 shape_array_obj.add_shape(Circle, xc=0, yc=0, r=0.1)
 shape_array_obj.add_shape(Circle, xc=0.4, yc=0.2, r=0.15)
 shape_array_obj.add_shape(Circle, xc=0.7, yc=0.5, r=0.1)
+shape_array_obj.add_shape(Ellipse, a=0.15, b=0.30, xc=0.30, yc=0.65, alpha=20)
 
-shape_array_obj._backup_state()
-print(shape_array_obj._backup_dict)
-#
-# # shape_array_obj.add_shape(Ellipse, a=0.15, b=0.30, xc=0.30, yc=0.65, alpha=20)
-# # Apply the Boolean mask to the part.
-# part.apply_mask(mask=shape_array_obj.mask, value=2)
-#
-# # Output the part.
-# part.output_abaqus_inp(file_name='ex_c4_shape_array',
-#                        elem_code='CPE4R', dim='2D',
-#                        material_elem_sets='Non-Empty')
+# Apply the Boolean mask to the part.
+part.apply_mask(mask=shape_array_obj.mask, value=2)
+
+# Output the part.
+part.output_abaqus_inp(file_name='ex_c4_shape_array',
+                       elem_code='CPE4R', dim='2D',
+                       material_elem_sets='Non-Empty')
