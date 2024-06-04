@@ -423,12 +423,14 @@ class ShapeDispersionArray(ShapeArray):
                  voxel_size: tuple[float, float, float] = None,
                  num_bound_pixels: int = 0,
                  short_msg: bool = True):
-        """A subclass of ShapeArray(TODO) which can disperse shapes inside itself.
+        """A subclass of :class:`~.shape.ShapeArray` which can disperse shapes inside itself.
+
         Args:
-            part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
-                                     If None, *mask_shape* and *voxel_size* must be specified (%TODO: enforce).
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
+            part (VoxelPart | None): The *VoxelPart* instance based on which the *ShapeArray* is created.
+                                     If None, *mask_shape* and *voxel_size* must be specified.
+                                     Defaults to *None*.
             mask_shape: A tuple containing three integers which determines
                         the shape of the returned boolean mask. Ignored if *part* is passed.
             voxel_size: A tuple containing three floats which determine the size of a voxel
@@ -438,11 +440,12 @@ class ShapeDispersionArray(ShapeArray):
                               Defaults to 0.
             short_msg: A boolean specifying whether the placement message should be printed
                        as a single updating line or in many lines with extensive details.
-                       Passed to :func:`.print_placement_message` Defaults to *True*.
+                       Passed to :meth:`._log_placement` Defaults to *True*.
         """
 
         super().__init__(dim, part, mask_shape, voxel_size, is_mask_calculation_lazy=False)
         # TODO: doc that is_mask_calculation_lazy is True
+        # TODO: enforce that if part=None, *mask_shape* and *voxel_size* must be specified.
 
         self.short_msg = short_msg
         """See :meth:`.__init__`."""

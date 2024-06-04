@@ -114,7 +114,7 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         file_path: Path to the configuration file.
 
     Returns:
-        A tuple of the following dictionaries *(part_creation_dict, part_manipulation_dict, bc_dict, output_dict)*.
+        A tuple of the following dictionaries (part_creation_dict, part_manipulation_dict, bc_dict, output_dict).
     """
     # Read the config file.
     logger.debug('Reading configuration file at %s' % file_path)
