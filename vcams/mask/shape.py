@@ -591,7 +591,7 @@ class Cylinder(BaseShape):
             dir: Direction of the axis. Can be 'x', 'y', or 'z'.
             a:   x-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
             b:   y-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
-            c:   y-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
+            c:   z-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
             r:   Radius of the cylinder.
         """
         super().__init__()

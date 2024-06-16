@@ -72,6 +72,8 @@ class TpmsSchwarzP(BaseTpms):
             See TODO for interpretation of the results.
         """
         p = 2 * pi / l  # Period.
+        if callable(c):
+            c = c(x, y, z)  # TODO: doc and add to all.
         return cos(p * x) + cos(p * y) + cos(p * z) - c
 
     tpms_id: int = 0
