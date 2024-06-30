@@ -322,7 +322,7 @@ def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str,
     node_id_list = unique(connectivity_table[:, 1:]) - 1
     num_elems = len(elem_id_list)
 
-    logger.debug(f"Wrote {num_elems} {dim.upper()} elements"
+    logger.debug(f"Wrote {num_elems} {dim.upper()} elements "
                  f"of type '{elem_code.upper()}' to the temporary file 'elem_def.tmp'.")
     return file_path, num_elems, node_id_list
 
@@ -599,8 +599,9 @@ def write_constraints(folder_path: str, constraint_list: list) -> tuple[int, str
     Returns:
         A tuple containing the number of constraints and the path to the temporary constraint definition file.
     """
-    # TODO: some kind of concatenation for optimization.
-    # TODO: buffer size for optimization.
+    # Note: Creation of a 2D PBC with 16M elements was tested.
+    # Since the number of constrain equations are actually small (16000),
+    # This function takes almost no time and so no further optimization is necessary.
     logger.debug("Attempting to write constraints to the temporary file 'constraints_def.tmp'.")
     constraints_file_path = os.path.join(folder_path, 'constraints_def.tmp')
     with open(constraints_file_path, 'w', encoding='latin1') as file_obj:
