@@ -553,7 +553,7 @@ def write_elem_set_def(part, material_elem_sets: tuple, folder_path: str,
     return elem_set_file_path, elem_id_list, elem_set_stats
 
 
-def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
+def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> tuple[str, dict]:
     """Write the node set portion of an Abaqus™ input file to a temporary file.
 
     Args:
@@ -589,7 +589,7 @@ def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
 
 
 def write_constraints(folder_path: str, constraint_list: list) -> tuple[int, str]:
-    """Write the node set portion of an Abaqus™ input file to a temporary file.
+    """Write the defined constraints portion of an Abaqus™ input file to a temporary file.
 
     Args:
         constraint_list: Tuple of constraint objects defined in :doc:`bc-module`.
@@ -640,6 +640,8 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
         ('Element Type', elem_code),
         ('Number of Elements', num_elems),
         ('Number of Nodes', num_nodes),
+        ('Number of Element Sets', len(elem_set_stats)),
+        ('Number of Node Sets', len(node_set_stats)),
         ('Number of Material Codes', len(np.unique(part.data))),
         ('Number of Constraint Equations', num_constraints),
         ('Total Output Time', time.strftime('%H:%M:%S', time.gmtime(elapsed_time)))
