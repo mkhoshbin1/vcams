@@ -251,6 +251,14 @@ def csv_string_to_list(csv_string: str) -> list:
     return [row for row in csv_reader]
 
 
+def validate_dim(dim: str):
+    """Validate the *dim* parameter used throughout the library.
+    Returns:
+        ValueError: If dim is not '2D' or '3D'.
+    """
+    if dim.upper() not in ['2D', '3D']:
+        raise ValueError("dim can only be one of '2D' or '3D'.")
+
 def validate_materials_to_be_output(part, material_list: str | int | Iterable | NDArray):
     """Validate the list of materials that are to be output and return a list of material codes.
 
