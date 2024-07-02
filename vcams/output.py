@@ -593,7 +593,7 @@ def write_constraints(folder_path: str, constraint_list: list) -> tuple[int, str
 
     Args:
         constraint_list: Tuple of constraint objects defined in :doc:`bc-module`.
-        Their `repr()` function is written to the file.
+                         Their `repr()` function is written to the file.
         folder_path: Path to the folder where the temporary constraint definition file will be placed.
 
     Returns:
@@ -631,6 +631,21 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
         num_constraints: Number of constraint equations written to the output.
         elapsed_time: Elapsed time for the output process in seconds.
     """
+
+    # noinspection PyProtectedMember
+    part_bc_type = part._bc_type
+    if part_bc_type is None:
+        bc_name = 'None'
+    elif part_bc_type.upper() == 'NODESET ONLY':
+        bc_name = 'Nodeset Only'
+    elif part_bc_type.upper() == 'LINEAR DISPLACEMENT':
+        bc_name = 'Linear Displacement'
+    elif part_bc_type.upper() == 'PERIODIC':
+        bc_name = 'Periodic Boundary Conditions'
+    else:
+        raise RuntimeError(f'part has an invalid bc_type {part_bc_type}. '
+                           f'This should have been caught earlier.')
+
     # Prepare part summary.
     part_summary = (
         ('Part Name', part.name),
@@ -644,6 +659,7 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
         ('Number of Element Sets', len(elem_set_stats)),
         ('Number of Node Sets', len(node_set_stats)),
         ('Number of Material Codes', len(np.unique(part.data))),
+        ('Requested BC Constraints', bc_name),
         ('Number of Constraint Equations', num_constraints),
         ('Total Output Time', time.strftime('%H:%M:%S', time.gmtime(elapsed_time)))
     )
