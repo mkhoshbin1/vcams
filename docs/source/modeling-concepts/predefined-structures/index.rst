@@ -25,3 +25,23 @@ Currently, the following groups of pre-defined structures can be used:
      shape
      tpms
      image
+
+A number of these structures are modeled using level-set function.
+The main idea behind this method is that an implicit function :math:`\Phi` describes a closed curve.
+:math:`\Phi(x,y,z)` can then be evaluated for each point :math:`P` in space, and:
+
+.. math::
+
+   \Phi(x,y,z)=
+   \begin{cases}
+    < 0, & \text{$P$ is inside the surface}\\
+    = 0, & \text{$P$ is on the surface boundary}\\
+    > 0, & \text{$P$ is outside the surface}
+  \end{cases}
+
+Many different functions can be derived for modeling simple or complex shapes, as listed above.
+See the famous book by Osher and Fedkiw [1]_.
+
+.. [1] Osher, Stanley, and Ronald Fedkiw.
+       “Level set methods and dynamic implicit surfaces.”
+       Applied mathematical sciences, 2003, doi:10.1007/b98879.
