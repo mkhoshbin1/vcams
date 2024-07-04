@@ -6,23 +6,18 @@ using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 See the :ref:`modeling-techniques` section for a complete explanation
 of the basic concepts.
 """
+from inspect import isclass
 from logging import getLogger
 from time import perf_counter
-from inspect import isclass
-from typing import Union, Callable
+from typing import Callable
 
 import numpy as np
 from numpy import ndarray, squeeze
 
-from .tpms import BaseTpms
-
 logger = getLogger(__name__)
 
 
-# TODO: the definition for level set is reversed. fix.
-#  See J. Liu et al. / Advances in Engineering Software 87 (2015) 13–29
-
-def mask_from_function(func: Callable | BaseTpms, vectorized: bool = True,
+def mask_from_function(func: Callable | object, vectorized: bool = True,
                        do_log: bool = True,
                        part=None,
                        mask_shape: tuple[int, int, int] = None,
@@ -33,17 +28,23 @@ def mask_from_function(func: Callable | BaseTpms, vectorized: bool = True,
         part (VoxelPart | None): The :class:`~.voxelpart.VoxelPart` based on which the mask is created.
                                  If *None*, arguments *mask_shape* and *voxel_size* must be specified
                                  otherwise they are ignored. Defaults to *None*.
-        func: A function object which evaluates a point and returns a value.
-              This function must accept x, y, and z parameters (if not use them)
-              and can receive other keyword arguments. See *\**kwargs*.
+        func: One of the following:
+
+              + A function which evaluates a point and returns a value.
+                This function must accept x, y, and z parameters (if not use them)
+                and can receive other keyword arguments through *\**kwargs*.
+              + A class that defined a method named *func* working according
+                to the aforementioned specs.
+                For example, it is possible to pass a subclass of :class:`~.BaseTpms`
+                and its *func* method is used for the operation.
+
               This function can represent anything, for example:
 
-              + A level-set function such as the Schwarz P
+              - A level-set function such as the Schwarz P
                 triply periodic minimal surface (TPMS).
-              + The equation for a circle. In this case,
+              - The equation for a circle. In this case,
                 the function receives the z variable, but does not use it.
-                It is possible to pass a subclass of :class:`~.BaseTpms`.
-                to this function. In that case, it's function is used for the operation.
+
         vectorized: If set to True, this function is run in a vectorized manner
                     which is very fast but uses more memory (Strongly recommended).
                     Otherwise, this function calls the others in a simple
@@ -86,8 +87,7 @@ def mask_from_function(func: Callable | BaseTpms, vectorized: bool = True,
     else:
         raise ValueError('mask_shape must have a length of 2 or 3.')
 
-    # noinspection PyTypeChecker
-    if isclass(func) and issubclass(func, BaseTpms):  # TODO: maybe check for function / rename?
+    if isclass(func) and hasattr(func, 'func') and callable(func.func):
         func = func.func
 
     start_time = perf_counter()
@@ -107,8 +107,8 @@ def mask_from_function(func: Callable | BaseTpms, vectorized: bool = True,
     return squeeze(mask)
 
 
-def is_voxel_inside(x: Union[float, ndarray], y: Union[float, ndarray], z: Union[float, ndarray],
-                    voxel_size: tuple[float, float, float], func: Callable, **kwargs) -> bool:
+def is_voxel_inside(x: float | ndarray, y: float | ndarray, z: float | ndarray,
+                    voxel_size: tuple[float, float, float] | ndarray, func: Callable, **kwargs) -> bool:
     """Determine if a voxel is inside a surface.
 
     A voxel is always cubic, and 27 points of interest (PoI) are defined on it as shown below:
@@ -130,6 +130,9 @@ def is_voxel_inside(x: Union[float, ndarray], y: Union[float, ndarray], z: Union
     This function is also vectorized for use with the output of numpy.ogrid,
     which is faster but that may consume a lot of memory.
 
+    Note that this function performs no input validations to ensure efficiency.
+    Extreme caution must be used when calling it to ensure correct results.
+
     Args:
         x: The x index of the voxel. It is multiplied by *voxel_size[0]* to obtain the x coordinate.
         y: The y index of the voxel. It is multiplied by *voxel_size[1]* to obtain the y coordinate.
@@ -145,11 +148,6 @@ def is_voxel_inside(x: Union[float, ndarray], y: Union[float, ndarray], z: Union
     Returns:
         Returns True if the voxel is inside the surface defined by *func* and False if outside.
     """
-    # TODO: type annotations.
-    # See https://stackoverflow.com/questions/71109838,
-    #     https://github.com/ramonhagenaars/nptyping,
-    #     https://pypi.org/project/nptyping2/ (which is quite new),
-    # and https://peps.python.org/pep-0646/
 
     # The coordinates of the 27 PoI have three unique values along each axis, Which are:
     xx = np.array((x, x + 0.5, x + 1.0)) * voxel_size[0]
