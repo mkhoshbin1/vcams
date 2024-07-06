@@ -1,7 +1,7 @@
 """Functions used for creating a boolean mask from one or a sequence of images.
 
-These resulting mask can then be used
-for manipulating a :class:`~vcams.voxelpart.VoxelPart` object
+The resulting masks can then be used
+for manipulating :class:`~vcams.voxelpart.VoxelPart` object
 using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 See the :ref:`predefined-image` section for a complete explanation
 of the basic concepts.
@@ -54,21 +54,20 @@ def mask_from_image(image_path: str, scale: float = 1.0,
     """
     if scale <= 0.0:
         raise ValueError('scale must be positive.')
-
     if scale > 1.0:
-        warn('scale is greater than 1.0 which introduces fake precision.')  # TODO: test this.
+        warn('scale is greater than 1.0 which introduces fake precision.')
 
     valid_thresh_modes = ('none', 'manual', 'otsu')
     if thresh_mode.lower() not in ('manual', 'otsu'):
-        raise ValueError('Invalid thresh_mode. Valid values are: %s.' % ', '.join(valid_thresh_modes))
+        raise ValueError(f"Invalid thresh_mode. Valid values are: {', '.join(valid_thresh_modes)}.")
 
     if (thresh_mode.lower() == 'manual') and ((thresh >= 1) or (thresh <= 0)):
-        raise ValueError('For manual thresholding, thresh must be in the range (0, 1), but it is %.3f.' % thresh)
+        raise ValueError(f'For manual thresholding, thresh must be in the range (0, 1), but it is {thresh:.3f}.')
 
     # Open the image and convert it to grayscale.
     gray_image = imread(fname=image_path, as_gray=True)  # Note that the dtype will be float, i.e. [0, 1].
     if verbose_log:
-        logger.debug("Opened image '%s'.", image_path)
+        logger.debug(f"Opened image '{image_path}'.")
 
     # Apply the scale.
     gray_image = resize_image(gray_image, scale, verbose_log)
@@ -89,12 +88,12 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         elif thresh_mode == 'otsu':
             thresh = threshold_otsu(gray_image)
         else:
-            raise ValueError('Invalid thresh_mode. Valid values are: %s.' % ', '.join(valid_thresh_modes) +
-                             ' This should have been caught earlier.')
+            raise ValueError(f"Invalid thresh_mode. Valid values are: {', '.join(valid_thresh_modes)}. "
+                             f"This should have been caught earlier.")
         # Threshold the image based on the thresh value
         binary_image = gray_image > thresh
         if verbose_log:
-            logger.debug('Applied a %s threshold to the image with a value of %.3f.' % (thresh_mode, thresh))
+            logger.debug(f'Applied a {thresh_mode} threshold to the image with a value of {thresh:.3f}.')
 
     # Show the image.
     if show_image:
@@ -111,8 +110,8 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         ax[1].axis('off')
         num_dark_px = len(where(binary_image == 0)[0]) / binary_image.size
         num_light_px = len(where(binary_image == 1)[0]) / binary_image.size
-        ax[1].annotate(f'Light Pixels = {100*num_light_px:3.2f}%, Dark Pixels = {100*num_dark_px:3.2f}%',
-                    xy=(0.5, -0.05), xycoords='axes fraction', ha='center')
+        ax[1].annotate(f'Light Pixels = {100 * num_light_px:3.2f}%, Dark Pixels = {100 * num_dark_px:3.2f}%',
+                       xy=(0.5, -0.05), xycoords='axes fraction', ha='center')
         plt.show(block=True)
 
     # Return the binary mask.
@@ -124,8 +123,6 @@ def mask_from_image(image_path: str, scale: float = 1.0,
     return binary_image
 
 
-# https://scikit-image.org/docs/dev/api/skimage.io.html#imread-collection
-
 def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
                              denoise: bool = True,
                              thresh_mode: str = 'otsu', thresh: float = None):
@@ -134,8 +131,8 @@ def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
     This function opens all images using the :func:`mask_from_image` function,
     applies the scale, and returns the final 3D binary mask.
 
-    Note that the images are initially opened with a scale of 1.0
-    meaning that this function may require a lot of RAM.
+    This function opens the images with a scale of 1.0 and then resizes them,
+    meaning that a lot of RAM may be required.
 
     Args:
         load_pattern: A pattern describing the path of all images in the sequence.
@@ -152,6 +149,18 @@ def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
     Returns:
         The binary mask derived from the image sequence.
     """
+    if scale <= 0.0:
+        raise ValueError('scale must be positive.')
+    if scale > 1.0:
+        warn('scale is greater than 1.0 which introduces fake precision.')
+
+    valid_thresh_modes = ('none', 'manual', 'otsu')
+    if thresh_mode.lower() not in ('manual', 'otsu'):
+        raise ValueError(f"Invalid thresh_mode. Valid values are: {', '.join(valid_thresh_modes)}.")
+
+    if (thresh_mode.lower() == 'manual') and ((thresh >= 1) or (thresh <= 0)):
+        raise ValueError(f'For manual thresholding, thresh must be in the range (0, 1), but it is {thresh:.3f}.')
+
     # Create an ImageCollection function which loads the images using
     # the mask_from_image() function. No scaling is applied and denoising is done if requested.
     image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=False,
@@ -162,18 +171,15 @@ def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
 
     # Make sure the collection has an appropriate number of images.
     if len(image_coll) == 0:
-        raise ValueError('The image collection is empty. The most likely reason is an incorrect '
-                         'load_pattern.')
+        raise ValueError('The image collection is empty. '
+                         'The most likely reason is an incorrect load_pattern.')
     elif len(image_coll) == 1:
         warn('Only one image has been loaded into the image collection. This may indicate misuse '
              'or an incorrect load_pattern.')
-        # TODO: use this method of filling (space in above line) everywhere else.
     else:
-        logger.info('Loaded %u images in the image collection', len(image_coll))
+        logger.info(f'Loaded {len(image_coll)} images in the image collection')
 
     full_image = moveaxis(image_coll.concatenate(), 0, -1)
-    # TODO: test input with and without move axis.
-    # TODO: is scale passed? is it already done by now? either way, check for 1.0.
     # Apply the scale.
     full_image = resize_image(full_image, scale, verbose_log=True)
     return full_image
@@ -217,7 +223,6 @@ def resize_image(image: ndarray, scale: float, verbose_log: bool = True) -> ndar
                                    'which was not the case.')
     else:
         # Image is not a boolean.
-        # TODO: test data type.
         image = rescale(image, scale, anti_aliasing=True)
 
     if verbose_log:

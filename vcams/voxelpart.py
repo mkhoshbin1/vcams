@@ -451,6 +451,9 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     """
 
     # TODO: can we add a logger here? Examples take a long time and then just finish.
+    # TODO: mask_from_image is not logged. Especially the warning for scale > 1.
+    #       may be set up the logger first?
+    #       also, test the warning in the end.
     # TODO:  it seems to be logged in the GUI, check why/how
     # TODO:  it also seems to have duplicates. why?
     if image_dim.upper() not in ['2D', '3D']:
