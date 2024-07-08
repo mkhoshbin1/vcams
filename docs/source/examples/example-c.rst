@@ -14,3 +14,4 @@ in creating complex structures.
    example-c5
    example-c6
    example-c7
+   example-c8
