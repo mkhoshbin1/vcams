@@ -1,4 +1,4 @@
-"""Second Script for Example C-7: Part from Image Series (3D)."""
+"""Second Script for Example C-6: Part from Image Series (3D)"""
 
 from vcams.voxelpart import voxelpart_from_image
 
@@ -11,11 +11,11 @@ part = voxelpart_from_image(image_dim='3D',
                             scale=0.5, denoise=True,
                             background_material=0, foreground_material=1,
                             voxel_size=(0.01012, 0.01012, 0.01012),
-                            name='Ex C-7 Part from Image Series 3D - B',
+                            name='Ex C-6 Part from Image Series 3D - B',
                             description='A 3D part created based on a series of 2D images.',
                             log_debug=True)
 
 # Output the part.
-part.output_abaqus_inp(file_name='ex_c7_image_3d_b',
+part.output_abaqus_inp(file_name='ex_c6_image_3d_b',
                        elem_code='C3D8R', dim='3D',
                        material_elem_sets='Non-Empty')
