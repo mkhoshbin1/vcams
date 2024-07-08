@@ -1,6 +1,6 @@
 Example A-5: Random 3D Model
 ============================
-This example, a 3D part is created with random dispersion of three elements.
+This example, a 3D part is created with random dispersion of three materials.
 This can be achieved by combining :doc:`Example A-2 <example-a2>` and :doc:`Example A-4 <example-a4>`.
 
 These kinds of models are very useful.

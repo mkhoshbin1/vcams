@@ -14,6 +14,7 @@ of the basic concepts.
    :maxdepth: 1
 
    function-module
+   random-module
    shape-module
    shape_dispersion-module
    tpms-module

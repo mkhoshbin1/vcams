@@ -7,10 +7,5 @@ in creating complex structures.
    :caption: List of Examples:
    :maxdepth: 1
 
-   example-c1
-   example-c2
    example-c3
    example-c4
-   example-c5
-   example-c6
-   example-c7
