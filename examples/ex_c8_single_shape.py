@@ -7,7 +7,7 @@ from vcams.voxelpart import VoxelPart
 part = VoxelPart(size=(50, 50), base_material=1,
                  voxel_size=(0.02, 0.02),
                  name='Ex C-8 Single Shape',
-                 description='A 2D square 50*50 part including a single circular inclusion.',
+                 description='A 2D square 50*50 part containing a single circular inclusion.',
                  log_debug=True)
 
 # Create an instance of the vcams.mask.shape.Circle class.
