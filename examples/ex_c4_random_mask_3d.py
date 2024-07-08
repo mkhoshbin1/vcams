@@ -1,6 +1,7 @@
 """Script for Example C-4: Randomly Distributed Second Phase (3D)"""
-from vcams.voxelpart import VoxelPart
+
 from vcams.mask.random import random_binary_mask
+from vcams.voxelpart import VoxelPart
 
 # Create the part.
 part = VoxelPart(size=(100, 100, 100), base_material=1,
