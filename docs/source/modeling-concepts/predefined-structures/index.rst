@@ -26,7 +26,12 @@ Currently, the following groups of pre-defined structures can be used:
      tpms
      image
 
-A number of these structures are modeled using level-set function.
+.. _level-set-functions:
+
+Level-Set Functions
+-------------------
+
+A number of these structures are modeled using level-set functions.
 The main idea behind this method is that an implicit function :math:`\Phi` describes a closed curve.
 :math:`\Phi(x,y,z)` can then be evaluated for each point :math:`P` in space, and:
 
@@ -40,7 +45,7 @@ The main idea behind this method is that an implicit function :math:`\Phi` descr
   \end{cases}
 
 Many different functions can be derived for modeling simple or complex shapes, as listed above.
-See the famous book by Osher and Fedkiw [1]_.
+For more information, see the famous book by Osher and Fedkiw [1]_.
 
 .. [1] Osher, Stanley, and Ronald Fedkiw.
        “Level set methods and dynamic implicit surfaces.”
