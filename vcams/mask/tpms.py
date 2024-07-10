@@ -1,8 +1,8 @@
 """Classes defining Triply Periodic Minimal Surfaces (TPMS)
-which can be used to create boolean masks.
+which can be used to create Boolean masks.
 
-These resulting mask can then be used
-for manipulating :class:`~vcams.voxelpart.VoxelPart` object
+The resulting masks can then be used
+for manipulating a :class:`~vcams.voxelpart.VoxelPart` instance
 using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 See the :ref:`predefined-tpms` section for a complete explanation
 of the basic concepts.

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
-from numpy import ndarray, rot90
+from numpy import ndarray, rot90, array
 
 from . import __version__, __website__
 from .helper import is_name_valid, return_default_results_path, read_configuration
@@ -164,18 +164,18 @@ class VoxelPart:
                     name, '*'.join(str(s) for s in size), base_material)
 
     @property
-    def instance_name(self):
+    def instance_name(self) -> str:
         """Name of the part instance which is name of the part + '-Ins'. Used for output to Abaqus™ input file."""
         return self.name + '-Ins'
 
     @property
-    def size(self):  # TODO: use everywhere in refactor
+    def size(self) -> ndarray:  # TODO: use everywhere in refactor
         """Shape of the part's *data* property.
         May have two or three elements depending on how the part was defined."""
-        return self.data.shape
+        return array(self.data.shape)
 
     @property
-    def real_size(self):
+    def real_size(self) -> ndarray:
         """Real size of the part which is ``part.size * voxel_size``."""
         # TODO: how does this behave in case of 2D and 3D?
         return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])

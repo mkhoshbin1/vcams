@@ -459,7 +459,7 @@ class ShapeDispersionArray(ShapeArray):
         self.dispersion_logger = setup_dispersion_logger(part.name, log_file=self._dispersion_log_file_path,
                                                          display_log=True)
         # TODO: make concise
-
+        # TODO: can we have the superclass's attributes in this doc?
         # Add boundary to the base mask so the shapes don't touch the outside.
         if num_bound_pixels:  # FIXME: here or in ShapeArray?
             self.base_mask[:, :num_bound_pixels] = True
@@ -1053,3 +1053,5 @@ def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
         else:  # The root is between c and b.
             a = c
             f_a = f_c
+
+# TODO: Check base_mask of ShapeArray with a TPMS. maybe make an example?

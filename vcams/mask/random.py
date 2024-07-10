@@ -1,7 +1,7 @@
 """Functions used for creating random Boolean masks.
 
 The resulting masks can then be used
-for manipulating :class:`~vcams.voxelpart.VoxelPart` object
+for manipulating a :class:`~vcams.voxelpart.VoxelPart` instance
 using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 
 See the :ref:`boolean-masks` section for an explanation of Boolean masks

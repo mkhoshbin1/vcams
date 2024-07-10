@@ -1,7 +1,7 @@
-"""Functions used for creating a boolean mask from a level set function.
+"""Functions used for creating a Boolean mask from a level set function.
 
 The resulting masks can then be used
-for manipulating :class:`~vcams.voxelpart.VoxelPart` object
+for manipulating a :class:`~vcams.voxelpart.VoxelPart` instance
 using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 See the :ref:`modeling-techniques` section for a complete explanation
 of the basic concepts.
