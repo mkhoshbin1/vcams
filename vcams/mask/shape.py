@@ -208,7 +208,7 @@ class ShapeArray:
             self.part_name = part.name
             self.part_shape = part.size
             self.voxel_size = part.voxel_size
-            self.base_mask = (part.data != 0)
+            self.base_mask = (part.data == 0)
             self._part_log_file_path = part._log_file_path  # noqa: PyProtectedMember
         else:
             self.part_name = None

@@ -9,7 +9,7 @@ part = VoxelPart(size=(50, 50), base_material=1,
                  name='Ex C-9 Shape Array',
                  description='A 2D square 50*50 part containing an array of different shapes.',
                  log_debug=True)
-# raise RuntimeError(part.voxel_size)
+
 # Create a ShapeArray based on the VoxelPart object.
 shape_array_obj = ShapeArray(dim='2D', part=part)
 

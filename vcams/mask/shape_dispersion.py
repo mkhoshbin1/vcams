@@ -2,25 +2,21 @@
 
 import logging
 import time
-import matplotlib
-import numpy as np
-
-from ..logger_conf import setup_dispersion_logger, LogWithoutFormatContext
-
-matplotlib.use('TkAgg')  # FIXME: https://stackoverflow.com/a/73788178/7180705
-import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
-from pathlib import Path
 from copy import deepcopy
-from numpy import var, std, mean, random, max, abs, isscalar, sum, inf
+from typing import Iterable
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np  # TODO: maybe remove??
+from numpy import random, max, abs, isscalar, sum, inf, ndarray
 from scipy.stats import truncnorm
 
 from .shape import ShapeArray
+from ..logger_conf import setup_dispersion_logger, LogWithoutFormatContext
 
+matplotlib.use('TkAgg')  # FIXME: https://stackoverflow.com/a/73788178/7180705
 logger = logging.getLogger(__name__)
-
-
-# TODO: document all functions.
 
 
 class TooManyDispersionAttemptsError(Exception):
@@ -91,15 +87,30 @@ class BaseListDispersion(ABC):
         return ManualListDispersion(self.values * other)
 
     def __init__(self):
+        """Constructor for the :class:`BaseListDispersion` abstract base class.
+        It should be called by subclasses."""
         self.values = np.array([])
         """A numpy array containing the values in the instance."""
 
-    def plot(self, num_bins, plot_actual_normal_curve=False):
-        """Plot a histogram of the dispersion object."""
+    @staticmethod
+    def _set_plot_legend():
+        """Set the legend for the plots created by the :meth:`BaseListDispersion.plot()` method."""
+        plt.gca().legend(frameon=False, prop={'family': 'monospace'},  # bbox_to_anchor=(1.04, 1),
+                         fontsize=2, numpoints=1, loc='upper right')
+        # plt.tight_layout()
+
+    def plot(self, num_bins: int, plot_actual_normal_curve: bool = False):
+        """Plot a histogram of the dispersion object.
+
+        Args:
+            num_bins: Number of bins for the histogram of actual values.
+            plot_actual_normal_curve: Whether the actual normal distribution of the values should be plotted.
+                                      Defaults to False.
+        """
         if self.__len__() < 1:
             raise ValueError('The object is empty. Has it been initialized?')
         plt.plot([], [], ' ', label=f'$\\bf{{Dispersion Type: {type(self).__name__}}}$')
-        plt.hist(self.values, num_bins, density=True, label='Actual Values Histogram')  # FIXME
+        plt.hist(self.values, num_bins, density=True, label='Actual Values Histogram')
         plt.xlabel('Value')
         plt.ylabel('Frequency')
 
@@ -107,22 +118,10 @@ class BaseListDispersion(ABC):
             x = np.linspace(-3 * self.actual_std + self.actual_mean, 3 * self.actual_std + self.actual_mean, 100)
             y = (np.exp(-np.power((x - self.actual_mean) / self.actual_std, 2.0) / 2)
                  / (np.sqrt(2.0 * np.pi) * self.actual_std))
-            plt.plot(x, y, label='Normal Distribution (Actual Values)')
+            plt.plot(x, y, label='Normal Distribution (Actual)')
 
         self._set_plot_legend()
         plt.show()
-
-    @staticmethod
-    def _set_plot_legend():
-        plt.gca().legend(frameon=False, prop={'family': 'monospace'},
-                         fontsize=1, numpoints=1, loc='upper right')
-        # TODO: see if legend can be correctly placed outside.
-        # It seems that the legend should be added to bbox_extra_artists
-        # which can only be done in savefig.
-        # plt.legend(title='MY TITLE', frameon=False,
-        #            prop={'family': 'monospace'}, fontsize=2,
-        #            numpoints=1, bbox_to_anchor=(1.05, 1),
-        #            loc='upper left')
 
 
 class ManualListDispersion(BaseListDispersion):
@@ -130,22 +129,27 @@ class ManualListDispersion(BaseListDispersion):
     This is simply a list and is only created to have a uniform naming.
     """
 
-    def __init__(self, values):
+    def __init__(self, values: Iterable | ndarray):
+        """Constructor for the :class:`ManualListDispersion` class.
+        It takes an iterable, creates a *NumPy* array from it, and then flattens it.
+        """
         super().__init__()
-        # TODO: make sure values is an iterable and flat.
-        self.values = np.array(values)
+        self.values = np.array(values).flatten()
 
     def __repr__(self):
-        return f"""{self.__class__}
-        Number of Values: {len(self)}
-        Actual Mean:      {self.actual_mean:{self._repr_float_length}.4f}
-        Actual SD:        {self.actual_std:{self._repr_float_length}.4f}
-        Actual Variance:  {self.actual_variance:{self._repr_float_length}.4f}
-        """
+        return (f'{self.__class__.__name__} Instance:\n'
+                f'    Number of Values: {len(self.values)}\n'
+                f'    Actual Mean:      {self.actual_mean:{self._repr_float_length}.4f}\n'
+                f'    Actual STD:       {self.actual_std:{self._repr_float_length}.4f}\n'
+                f'    Actual Variance:  {self.actual_variance:{self._repr_float_length}.4f}')
 
     # noinspection PyMethodOverriding
-    def plot(self, num_bins):
-        """Plot a histogram of the dispersion object."""
+    def plot(self, num_bins: int):
+        """Plot a histogram of the dispersion object.
+
+        Args:
+            num_bins: Number of bins for the histogram of actual values.
+        """
         BaseListDispersion.plot(self, num_bins, plot_actual_normal_curve=True)
         plt.plot([], [], ' ', label=self.__repr__().split('\n', 1)[1])
         BaseListDispersion._set_plot_legend()
@@ -154,7 +158,7 @@ class ManualListDispersion(BaseListDispersion):
 
 class BaseNormalDistributionDispersion(BaseListDispersion):
     """Abstract base class for dispersion classes that generate a list of values
-    with a normal (gaussian) distribution.
+    with a `normal (Gaussian) distribution <https://en.wikipedia.org/wiki/Normal_distribution>`_.
 
     Instances are defined using a target mean and standard deviation.
     Afterwards, a list is created using a random number generator.
@@ -173,7 +177,8 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
 
     def __init__(self, target_mean: float, target_std: float,
                  num_values: int = None, max_absolute_pct_error: int = 10):
-        """
+        """Constructor for the :class:`BaseNormalDistributionDispersion` class.
+
         Args:
             target_mean: Target mean for the randomly generated values.
                          Actual mean will be stored in *actual_mean*.
@@ -214,25 +219,31 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
 
     def __repr__(self):
         if len(self) == 0:
-            return (f'{self.__class__}\n'
+            return (f'{self.__class__.__name__} Instance:\n'
                     f'    The instance is empty. Use generate_values(num_values) to populate it.\n'
                     f'    Target Mean:      {self.target_mean:{self._repr_float_length}.4f}\n'
-                    f'    Target SD:        {self.target_std:{self._repr_float_length}.4f}')
+                    f'    Target STD:       {self.target_std:{self._repr_float_length}.4f}')
         else:
             mean_pct_error = 100 * (self.actual_mean - self.target_mean) / self.target_mean
-            sd_pct_error = 100 * (self.actual_std - self.target_std) / self.target_std
-            return (f'{self.__class__}\n'
+            std_pct_error = 100 * (self.actual_std - self.target_std) / self.target_std
+            return (f'{self.__class__.__name__} Instance:\n'
                     f'    Number of Values: {len(self.values)}\n'
                     f'    Target Mean:      {self.target_mean:{self._repr_float_length}.4f}\n'
                     f'    Actual Mean:      {self.actual_mean:{self._repr_float_length}.4f} ({mean_pct_error:+.4f}%)\n'
-                    f'    Target SD:        {self.target_std:{self._repr_float_length}.4f}\n'
-                    f'    Actual SD:        {self.actual_std:{self._repr_float_length}.4f} ({sd_pct_error:+.4f}%)\n'
+                    f'    Target STD:       {self.target_std:{self._repr_float_length}.4f}\n'
+                    f'    Actual STD:       {self.actual_std:{self._repr_float_length}.4f} ({std_pct_error:+.4f}%)\n'
                     f'    Actual Variance:  {self.actual_variance:{self._repr_float_length}.4f}')
 
     # noinspection PyMethodOverriding
-    def plot(self, num_bins):
-        """Plot a histogram of the dispersion object."""
-        BaseListDispersion.plot(self, num_bins)
+    def plot(self, num_bins: int, plot_actual_normal_curve: bool = False):
+        """Plot a histogram of the dispersion object.
+
+        Args:
+            num_bins: Number of bins for the histogram of actual values.
+            plot_actual_normal_curve: Whether the actual normal distribution of the values should be plotted.
+                                      Defaults to False.
+        """
+        BaseListDispersion.plot(self, num_bins, plot_actual_normal_curve)
         x = np.linspace(-3 * self.target_std + self.target_mean, 3 * self.target_std + self.target_mean, 1000)
         y = (np.exp(-np.power((x - self.target_mean) / self.target_std, 2.0) / 2)
              / (np.sqrt(2.0 * np.pi) * self.target_std))
@@ -243,14 +254,20 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
 
     @abstractmethod
     def _generate_values_once(self, num_values: int, qc_results=True):
-        """Abstract method for generating a single set of :attr:`values`
+        """Abstract method for generating a single set of random values
         based on the instance's attributes.
         This method can be called as many times as necessary to regenerate the instance's
-        *values* list and change its *num_values*."""
+        *values* list and change its *num_values*.
+
+        Args:
+            num_values: Number of values to be generated and stored in the *values* property.
+            qc_results: If *True*, the values are quality controlled
+                        using :meth:`_qc_dispersion`. Defaults to *True*.
+        """
         pass
 
-    def generate_values(self, num_values: int, qc_results=True, max_attempts=1000):
-        """TODO note that error is raised and attempts are made.
+    def generate_values(self, num_values: int, qc_results=True, max_attempts=10000):
+        """Generate values based on the normal dispersion's parameters.
 
         Args:
             num_values: Number of values to be generated and stored in the *values* property.
@@ -259,6 +276,9 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
                         Defaults to *True*.
             max_attempts: The maximum number of attempts for generation of valid values.
                           If exceeded, :class:`TooManyValueGenerationAttemptsError` is raised.
+                          Note that some parameters require much more tries
+                          because the distribution keeps getting rejected
+                          by the quality control process.
 
         Raises:
             TooManyValueGenerationAttemptsError: Too many attempts were made for value generation.
@@ -272,7 +292,7 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
         raise TooManyValueGenerationAttemptsError(f'Too many attempts ({max_attempts}) made '
                                                   f'for generating valid values.')
 
-    def _qc_dispersion(self, min_size=0, max_absolute_pct_error: int | None = None):
+    def _qc_dispersion(self, min_size: int = 0, max_absolute_pct_error: int | None = None):
         """Control the quality of the dispersion using two tests:
 
         - The number of values in the dispersion must be more than *min_size*. Defaults to 0.
@@ -305,18 +325,20 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
 
 class NormalDistributionDispersion(BaseNormalDistributionDispersion):
     """A dispersion class that generates a list of values with
-    a normal (gaussian) distribution.
+    a `normal (Gaussian) distribution <https://en.wikipedia.org/wiki/Normal_distribution>`_.
 
-    The generated distribution will be truly normal, but may include negative values.
+    The generated distribution will be truly normal,
+    but may include values that are negative or too small.
     This will cause issues for some purposes such as geometrical features.
-    Other classes will not be truly normal but not won't have this problem.
+    The :class:`TruncatedNormalDistributionDispersion` class
+    can fix this problem but its values will not be truly normal.
 
     This is a subclass of :class:`BaseNormalDistributionDispersion`.
     See its docs for other details.
     """
 
     def _generate_values_once(self, num_values: int, qc_results=True):
-        """Generate values randomly with the given mean and standard deviation.
+        """Generate a single set of random values with the given mean and standard deviation.
         This method can be called as many times as necessary to regenerate the instance's
         *values* list and change its *num_values*.
 
@@ -325,7 +347,7 @@ class NormalDistributionDispersion(BaseNormalDistributionDispersion):
         Args:
             num_values: Number of values to be generated and stored in the *values* property.
             qc_results: If *True*, the values are quality controlled
-                        using :meth:`BaseNormalDistributionDispersion._qc_dispersion`.
+                        using :meth:`~BaseNormalDistributionDispersion._qc_dispersion`.
                         Defaults to *True*.
         """
         if num_values < 1:
@@ -336,11 +358,29 @@ class NormalDistributionDispersion(BaseNormalDistributionDispersion):
 
 
 class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
-    """todo"""
+    """A dispersion class that generates a list of values with
+    a `truncated normal (Gaussian) distribution <https://en.wikipedia.org/wiki/Truncated_normal_distribution>`_.
+
+    A regular normal distribution created by the :class:`NormalDistributionDispersion` class
+    has the problem that it may include values that are negative or too small
+    which will cause issues for some purposes such as geometrical features.
+    This class allows for defining boundaries for the start and end of the distribution
+    which solves this problem.
+    However, there are two problems:
+
+      1. The results will not be truly normal.
+      2. The generated values may not pass the quality control process
+         which means that many attempts may be necessary
+         when calling the :meth:`~BaseNormalDistributionDispersion.generate_values` method.
+
+    This is a subclass of :class:`BaseNormalDistributionDispersion`.
+    See its docs for other details.
+    """
 
     def __init__(self, target_mean: float, target_std: float,
                  bound_a: float = -inf, bound_b: float = inf, num_values: int = None):
-        """
+        """Constructor for the :class:`TruncatedNormalDistributionDispersion` class.
+
         Args:
             target_mean: Target mean for the randomly generated values.
                          Actual mean will be stored in *actual_mean*.
@@ -350,7 +390,8 @@ class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
             bound_b:    The end of the range from which values should be drawn.
             num_values: Number of values to be generated and stored in the *values* property.
                         Defaults to *None* which defers value generation and
-                        requires a call to :meth:`generate_values` to generate the values.
+                        requires a call to :meth:`~BaseNormalDistributionDispersion.generate_values`
+                        to generate the values.
         """
         # target_mean and target_std are assigned in super().__init__.
         self.bound_a = bound_a
@@ -362,32 +403,44 @@ class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
         self._truncnorm_b = (bound_b - target_mean) / target_std
         super().__init__(target_mean, target_std, num_values)
 
-    def plot(self, num_bins):
-        """Plot a histogram of the dispersion object."""
+    def plot(self, num_bins: int, verbose: bool = True):  # TODO: maybe rename verbose?
+        """Plot a histogram of the dispersion object.
+
+        Args:
+            num_bins: Number of bins for the histogram of actual values.
+            verbose: Whether an equivalent (untruncated) normal distribution
+                     should be plotted based on the parameters.
+        """
         BaseListDispersion.plot(self, num_bins)
 
         x = np.linspace(-3 * self.target_std + self.target_mean, 3 * self.target_std + self.target_mean, 1000)
         y = truncnorm.pdf(x, a=self._truncnorm_a, b=self._truncnorm_b,
                           loc=self.target_mean, scale=self.target_std)
         plt.plot(x, y, label='Truncated Normal Distribution (Target)')
+        if verbose:
+            y_eq_normal = (np.exp(-np.power((x - self.target_mean) / self.target_std, 2.0) / 2)
+                           / (np.sqrt(2.0 * np.pi) * self.target_std))
+            plt.plot(x, y_eq_normal, label='Equivalent Normal Distribution (Target)')
+
         plt.plot([], [], ' ', label=self.__repr__().split('\n', 1)[1])
         BaseListDispersion._set_plot_legend()
         plt.show()
 
     def _generate_values_once(self, num_values: int, qc_results=True):
-        """Generate values randomly based on a truncated normal distribution
+        """Generate a single set of random values based on a truncated normal distribution
         with the given mean and standard deviation.
         This method can be called as many times as necessary to regenerate the instance's
         *values* list and change its *num_values*.
-        
+
         This function uses SciPy's `stats.truncnorm.rvs` function.
-        
+
         Args:
             num_values: Number of values to be generated and stored in the *values* property.
             qc_results: If *True*, the values are quality controlled
-                        using :meth:`BaseNormalDistributionDispersion._qc_dispersion`.
+                        using the :meth:`~BaseNormalDistributionDispersion._qc_dispersion` method.
                         Defaults to *True*.
-        """  # See __init__ for _truncnorm_a and _truncnorm_b.
+        """
+        # See __init__ for _truncnorm_a and _truncnorm_b.
         self.values = truncnorm.rvs(a=self._truncnorm_a, b=self._truncnorm_b,
                                     loc=self.target_mean, scale=self.target_std,
                                     size=num_values)
@@ -404,12 +457,13 @@ class RandomDispersion:  # TODO: doc
         return random.uniform(low=self.low, high=self.high, size=None)
 
     def __repr__(self):
-        return f"""{self.__class__}
-        Actual Low:  {self.low}
-        Actual High: {self.high}
-        """
+        return (f'{self.__class__.__name__} Instance:\n'
+                f'    Actual Low:  {self.low}\n'
+                f'    Actual High: {self.high}\n')
 
     def plot(self):
+        """A nonfunctional method that raises a *NotImplementedError*
+        because it is not applicable to the :class:`RandomDispersion` class."""
         raise NotImplementedError('This function is not available for the RandomDispersion class '
                                   'because it only return a random scalar.')
 
@@ -761,7 +815,7 @@ class ShapeDispersionArray(ShapeArray):
         """
         begin_log_msg = 'Trying to find a suitable number of shapes ' \
                         'for the given shape requests and target volume fraction.'
-        self.dispersion_logger.debug(begin_log_msg)
+        self.dispersion_logger.debug(begin_log_msg + '\n')
         logger.info(begin_log_msg)
         # Validate input.
         if target_vf <= 0:
@@ -792,9 +846,9 @@ class ShapeDispersionArray(ShapeArray):
                     self.dispersion_logger.debug(f'Suitable number of shapes was found '
                                                  f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
                     return num_shapes
-                # If we are here, all values have been checked. Raise error.
-                raise SuitableNumShapesNotFoundError(
-                    f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
+            # If we are here, all values have been checked. Raise error.
+            raise SuitableNumShapesNotFoundError(
+                f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
         elif solver_mode.upper() == 'BISECTION':
             num_shapes = bisection_solver_integer(func=self._find_vf_for_shape_number,
                                                   a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
@@ -838,6 +892,7 @@ class ShapeDispersionArray(ShapeArray):
         """
         # TODO: What about overlap? at least raise an error somewhere.
         # TODO: this can get better. Maybe a switch for analytical / real volume?
+        # TODO: why do we sometimes need too many generation attempts?
 
         # This function is used many times and therefore logs nothing.
         # Validate input.
@@ -900,6 +955,7 @@ class ShapeDispersionArray(ShapeArray):
                            max_attempts: int = 5000, max_trials: int = 100,
                            max_generations: int = 100):
         """FIXME
+        # TODO: change start_num_shapes to min_num_shapes.
         Disperse shapes in the *ShapeDispersionArray* instance according to
         the shape requests. All shape requests are processed and then :attr:`shape_requests`
         is emptied.
@@ -946,7 +1002,7 @@ class ShapeDispersionArray(ShapeArray):
         # as part of the process so we have to create a copy for this loop.
         self._backup_state()
         vf_dispersion_backup = deepcopy(self._backup_dict)
-        for gen_number in range(1, max_generations+1):
+        for gen_number in range(1, max_generations + 1):
             # fix this. it doesn't loop properly.
             # Regenerate all shape requests (subclasses of BaseNormalDistributionDispersion).
             self.dispersion_logger.debug(f'** Generation {gen_number}: Regenerating shape requests ... ')
@@ -959,7 +1015,14 @@ class ShapeDispersionArray(ShapeArray):
                 self.dispersion_logger.debug('Done. **\n')
 
             # Try to disperse this generation of shapes in the structure.
-            self.disperse_shapes(max_attempts=max_attempts, max_trials=max_trials, log_main=False)
+            try:
+                self.disperse_shapes(max_attempts=max_attempts, max_trials=max_trials, log_main=False)
+            except TooManyDispersionTrialsError:
+                self.dispersion_logger.debug(
+                    f'Generation {gen_number} could not be dispersed '
+                    f'after {max_trials} trials. Regenerating.\n')
+                self._restore_state(backup_dict=vf_dispersion_backup)
+                continue
 
             # Compare target VF with the instance's real voxel-based VF.
             vf_diff = abs(self.shape_array_volume_fraction - target_vf)
@@ -1031,7 +1094,7 @@ def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
         raise ValueError('func(a) and func(b) must have opposite values. Try changing a and b.')
 
     while True:
-        if (b - a) < 1:
+        if abs(b - a) <= 1:
             if a == b:
                 return a
             elif abs(f_a) < tolerance:
@@ -1039,12 +1102,11 @@ def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
             elif abs(f_b) < tolerance:
                 return b
             else:
-                raise RuntimeError(f'The solver reached F(a={a})={f_a} and F(b={b})={f_b}, '
-                                   f'but could not find a root with the given tolerance ({tolerance}).')
+                raise RuntimeError(f'The solver reached F(a={a})={f_a:.6} and F(b={b})={f_b:.6}, '
+                                   f'but could not find a root with the given tolerance ({tolerance:.6}).')
         # Calculate the *integer* midpoint c. Note that it will not be equal to a or b because of the above check.
         c = int((a + b) / 2)
         f_c = func(c, **kwargs)
-
         if abs(f_c) < tolerance:  # F(c) is OK.
             return c
         elif f_a * f_c < 0:  # The root is between a and c.
