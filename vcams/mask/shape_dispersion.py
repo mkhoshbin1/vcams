@@ -448,18 +448,62 @@ class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
             self._qc_dispersion()
 
 
-class RandomDispersion:  # TODO: doc
-    def __init__(self, low, high, boundary=0):
-        self.low = low + boundary
-        self.high = high - boundary
+class RandomDispersion:
+    """A dispersion class that generates a single random float value in a half-open interval.
+
+    The constructor (:meth:`__init__`) takes three arguments,
+    which are *low*, *high*, and boundary, and then calculates
+    :attr:`actual_low` and :attr:`actual_high` using the following equations:
+
+    .. math::
+
+       \\begin{cases}
+       \\text{actual_low} &=& \\text{low} &+& \\text{boundary}\\\\
+       \\text{actual_high} &=& \\text{high} &-& \\text{boundary}
+       \\end{cases}
+
+    This class uses *numpy.random.uniform()* in the half-open interval
+    :math:`[\\text{actual_low}, \\text{actual_high})`.
+
+    Instances of this class are callables, meaning that they can be called like a function.
+    For example:
+
+    .. code-block:: python
+
+       rand_disp_ins = RandomDispersion(low=2, high=10)
+       v1 = rand_disp_ins()  # A random value between 2 and 10.
+       v2 = rand_disp_ins()  # Another random value between 2 and 10.
+
+    """
+    def __init__(self, low: float, high: float, boundary: float = 0):
+        """Constructor for the :class:`RandomDispersion` class.
+
+        Args:
+            low: Lower boundary of the output interval.
+            high: Upper boundary of the output interval.
+            boundary: A boundary applied to the *low* and *high* arguments
+                      to calculate :attr:`actual_low` and :attr:`actual_high`.
+        """
+        self.low = low
+        self.high = high
+        self.boundary = boundary
+        self.actual_low = low + boundary
+        """Actual lower boundary from which the random number is generated.
+        Values will be equal or greater than this number."""
+        self.actual_high = high - boundary
+        """Actual upper boundary from which the random number is generated.
+        Values will be less than this number."""
 
     def __call__(self):
-        return random.uniform(low=self.low, high=self.high, size=None)
+        return random.uniform(low=self.actual_low, high=self.actual_high, size=None)
 
     def __repr__(self):
         return (f'{self.__class__.__name__} Instance:\n'
-                f'    Actual Low:  {self.low}\n'
-                f'    Actual High: {self.high}\n')
+                f'    Low:         {self.low}\n'
+                f'    High:        {self.high}\n'
+                f'    Boundary:    {self.boundary}\n'
+                f'    Actual Low:  {self.actual_low}\n'
+                f'    Actual High: {self.actual_high}\n')
 
     def plot(self):
         """A nonfunctional method that raises a *NotImplementedError*

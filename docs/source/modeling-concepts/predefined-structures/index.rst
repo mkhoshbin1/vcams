@@ -42,7 +42,7 @@ The main idea behind this method is that an implicit function :math:`\Phi` descr
     < 0, & \text{$P$ is inside the surface}\\
     = 0, & \text{$P$ is on the surface boundary}\\
     > 0, & \text{$P$ is outside the surface}
-  \end{cases}
+   \end{cases}
 
 Many different functions can be derived for modeling simple or complex shapes, as listed above.
 For more information, see the famous book by Osher and Fedkiw [1]_.
