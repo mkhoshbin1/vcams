@@ -4,7 +4,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Iterable
+from typing import Iterable, Callable
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -94,7 +94,7 @@ class BaseListDispersion(ABC):
 
     @staticmethod
     def _set_plot_legend():
-        """Set the legend for the plots created by the :meth:`BaseListDispersion.plot()` method."""
+        """Set the legend for the plots created by the :meth:`BaseListDispersion.plot` method."""
         plt.gca().legend(frameon=False, prop={'family': 'monospace'},  # bbox_to_anchor=(1.04, 1),
                          fontsize=2, numpoints=1, loc='upper right')
         # plt.tight_layout()
@@ -475,6 +475,7 @@ class RandomDispersion:
        v2 = rand_disp_ins()  # Another random value between 2 and 10.
 
     """
+
     def __init__(self, low: float, high: float, boundary: float = 0):
         """Constructor for the :class:`RandomDispersion` class.
 
@@ -513,26 +514,41 @@ class RandomDispersion:
 
 
 class ShapeDispersionArray(ShapeArray):
-    """TODO: doc
-    TODO: if part is specified, it's used as background. Is this a question or a statement??"""
+    """Class for an array of shapes that are dispersed in the workspace.
+    For each shape, its xyz coordinates are randomly assigned
+    and the rest of the parameters may be predefined or randomly generated.
+
+    This is, in fact, a subclass of :class:`~.shape.ShapeArray`
+    which can disperse shapes inside itself.
+
+    The array may contain any number of shapes of any class as long as they
+    are subclasses of :class:`.shape.BaseShape` and have the same *dim* attribute.
+
+    When constructing an instance, a :class:`~vcams.voxelpart.VoxelPart` instance
+    can be passed which allows for defining a *background* in the shape array.
+    This means that the shapes will only be dispersed in the nonempty regions
+    of the *VoxelPart* instance.
+    """
 
     def __init__(self, dim: str, part=None,
-                 mask_shape: tuple[int, int, int] = None,
+                 part_shape: tuple[int, int, int] = None,
                  voxel_size: tuple[float, float, float] = None,
                  num_bound_pixels: int = 0,
                  short_msg: bool = True):
-        """A subclass of :class:`~.shape.ShapeArray` which can disperse shapes inside itself.
+        """Constructor for the *ShapeDispersionArray* class.
 
         Args:
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
-            part (VoxelPart | None): The *VoxelPart* instance based on which the *ShapeArray* is created.
-                                     If None, *mask_shape* and *voxel_size* must be specified.
-                                     Defaults to *None*.
-            mask_shape: A tuple containing three integers which determines
-                        the shape of the returned boolean mask. Ignored if *part* is passed.
-            voxel_size: A tuple containing three floats which determine the size of a voxel
-                        in the x, y, and z directions. Ignored if *part* is passed.
+            part (VoxelPart | None): The *VoxelPart* instance based on which the shape array is created.
+                                     If *None*, *part_shape* and *voxel_size* must be specified,
+                                     otherwise they are ignored. Defaults to *None*.
+            part_shape: A tuple containing two or three integers which determine
+                        the shape of the returned boolean mask.
+                        Defaults to *None* and ignored if *part* is passed.
+            voxel_size: A tuple containing two or three floats which determine the size of a voxel
+                        in the x, y, and z directions.
+                        Defaults to *None* and ignored if *part* is passed.
             num_bound_pixels: An int specifying the number of pixels to add to the boundary of the base mask.
                               The boundary will become a region that the dispersed shapes cannot touch.
                               Defaults to 0.
@@ -541,23 +557,54 @@ class ShapeDispersionArray(ShapeArray):
                        Passed to :meth:`._log_placement` Defaults to *True*.
         """
 
-        super().__init__(dim, part, mask_shape, voxel_size, is_mask_calculation_lazy=False)
-        # TODO: doc that is_mask_calculation_lazy is True
-        # TODO: enforce that if part=None, *mask_shape* and *voxel_size* must be specified.
+        # Call the parent class's constructor.
+        # Note that is_mask_calculation_lazy is set to True.  # FIXME: set it to true
+        super().__init__(dim, part, part_shape, voxel_size, is_mask_calculation_lazy=False)
 
         self.short_msg = short_msg
         """See :meth:`.__init__`."""
 
         self.shape_requests = []
         """A list of shapes shape classes and related parameters that should be dispersed.
-        This list is emptied after a successful dispersion."""  # TODO: talk about structure.
+        
+        Members of this list are added by the :meth:`add_shape_request` method.
+        Each is a list containing the following:
+        
+          - **cls**: The *class* object for the shape that is requested.
+            It is a subclass of :class:`.shape.BaseShape`
+            and has the same *dim* attribute (2D or 3D) as the shape array.
+            The last two members of the list will be keyword arguments
+            that can be used to define the shape. 
+          
+          - **num_shapes**: Number of requested shapes. This should be an integer.
+            If set to *None*, the number can be determined by the object.
+            In that case, all members of the list should have *num_shapes* set to *None*.
+          
+          - **iterable_kwargs**: A dictionary of keyword arguments for *cls*.
+            Each dictionary key will be the name of a keyword argument for *cls*,
+            and the dictionary value will be the keyword argument's value.
+            Here, keys are either iterables or subclasses of :class:`BaseListDispersion`,
+            except for :class:`RandomDispersion` which is treated as a scalar.
+            Note that the dictionary values should have the same length as *num_shapes*.
+          
+          - **scalar_kwargs**: A dictionary of keyword arguments for *cls*.
+            Each dictionary key will be the name of a keyword argument for *cls*,
+            and the dictionary value will be the keyword argument's value.
+            Here, keys are either scalars or instances :class:`RandomDispersion`.
+            Scalars will be used for all the shapes requested (by this member)
+            and instances :class:`RandomDispersion` will be called
+            by the appropriate methods to generate random values.
+          
+        Addition to this list should be done by the :meth:`add_shape_request` method
+        and the list is emptied after a successful dispersion.
+        Users should not interact with this list. This is not enforced but highly recommended.
+        """
 
         self._dispersion_log_file_path = \
             part._log_file_path.with_stem(part._log_file_path.stem + '_dispersion_log')  # noqa: PyProtectedMember
         self.dispersion_logger = setup_dispersion_logger(part.name, log_file=self._dispersion_log_file_path,
                                                          display_log=True)
-        # TODO: make concise
-        # TODO: can we have the superclass's attributes in this doc?
+
         # Add boundary to the base mask so the shapes don't touch the outside.
         if num_bound_pixels:  # FIXME: here or in ShapeArray?
             self.base_mask[:, :num_bound_pixels] = True
@@ -566,13 +613,16 @@ class ShapeDispersionArray(ShapeArray):
             self.base_mask[-num_bound_pixels:, :] = True
 
     @property
-    def num_requested_shapes(self):  # TODO: test
-        """Total number of shapes requested in :meth:`shape_requests`."""
+    def num_requested_shapes(self) -> int:
+        """Total number of shapes requested in :attr:`shape_requests`.
+        This is calculated automatically on the fly.
+        If any of the *num_shapes* in *shape_requests* is set to *None*,
+        the number -1 is returned."""
         num_shapes_list = [sr[1] for sr in self.shape_requests]
         if None in num_shapes_list:
-            return '???'
+            return -1
         else:
-            return sum(num_shapes_list)
+            return int(sum(num_shapes_list, axis=None))
 
     def _backup_state(self):
         super()._backup_state()
@@ -587,7 +637,10 @@ class ShapeDispersionArray(ShapeArray):
     @staticmethod
     def _test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs):
         """Try to create a shape with a set of iterable_kwargs and scalar_kwargs
-        to make sure they are valid. It raises an error if unsuccessful and is otherwise silent."""
+        to make sure they are valid. It raises an error if unsuccessful and is otherwise silent.
+
+        This is a method function used by the :meth:`add_shape_request` method
+        and should not be directly called by the users."""
         iter0_dict_temp = dict()
         scalar_dict_temp = dict()
         for (k, v) in iterable_kwargs.items():
@@ -609,21 +662,25 @@ class ShapeDispersionArray(ShapeArray):
 
     def _place_shape_randomly(self, cls, shape_number: int, max_attempts: int,
                               trial_number: int = None, **kwargs):
-        """Place a shape in a random position. Placement is tried *max_attempts* number of times.
+        """Place a shape in a random position. Placement is tried *max_attempts* number of times
+        and if not successful, :class:`TooManyDispersionAttemptsError` is raised.
+
+        This is a private method used by the :meth:`disperse_shapes` method
+        and should not be directly called by the users.
 
         Args:
             cls: The shape class that should be placed. Arguments are passed as *kwargs*.
             shape_number: The number of this shape.
                           This number keeps track of the shapes that are dispersed
-                          and is used for logging the progress.
-                          it is *not* the shape's eventual ID.
+                          and is used for logging the progress. it is *not* the shape's eventual ID.
             max_attempts: The maximum number of attempts for placement of a shape.
                           If exceeded, :class:`TooManyDispersionAttemptsError` is raised.
             trial_number: The number for this trial. Used for logging the progress.
             **kwargs:     A dictionary where the keys are the arguments for the shape class
                           and the values are either dispersion objects or scalars.
-                          Coordinate arguments should be passes as :class:`RandomDispersion` instances.
-                          These are then called to generate a random value for each attempt.
+                          Coordinate arguments should always be passed as :class:`RandomDispersion`
+                          instances that are then called to generate a random value for each attempt.
+                          This is not enforced.
 
         Raises:
             TooManyDispersionAttemptsError: Too many attempts were made for this shape.
@@ -655,7 +712,9 @@ class ShapeDispersionArray(ShapeArray):
 
     def _log_placement(self, cls, attempt_number, shape_number, scalar_dict,
                        random_value_dict, trial_number=None):
-        """Log the placement of the shape."""
+        """Log the placement of the shape.
+        This is a private method used by the :meth:`_place_shape_randomly` method
+        and should not be directly called by the users."""
         if trial_number is None:
             trial_str = ''
         else:
@@ -672,7 +731,9 @@ class ShapeDispersionArray(ShapeArray):
         self.dispersion_logger.debug(msg_str)
 
     def _log_shape_placement_status(self, shape_status):
-        """Log the placement status of shape."""
+        """Log the placement status of shape.
+        This is a private method used by the :meth:`_place_shape_randomly` method
+        and should not be directly called by the users."""
         if shape_status:
             with LogWithoutFormatContext(self.dispersion_logger):
                 self.dispersion_logger.debug('Success!\r')
@@ -687,7 +748,7 @@ class ShapeDispersionArray(ShapeArray):
             cls: The shape class that should be placed. Arguments are passed as *kwargs*.
             num_shapes: Number of shapes that are requested with the given arguments.
                         Should either be an integer or *None* so it can be determined using
-                        the instance's :meth:`_find_suitable_num_shapes()` method.
+                        the instance's :meth:`_find_suitable_num_shapes` method.
                         If set to *None*, all other shape requests must also have this argument
                         set to *None*. Defaults to *None*.
             **kwargs: A dictionary where the keys are the arguments for the shape class
@@ -746,12 +807,12 @@ class ShapeDispersionArray(ShapeArray):
         the shape requests. All shape requests are processed
         and then :attr:`shape_requests` is emptied.
 
-        It is necessary for the instance's shape requests (TODO)
+        It is necessary for all the members in the instance's :attr:`shape_requests`
         to have valid *num_shapes*, otherwise an error is raised.
         If you need to disperse without knowing the number of shapes
-        (based on volume fraction), use the TODO method instead.
+        (based on volume fraction), use the :meth:`disperse_shapes_vf` method instead.
 
-        The function uses the :meth:`_place_shape_randomly()` function to place each shape
+        The function uses the :meth:`_place_shape_randomly` function to place each shape
         in a random position. Placement is tried *max_attempts* number of times
         and if the attempts run out, the *trial* ends and a new trial begins with
         a clean ShapeArray, and the same shapes will be dispersed again.
@@ -763,7 +824,8 @@ class ShapeDispersionArray(ShapeArray):
                           If exceeded, the trial ends and the process is restarted.
             max_trials:   The maximum number of trials. If exceeded,
                           :class:`TooManyDispersionTrialsError` is raised.
-            log_main:     TODO
+            log_main:     Whether the start and end of dispersion should be logged by the main logger.
+                          Defaults to True.
 
         Raises:
             TooManyDispersionTrialsError: Too many trials were done.
@@ -831,13 +893,15 @@ class ShapeDispersionArray(ShapeArray):
     def _find_suitable_num_shapes(self, target_vf: float, vf_tolerance: float,
                                   start_num_shapes: int = 5, max_num_shapes: int = 5000,
                                   solver_mode: str = 'BISECTION') -> int:
-        """Find a suitable number of shapes for the *ShapeDispersionArray*'s requested shapes.
+        """Find the suitable number of shapes for the *ShapeDispersionArray*'s requested shapes.
 
         This function first makes sure that all the shape requests are without *num_shapes*,
         then finds a suitable number of shapes that satisfies a *target_vf*.
-        In the case of multiple requests each of them will be assumed to have an equal number of shapes.
+        In the case of multiple requests, an equal number of shapes will be used for all of them.
 
         Read the documentation for the :meth:`_find_vf_for_shape_number` for more information.
+        This is a private method used by the :meth:`disperse_shapes_vf` method
+        and should not be directly called by the users.
 
         Args:
             target_vf: Target volume fraction.
@@ -861,47 +925,43 @@ class ShapeDispersionArray(ShapeArray):
                         'for the given shape requests and target volume fraction.'
         self.dispersion_logger.debug(begin_log_msg + '\n')
         logger.info(begin_log_msg)
+
         # Validate input.
         if target_vf <= 0:
             raise ValueError('target_volume_fraction should be a positive number.')
+        if (int(start_num_shapes) != start_num_shapes) or (start_num_shapes < 1):
+            raise ValueError(f'start_num_shapes must be an integer greater than 1, but is {start_num_shapes}.')
+        if (int(max_num_shapes) != max_num_shapes) or (max_num_shapes < 1):
+            raise ValueError(f'max_num_shapes must be an integer greater than 2, but is {max_num_shapes}.')
+        if max_num_shapes <= start_num_shapes:
+            raise ValueError(f'max_num_shapes must be greater than start_num_shapes.')
+        if vf_tolerance < 1E-4:
+            raise ValueError('vf_tolerance should be a float greater than 1E-4.')
+        if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
+            raise ValueError('Invalid value for solver_mode.')
         # Make sure all num_shapes in the shape requests are None.
         num_shapes_list = [sr[1] for sr in self.shape_requests]
         if not all(ns is None for ns in num_shapes_list):
             raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
                              f'If you want to find suitable num_shapes, they should *all* start as None.'
                              f'The list is: {num_shapes_list}')
-        if vf_tolerance < 1E-4:
-            raise ValueError('max_vf_diff should be None or a float greater than 1E-4.')
-        if max_num_shapes <= start_num_shapes:
-            raise ValueError('max_num_shapes should be greater than start_num_shapes.')
-        if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
-            raise ValueError('Invalid value for solver_mode.')
+
         with LogWithoutFormatContext(self.dispersion_logger):
             self.dispersion_logger.debug(f' Using the {solver_mode.title()} solver mode.\n')
-
         line_str = ('=' * 80) + '\n'
         if solver_mode.upper() == 'BRUTE FORCE':
-            # TODO: consider making a function.
-            # TODO: test this option.
-            for num_shapes in range(start_num_shapes, max_num_shapes + 1):
-                vf_diff = self._find_vf_for_shape_number(num_shapes, target_vf)
-                # If within acceptable range, return here.
-                if abs(vf_diff) <= vf_tolerance:
-                    self.dispersion_logger.debug(f'Suitable number of shapes was found '
-                                                 f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
-                    return num_shapes
-            # If we are here, all values have been checked. Raise error.
-            raise SuitableNumShapesNotFoundError(
-                f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
+            solver_function = integer_solver_brute_force
         elif solver_mode.upper() == 'BISECTION':
-            num_shapes = bisection_solver_integer(func=self._find_vf_for_shape_number,
-                                                  a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
-                                                  target_vf=target_vf)
-            self.dispersion_logger.debug(f'Suitable number of shapes was found '
-                                         f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
-            return num_shapes
+            solver_function = integer_solver_bisection
         else:
             raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
+
+        num_shapes = solver_function(func=self._find_vf_for_shape_number,
+                                     a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
+                                     target_vf=target_vf)
+        self.dispersion_logger.debug(f'Suitable number of shapes was found '
+                                     f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
+        return num_shapes
 
     def _find_vf_for_shape_number(self, num_shapes, target_vf) -> float:
         """Calculate the volume fraction (VF) for the *ShapeDispersionArray*'s requested shapes,
@@ -1004,7 +1064,7 @@ class ShapeDispersionArray(ShapeArray):
         the shape requests. All shape requests are processed and then :attr:`shape_requests`
         is emptied.
 
-        The function uses the :meth:`_place_shape_randomly()` function to place each shape
+        The function uses the :meth:`_place_shape_randomly` function to place each shape
         in a random position. Placement is tried *max_attempts* number of times
         and if the attempts run out, the *trial* ends and a new trial begins with
         a clean ShapeArray, and the same shapes will be dispersed again.
@@ -1043,7 +1103,7 @@ class ShapeDispersionArray(ShapeArray):
                     f"Target volume fraction is {target_vf:.6} and tolerance is {vf_tolerance}.")
         # Backup the shape array instance's state.
         # Note that the instance's _backup_dict will be overwritten
-        # as part of the process so we have to create a copy for this loop.
+        # as part of the process, so we have to create a copy for this loop.
         self._backup_state()
         vf_dispersion_backup = deepcopy(self._backup_dict)
         for gen_number in range(1, max_generations + 1):
@@ -1096,19 +1156,89 @@ class ShapeDispersionArray(ShapeArray):
         raise TooManyDispersionGenerationsError(f'Dispersion failed after {max_generations} generations.')
 
     # FIXME: add knapsack here.
-    # It should use the analytical volume for finding the optimal numner of shapes.
+    # It should use the analytical volume for finding the optimal number of shapes.
     # then use that to disperse and apply the knapsack algorithm to find a good list of shapes.
 
 
-def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
-    """A solver for finding the root of the function *F()* function using
+def integer_solver_validator(func: Callable, a: int, b: int, tolerance: float):
+    """Validate inputs for the integer solver functions.
+
+    Args:
+        func: The continuous function :math:`F()` to be solved.
+              This function only checks if it is callable.
+        a: The start of the range where the search takes place. Should be an integer less than *b*.
+        b: The end of the range where the search takes place. Should be an integer greater than *a*.
+        tolerance: The tolerance for finding the root of the function. It should be greater than 1E-4.
+
+    Raises:
+        ValueError: If any of the input values are invalid.
+    """
+    if callable(func):
+        raise ValueError(f'func should be a callable but its type is {type(func)}')
+    if (int(a) != a) or (a < 1):
+        raise ValueError(f'a must be an integer greater than 1, but is {a}.')
+    if (int(b) != b) or (b < 1):
+        raise ValueError(f'b must be an integer greater than 1, but is {b}.')
+    if b <= a:
+        raise ValueError(f'b must be greater than a.')
+    if tolerance < 1E-4:
+        raise ValueError('tolerance should be a float greater than 1E-4.')
+
+
+def integer_solver_brute_force(func: Callable, a: int, b: int, tolerance: float, **kwargs) -> int:
+    """A solver for finding the root of the function :math:`F()` using a brute force approach.
+
+    This solver checks all values between *a* and *b* for a root that satisfies the given *tolerance*.
+    The main difference between this and a regular solver is that in here, everything is an integer.
+
+    Note that since the function :math:`F()` is stochastic in nature, there will always be
+    an error associated with the result. This is OK as the result is acceptable with a tolerance.
+
+    Args:
+        func: The continuous function :math:`F()` to be solved. This solver is meant for and tested with
+              the :meth:`ShapeDispersionArray._find_vf_for_shape_number` function,
+              but should work for other functions.
+        a: The start of the range where the search takes place. Should be an integer less than *b*.
+        b: The end of the range where the search takes place. Should be an integer greater than *a*.
+        tolerance: The tolerance for finding the root of the function. It should be greater than 1E-4.
+        kwargs: The keyword arguments to be passed to *func*.
+
+    Returns:
+        An integer root for the function :math:`F()`.
+
+    Raises:
+        SuitableNumShapesNotFoundError: If a suitable root is not found.
+    """
+    # Validate inputs.
+    integer_solver_validator(func, a, b, tolerance)
+
+    old_vf_diff = None
+    for num_shapes in range(a, b + 1):
+        vf_diff = func(num_shapes, **kwargs)
+        # If within acceptable range, return here.
+        if abs(vf_diff) <= tolerance:
+            return num_shapes
+        # If the sign of new and old vf_diff are different,
+        # it means we are only getting further from a good solution
+        # and the best two solutions on the boundary have already
+        # been determined to be outside tolerance.
+        # So we should break the loop and raise SuitableNumShapesNotFoundError.
+        if np.sign(old_vf_diff) == np.sign(vf_diff):
+            break
+    # If we are here, all values have been checked or a solution cannot be found. Raise error.
+    raise SuitableNumShapesNotFoundError(f'Suitable num_shapes not found in the range [{a},{b}].')
+
+
+def integer_solver_bisection(func: Callable, a: int, b: int, tolerance: float, **kwargs) -> int:
+    """A solver for finding the root of the function :math:`F()` using
     the `bisection method <https://en.wikipedia.org/wiki/Bisection_method>`_.
+
     The main difference between this and a regular solver is that in here, everything is an integer.
     This means that if :math:`a=b`, or if :math:`b-a<1` and :math:`F(a)` or :math:`F(b)`
     are within the tolerances, the algorithms stops.
 
     Note that since the function :math:`F()` is stochastic in nature, there will always be
-    an error associated with the result. This is OK as the result is used in a knapsack algorithm.
+    an error associated with the result. This is OK as the result is acceptable with a tolerance.
 
     Args:
         func: The continuous function :math:`F()` to be solved. This solver is meant for and tested with
@@ -1117,21 +1247,18 @@ def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
               Note that :math:`F(a)` and :math:`F(b)` should have opposing signs.
         a: The start of the range where the search takes place. Should be an integer less than *b*.
         b: The end of the range where the search takes place. Should be an integer greater than *a*.
-        tolerance: The tolerance for finding the root of the function.
+        tolerance: The tolerance for finding the root of the function. It should be greater than 1E-4.
         kwargs: The keyword arguments to be passed to *func*.
 
     Returns:
-        An integer root for the function.
+        An integer root for the function :math:`F()`.
+
+    Raises:
+        SuitableNumShapesNotFoundError: If a suitable root is not found.
     """
-    # Validate everything.
-    if (int(a) != a) or (a < 1):
-        raise ValueError(f'a must be an integer greater than 1, but is {a}.')
-    if (int(b) != b) or (b < 1):
-        raise ValueError(f'b must be an integer greater than 1, but is {b}.')
-    if b < a:
-        raise ValueError(f'b must be greater than a.')
-    if (b - a) < 1:  # Note that b is greater than a and both are positive, so abs() is not necessary.
-        raise ValueError(f'(b-a) must be greater than 1.')
+    # Validate inputs.
+    integer_solver_validator(func, a, b, tolerance)
+
     f_a = func(a, **kwargs)
     f_b = func(b, **kwargs)
     if (f_a * f_b) > 0:
@@ -1146,8 +1273,9 @@ def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
             elif abs(f_b) < tolerance:
                 return b
             else:
-                raise RuntimeError(f'The solver reached F(a={a})={f_a:.6} and F(b={b})={f_b:.6}, '
-                                   f'but could not find a root with the given tolerance ({tolerance:.6}).')
+                raise SuitableNumShapesNotFoundError(
+                    f'The solver reached F(a={a})={f_a:.6} and F(b={b})={f_b:.6}, '
+                    f'but could not find a root with the given tolerance ({tolerance:.6}).')
         # Calculate the *integer* midpoint c. Note that it will not be equal to a or b because of the above check.
         c = int((a + b) / 2)
         f_c = func(c, **kwargs)

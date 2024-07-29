@@ -171,7 +171,7 @@ class BaseShape(ABC):
 
 
 class ShapeArray:
-    """Class for an array of shapes.
+    """Class for an array of shapes where each shape's parameters and location is predefined.
     The array may contain any number of shapes of any class as long as they
     are subclasses of :class:`.shape.BaseShape` and have the same *dim* attribute.
     """
@@ -180,12 +180,13 @@ class ShapeArray:
                  part_shape: tuple[int, int] | tuple[int, int, int] = None,
                  voxel_size: tuple[float, float] | tuple[float, float, float] = None,
                  is_mask_calculation_lazy: bool = True):
-        """
+        """Constructor for the *ShapeArray* class.
+
         Args:
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
-            part (VoxelPart | None): The *VoxelPart* instance based on which a mask is created.
-                                     If *None*, *part_shape* and *voxel_size* must be specified
+            part (VoxelPart | None): The *VoxelPart* instance based on which the shape array is created.
+                                     If *None*, *part_shape* and *voxel_size* must be specified,
                                      otherwise they are ignored. Defaults to *None*.
             part_shape: A tuple containing two or three integers which determine
                         the shape of the returned boolean mask.
@@ -211,6 +212,9 @@ class ShapeArray:
             self.base_mask = (part.data == 0)
             self._part_log_file_path = part._log_file_path  # noqa: PyProtectedMember
         else:
+            if (part_shape is None) or (voxel_size is None):
+                raise ValueError('The part argument is not specified,'
+                                 'therefore both part_shape and voxel_size must be specified.')
             self.part_name = None
             """Name of the part for which the *ShapeArray* instance is created.
             If a pert is not passed, it is set to *None* and it is not used."""
