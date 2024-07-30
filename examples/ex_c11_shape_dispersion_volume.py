@@ -47,10 +47,8 @@ shape_disp_array_obj.add_shape_request(num_shapes=None, cls=EllipseFromAspectRat
 # Disperse the shapes in shape_disp_array_obj with the desired target_vf.
 # Why doesn't this work for num_shapes > 16? It requires too random value generation many attempts, but why?
 # The problem seems to be with aspect ratio because of numbers' size.
-shape_disp_array_obj.disperse_shapes_vf(target_vf=0.30, vf_tolerance=0.03,
-                                        start_num_shapes=5, max_num_shapes=20,
-                                        max_attempts=100, max_trials=1000,
-                                        max_generations=100)
+shape_disp_array_obj.disperse_shapes_vf(target_vf=0.30, vf_tolerance=0.03, min_num_shapes=5, max_num_shapes=20,
+                                        max_attempts=100, max_trials=1000, max_generations=100)
 
 # Apply the Boolean mask to the part.
 part.apply_mask(mask=shape_disp_array_obj.mask, value=2)

@@ -8,14 +8,14 @@ from typing import Iterable, Callable
 
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np  # TODO: maybe remove??
+import numpy as np  # This is intentional to simplify the formulae.
 from numpy import random, max, abs, isscalar, sum, inf, ndarray
 from scipy.stats import truncnorm
 
 from .shape import ShapeArray
 from ..logger_conf import setup_dispersion_logger, LogWithoutFormatContext
 
-matplotlib.use('TkAgg')  # FIXME: https://stackoverflow.com/a/73788178/7180705
+matplotlib.use('TkAgg')  # From https://stackoverflow.com/a/73788178/7180705
 logger = logging.getLogger(__name__)
 
 
@@ -403,13 +403,14 @@ class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
         self._truncnorm_b = (bound_b - target_mean) / target_std
         super().__init__(target_mean, target_std, num_values)
 
-    def plot(self, num_bins: int, verbose: bool = True):  # TODO: maybe rename verbose?
+    def plot(self, num_bins: int, plot_equivalent_normal_curve: bool = True):
         """Plot a histogram of the dispersion object.
 
         Args:
             num_bins: Number of bins for the histogram of actual values.
-            verbose: Whether an equivalent (untruncated) normal distribution
-                     should be plotted based on the parameters.
+            plot_equivalent_normal_curve: Whether an equivalent (untruncated) normal distribution
+                                          should be plotted based on the parameters.
+                                          Defaults to True.
         """
         BaseListDispersion.plot(self, num_bins)
 
@@ -417,7 +418,7 @@ class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
         y = truncnorm.pdf(x, a=self._truncnorm_a, b=self._truncnorm_b,
                           loc=self.target_mean, scale=self.target_std)
         plt.plot(x, y, label='Truncated Normal Distribution (Target)')
-        if verbose:
+        if plot_equivalent_normal_curve:
             y_eq_normal = (np.exp(-np.power((x - self.target_mean) / self.target_std, 2.0) / 2)
                            / (np.sqrt(2.0 * np.pi) * self.target_std))
             plt.plot(x, y_eq_normal, label='Equivalent Normal Distribution (Target)')
@@ -558,8 +559,8 @@ class ShapeDispersionArray(ShapeArray):
         """
 
         # Call the parent class's constructor.
-        # Note that is_mask_calculation_lazy is set to True.  # FIXME: set it to true
-        super().__init__(dim, part, part_shape, voxel_size, is_mask_calculation_lazy=False)
+        # Note that is_mask_calculation_lazy is set to True.
+        super().__init__(dim, part, part_shape, voxel_size, is_mask_calculation_lazy=True)
 
         self.short_msg = short_msg
         """See :meth:`.__init__`."""
@@ -606,7 +607,7 @@ class ShapeDispersionArray(ShapeArray):
                                                          display_log=True)
 
         # Add boundary to the base mask so the shapes don't touch the outside.
-        if num_bound_pixels:  # FIXME: here or in ShapeArray?
+        if num_bound_pixels:
             self.base_mask[:, :num_bound_pixels] = True
             self.base_mask[:, -num_bound_pixels:] = True
             self.base_mask[:num_bound_pixels, :] = True
@@ -891,7 +892,7 @@ class ShapeDispersionArray(ShapeArray):
             logger.info(success_msg)
 
     def _find_suitable_num_shapes(self, target_vf: float, vf_tolerance: float,
-                                  start_num_shapes: int = 5, max_num_shapes: int = 5000,
+                                  min_num_shapes: int, max_num_shapes: int,
                                   solver_mode: str = 'BISECTION') -> int:
         """Find the suitable number of shapes for the *ShapeDispersionArray*'s requested shapes.
 
@@ -907,16 +908,16 @@ class ShapeDispersionArray(ShapeArray):
             target_vf: Target volume fraction.
             vf_tolerance: Maximum tolerable difference between the reached volume fraction and *target_vf*.
                           It should be a float greater than 1E-4.
-            start_num_shapes: The initial value of *num_shapes* investigated by the function.
+            min_num_shapes: The initial value of *num_shapes* investigated by the function.
             max_num_shapes: The maximum value of *num_shapes* investigated by the function.
             solver_mode: The solver used for finding the suitable number of shapes.
-                         If set to *'BRUTE FORCE'*, all values from *start_num_shapes* to *max_num_shapes*
+                         If set to *'BRUTE FORCE'*, all values from *min_num_shapes* to *max_num_shapes*
                          are tested and if set to *'BISECTION'*, the bisection method
                          is used to find the suitable value.
                          Defaults to *'BISECTION'* which is faster and more reliable.
 
         Returns:
-            A suitable value for *num_shapes* that can be used in conjunction with the knapsack algorithm.
+            A suitable value for *num_shapes*.
 
         Raises:
             SuitableNumShapesNotFoundError: If a suitable number of shapes is not found in the given range.
@@ -929,12 +930,12 @@ class ShapeDispersionArray(ShapeArray):
         # Validate input.
         if target_vf <= 0:
             raise ValueError('target_volume_fraction should be a positive number.')
-        if (int(start_num_shapes) != start_num_shapes) or (start_num_shapes < 1):
-            raise ValueError(f'start_num_shapes must be an integer greater than 1, but is {start_num_shapes}.')
+        if (int(min_num_shapes) != min_num_shapes) or (min_num_shapes < 1):
+            raise ValueError(f'min_num_shapes must be an integer greater than 1, but is {min_num_shapes}.')
         if (int(max_num_shapes) != max_num_shapes) or (max_num_shapes < 1):
             raise ValueError(f'max_num_shapes must be an integer greater than 2, but is {max_num_shapes}.')
-        if max_num_shapes <= start_num_shapes:
-            raise ValueError(f'max_num_shapes must be greater than start_num_shapes.')
+        if max_num_shapes <= min_num_shapes:
+            raise ValueError(f'max_num_shapes must be greater than min_num_shapes.')
         if vf_tolerance < 1E-4:
             raise ValueError('vf_tolerance should be a float greater than 1E-4.')
         if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
@@ -957,13 +958,13 @@ class ShapeDispersionArray(ShapeArray):
             raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
 
         num_shapes = solver_function(func=self._find_vf_for_shape_number,
-                                     a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
+                                     a=min_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
                                      target_vf=target_vf)
         self.dispersion_logger.debug(f'Suitable number of shapes was found '
                                      f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
         return num_shapes
 
-    def _find_vf_for_shape_number(self, num_shapes, target_vf) -> float:
+    def _find_vf_for_shape_number(self, num_shapes: int, target_vf: float) -> float:
         """Calculate the volume fraction (VF) for the *ShapeDispersionArray*'s requested shapes,
         given the input number of shapes and return the difference between the actual and target VF.
 
@@ -980,7 +981,7 @@ class ShapeDispersionArray(ShapeArray):
               dispersable in a ShapeDispersionArray. This function is only about the VFs.
             - The nature of shape generation is stochastic. This means that no two calls
               will have an equal output. This is generally OK as the results are expected
-              to be used in a knapsack algorithm.
+              within a tolerance.
             - The volume used is the analytical volume of each shape
               which is fast but inaccurate for larger voxel sizes.
             - The volume of each voxel is calculated individually.
@@ -994,10 +995,6 @@ class ShapeDispersionArray(ShapeArray):
         Returns:
             The difference between the actual VF and *target_vf*.
         """
-        # TODO: What about overlap? at least raise an error somewhere.
-        # TODO: this can get better. Maybe a switch for analytical / real volume?
-        # TODO: why do we sometimes need too many generation attempts?
-
         # This function is used many times and therefore logs nothing.
         # Validate input.
         if target_vf <= 0:
@@ -1054,39 +1051,52 @@ class ShapeDispersionArray(ShapeArray):
         return vf_diff
 
     def disperse_shapes_vf(self, target_vf: float, vf_tolerance: float,
-                           start_num_shapes: int = 5, max_num_shapes: int = 5000,
+                           min_num_shapes: int = 5, max_num_shapes: int = 5000,
                            solver_mode: str = 'BISECTION',
                            max_attempts: int = 5000, max_trials: int = 100,
                            max_generations: int = 100):
-        """FIXME
-        # TODO: change start_num_shapes to min_num_shapes.
-        Disperse shapes in the *ShapeDispersionArray* instance according to
-        the shape requests. All shape requests are processed and then :attr:`shape_requests`
-        is emptied.
+        """Disperse shapes in the *ShapeDispersionArray* instance to reach a target volume fraction (VF).
+        All shape requests are processed and then :attr:`shape_requests` is emptied.
 
-        The function uses the :meth:`_place_shape_randomly` function to place each shape
-        in a random position. Placement is tried *max_attempts* number of times
-        and if the attempts run out, the *trial* ends and a new trial begins with
-        a clean ShapeArray, and the same shapes will be dispersed again.
-        If after the given maximum number of trials (*max_trials*) all shapes are not placed,
-        :class:`TooManyDispersionTrialsError` will be raised to indicate an error.
+        Here, all shape requests should have a *num_shapes* value of *None*.
+        The function uses the :meth:`_find_suitable_num_shapes` function to find
+        a suitable number of shapes (for all requests).
+
+        Then, for *max_generations* number of times, the following is performed:
+
+          1. The random values in shape requests are regenerated.
+          2. The :meth:`disperse_shapes` method is used to disperse the shapes.
+             Make sure to read that function's documents for its intricacies.
+             If the shapes cannot be dispersed, a new generation is started.
+          3. If dispersion is successful, the final volume fraction (VF)
+             is checked to make sure it is within tolerances.
 
         Args:
+            target_vf: Target volume fraction.
+            vf_tolerance: Maximum tolerable difference between the reached volume fraction and *target_vf*.
+                          It should be a float greater than 1E-4.
+            min_num_shapes: The initial value used to find a suitable *num_shapes*.
+            max_num_shapes: The maximum value used for finding a suitable *num_shapes*.
+            solver_mode: The solver used for finding the suitable number of shapes.
+                         If set to *'BRUTE FORCE'*, all values from *min_num_shapes* to *max_num_shapes*
+                         are tested and if set to *'BISECTION'*, the bisection method
+                         is used to find the suitable value.
+                         Defaults to *'BISECTION'* which is faster and more reliable.
             max_attempts: The maximum number of attempts for placement of a shape.
                           If exceeded, the trial ends and the process is restarted.
-            max_trials:   The maximum number of trials. If exceeded,
-                          :class:`TooManyDispersionTrialsError` is raised.
+            max_trials:   The maximum number of trials for a shape generation attempt.
+                          If exceeded, a new shape generation attempt will be made.
+            max_generations: Maximum number of shape generation attempts.
+                             If exceeded, :class:`TooManyDispersionGenerationsError` is raised.
 
         Raises:
-            TooManyDispersionTrialsError: Too many trials were done.
-                                          Note that each trials entails many attempts.
+            TooManyDispersionGenerationsError: Too many trials were done.
+                                               Note that each generation entails many trials.
         """
-        # Note that the shape request are already there. FIXME: validate this!!
-        # self.dispersion_logger.debug('Dispersing shapes in the ShapeDispersionArray.\n')
-        # logger.debug('Dispersing shapes in the ShapeDispersionArray.')
+        self.dispersion_logger.debug('Dispersing shapes in the ShapeDispersionArray.\n')
+        logger.debug('Dispersing shapes in the ShapeDispersionArray.')
         # Find the suitable number of shapes.
-        num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance,
-                                                    start_num_shapes, max_num_shapes,
+        num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance, min_num_shapes, max_num_shapes,
                                                     solver_mode)
         # Set num_shapes in all shape requests and regenerate subclasses of BaseNormalDistributionDispersion.
         for sr in self.shape_requests:
@@ -1155,10 +1165,6 @@ class ShapeDispersionArray(ShapeArray):
                 continue
         raise TooManyDispersionGenerationsError(f'Dispersion failed after {max_generations} generations.')
 
-    # FIXME: add knapsack here.
-    # It should use the analytical volume for finding the optimal number of shapes.
-    # then use that to disperse and apply the knapsack algorithm to find a good list of shapes.
-
 
 def integer_solver_validator(func: Callable, a: int, b: int, tolerance: float):
     """Validate inputs for the integer solver functions.
@@ -1173,8 +1179,8 @@ def integer_solver_validator(func: Callable, a: int, b: int, tolerance: float):
     Raises:
         ValueError: If any of the input values are invalid.
     """
-    if callable(func):
-        raise ValueError(f'func should be a callable but its type is {type(func)}')
+    if not callable(func):
+        raise ValueError(f'func should be a function or a method but its type is {type(func)}')
     if (int(a) != a) or (a < 1):
         raise ValueError(f'a must be an integer greater than 1, but is {a}.')
     if (int(b) != b) or (b < 1):
@@ -1287,5 +1293,3 @@ def integer_solver_bisection(func: Callable, a: int, b: int, tolerance: float, *
         else:  # The root is between c and b.
             a = c
             f_a = f_c
-
-# TODO: Check base_mask of ShapeArray with a TPMS. maybe make an example?
