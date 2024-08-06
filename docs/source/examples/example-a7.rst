@@ -16,7 +16,7 @@ The parameter *log_debug* is set to *True* for demonstration purposes.
 
 Afterwards, numpy is imported and an array is created using its *choice* function::
 
-    random_mask = random.choice((True, False), size=part.data.shape)
+    random_mask = random.choice((True, False), size=part.size)
 
 The mask is then applied to the part with a value of 1 which corresponds to *MAT-1*::
 

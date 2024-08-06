@@ -172,7 +172,7 @@ class VoxelPart:
         return self.name + '-Ins'
 
     @property
-    def size(self) -> ndarray:  # TODO: use everywhere in refactor
+    def size(self) -> ndarray:
         """Shape of the part's *data* property.
         May have two or three elements depending on how the part was defined."""
         return array(self.data.shape)
@@ -353,7 +353,7 @@ class VoxelPart:
         if not mask.dtype == bool:
             raise ValueError("mask.dtype is not 'bool'.")
         # Make sure mask and self.data have the same shape.
-        if mask.shape != self.data.shape:
+        if mask.shape != self.size:
             if self.data.ndim == 2 and mask.shape[2] == 1:
                 pass
             else:
@@ -412,7 +412,7 @@ class VoxelPart:
         name = 'MAT-{mat_code:0{num_padding}d}'.format(mat_code=mat_code, num_padding=num_padding)
         # Source: https://stackoverflow.com/a/32413139/7180705
         elem_ids = np.ravel_multi_index(multi_index=np.nonzero(self.data == mat_code),
-                                        dims=self.data.shape, mode='raise', order='C').astype('uint32')
+                                        dims=self.size, mode='raise', order='C').astype('uint32')
         return name, elem_ids
 
 
@@ -505,7 +505,7 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
     if modeling_mode == '1':  # No Further Manipulation.
         pass
     elif modeling_mode == '2':  # TPMS
-        boolean_mask = mask_from_function(mask_shape=part.data.shape,
+        boolean_mask = mask_from_function(mask_shape=part.size,
                                           func=tpms_dict[part_manipulation_dict['tpms_type']],
                                           part=part,
                                           l=part_manipulation_dict['tpms_length'],
@@ -528,12 +528,12 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
     elif modeling_mode == '5':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:
             circle_obj = Circle(id=0, a=float(row[0]), b=float(row[1]), r=float(row[2]))
-            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape, voxel_size=part.voxel_size),
+            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.size, voxel_size=part.voxel_size),
                             value=int(row[3]))
     elif modeling_mode == '6':  # Spatial Composite (Spherical Inclusions)
         for row in part_manipulation_dict['sphere_list']:
             circle_obj = Sphere(id=0, a=float(row[0]), b=float(row[1]), c=float(row[2]), r=float(row[3]))
-            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.data.shape, voxel_size=part.voxel_size),
+            part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.size, voxel_size=part.voxel_size),
                             value=int(row[4]))
     else:
         raise ValueError("Invalid value '%s' for part_manipulation_dict['modeling_mode']." % modeling_mode)

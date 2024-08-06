@@ -559,7 +559,7 @@ def create_node_sets(part, dim: str,
     # Define a numpy.array containing a single number 0.
     zro = array([0])
     # Define elem_array_shape.
-    elem_array_shape = part.data.shape
+    elem_array_shape = part.size
     # In each direction, node array is larger by one.
     node_array_shape = tuple(i + 1 for i in elem_array_shape)
     if dim.upper() == '2D':

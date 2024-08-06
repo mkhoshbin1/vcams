@@ -21,7 +21,7 @@ We must specify the size, highest and lowest numbers, and the *dtype* of the ran
 These can be extracted from the part's *data* array.
 We will then assign the created array to part.data, thus replacing its previous contents::
 
-   random_array = rng.integers(low=1, high=3, size=part.data.shape,
+   random_array = rng.integers(low=1, high=3, size=part.size,
                             dtype=part.data.dtype, endpoint=True)
    part.data = random_array
 
