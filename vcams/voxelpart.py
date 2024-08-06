@@ -30,7 +30,7 @@ class VoxelPart:
                  voxel_size: tuple[float, float, float] | tuple[float, float] = (1.0, 1.0, 1.0),
                  dtype: str = 'uint8', name: str = 'unnamed', description: str = '',
                  working_dir: str | Path = None,
-                 overwrite_logs: bool = True, log_debug: bool = False):
+                 overwrite_logs: bool = True, log_debug: bool = False, display_log: bool = True):
         """
         Args:
             size: The tuple *(size_x, size_y, size_z)* which determines
@@ -80,6 +80,9 @@ class VoxelPart:
                             Otherwise, the file will be opened in append mode.
 
             log_debug: If set to True, debug information will be written to program log.
+
+            display_log: If set to True, all logs will be displayed on the screen
+                         in addition to being written to file.
         """
 
         # Validate dtype.
@@ -151,9 +154,8 @@ class VoxelPart:
 
         # Create and configure the logger.
         self._log_file_path = Path(self.working_dir) / (name + '.log')  # Make sure it's necessary.
-        setup_main_logger(log_file=self._log_file_path, display_log=True,
+        setup_main_logger(log_file=self._log_file_path, display_log=display_log,
                           overwrite_logs=overwrite_logs, log_debug=log_debug)
-        # TODO: add display_log as parameter.
 
         # Log creation of the object.
         logger.info('\n** Created using VCAMS v%s.'
