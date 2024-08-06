@@ -7,7 +7,7 @@ from vcams.voxelpart import VoxelPart
 # Create the part.
 part = VoxelPart(size=(200, 200), base_material=1,
                  voxel_size=(0.005, 0.005),
-                 name='Ex C-10 Dispersion of Specified Number of Shapes',
+                 name='Ex C-10 Dispersion of a Specified Number of Shapes',
                  description='A 2D square 200*200 part created with '
                              'a specified number of shapes randomly dispersed in it.',
                  log_debug=True)
@@ -25,12 +25,12 @@ shape_disp_array_obj = ShapeDispersionArray(dim='2D', part=part,
                                             short_msg=True)
 
 # Request the circles.
-num_circles = 10
-circle_r = TruncatedNormalDistributionDispersion(num_values=num_circles,
+num_circle = 10
+circle_r = TruncatedNormalDistributionDispersion(num_values=num_circle,
                                                  target_mean=0.06, target_std=0.03, bound_a=min_valid_r)
 circle_xc = RandomDispersion(0, part.real_size[0], max(circle_r) + bound_length)
 circle_yc = RandomDispersion(0, part.real_size[1], max(circle_r) + bound_length)
-shape_disp_array_obj.add_shape_request(num_shapes=num_circles, cls=Circle,
+shape_disp_array_obj.add_shape_request(num_shapes=num_circle, cls=Circle,
                                        xc=circle_xc, yc=circle_yc, r=circle_r, br=bound_length)
 
 # Request the ellipses.

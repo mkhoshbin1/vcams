@@ -43,7 +43,7 @@ This means that the values of the elements selected by the mask are set to 2::
 
     part.apply_mask(mask=shape_array_obj.mask, value=2)
 
-Finally, The part is then exported to an Abaqus™ input file in *2D* mode with *CPE4R* elements.
+Finally, The part is exported to an Abaqus™ input file in *2D* mode with *CPE4R* elements.
 The *Non-Empty* elements (which happens to be the whole model), are requested to be exported.
 
 The code can be found in the *examples* folder of the main repository. It is also included below:

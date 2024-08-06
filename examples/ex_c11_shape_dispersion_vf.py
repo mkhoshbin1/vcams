@@ -7,7 +7,7 @@ from vcams.voxelpart import VoxelPart
 # Create the part.
 part = VoxelPart(size=(200, 200), base_material=1,
                  voxel_size=(0.005, 0.005),
-                 name='Ex C-11 Dispersion of Shapes VF',
+                 name='Ex C-11 Dispersion of Shapes with Specified VF',
                  description='A 2D square 200*200 part created with '
                              'a volume fraction of shapes randomly dispersed in it.',
                  log_debug=True)
@@ -25,9 +25,11 @@ shape_disp_array_obj = ShapeDispersionArray(dim='2D', part=part,
                                             short_msg=True)
 
 # Request the circles.
-# TODO: comment that max(circle_r) + bound_length cannot be used here.
+# Note that the boundary for RandomDispersion instances
+# is only set to bound_length because we do not have any values
+# for the radius so there is no maximum radius to be added to it.
+# This means that some circles may touch the boundary.
 circle_r = TruncatedNormalDistributionDispersion(target_mean=0.05, target_std=0.02, bound_a=min_valid_r)
-# circle_r = .1
 circle_xc = RandomDispersion(0, part.real_size[0], bound_length)
 circle_yc = RandomDispersion(0, part.real_size[1], bound_length)
 shape_disp_array_obj.add_shape_request(num_shapes=None, cls=Circle,
@@ -45,15 +47,14 @@ shape_disp_array_obj.add_shape_request(num_shapes=None, cls=EllipseFromAspectRat
                                        ba=bound_length, bb=bound_length)
 
 # Disperse the shapes in shape_disp_array_obj with the desired target_vf.
-# Why doesn't this work for num_shapes > 16? It requires too random value generation many attempts, but why?
-# The problem seems to be with aspect ratio because of numbers' size.
-shape_disp_array_obj.disperse_shapes_vf(target_vf=0.30, vf_tolerance=0.03, min_num_shapes=5, max_num_shapes=20,
+shape_disp_array_obj.disperse_shapes_vf(target_vf=0.30, vf_tolerance=0.03,
+                                        min_num_shapes=5, max_num_shapes=20,
                                         max_attempts=100, max_trials=1000, max_generations=100)
 
 # Apply the Boolean mask to the part.
 part.apply_mask(mask=shape_disp_array_obj.mask, value=2)
 
 # # Output the part.
-part.output_abaqus_inp(file_name='ex_c11_shape_dispersion_volume',
+part.output_abaqus_inp(file_name='ex_c11_shape_dispersion_vf',
                        elem_code='CPE4R', dim='2D',
                        material_elem_sets='Non-Empty')

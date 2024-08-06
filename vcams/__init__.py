@@ -35,6 +35,6 @@ gui_file_name = gui_name + ' v' + __version__
 
 # Import the modules. Although general guidelines are against polluting the namespace,
 # it's done to improve usability for less experienced users.
-from . import voxelpart
-from . import bc
-from . import mask
+from . import voxelpart  # noqa: E402
+from . import bc  # noqa: E402
+from . import mask  # noqa: E402
