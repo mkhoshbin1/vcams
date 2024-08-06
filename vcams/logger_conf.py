@@ -3,7 +3,7 @@ from pathlib import Path
 from sys import stdout
 
 
-def setup_main_logger(log_file: Path, display_log: bool = False,
+def setup_main_logger(log_file: Path, display_log: bool = True,
                       overwrite_logs: bool = True, log_debug: bool = False):
     """Set up the main logger for a *VoxelPart* object."""
     logger_name = 'vcams'  # This will become the root for all library-level logs.
