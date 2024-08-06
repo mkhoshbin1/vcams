@@ -173,28 +173,38 @@ class VoxelPart:
 
     @property
     def size(self) -> ndarray:
-        """Shape of the part's *data* property.
-        May have two or three elements depending on how the part was defined."""
+        """Size of the *VoxelPart* instance.
+
+        This is the shape of the part's *data* property, returned as a NumPy array.
+        If the instance is 2D, it will have two elements, otherwise it will have three."""
         return array(self.data.shape)
 
     @property
     def real_size(self) -> ndarray:
-        """Real size of the part which is ``part.size * voxel_size``."""
-        # TODO: how does this behave in case of 2D and 3D?
+        """Real size of the *VoxelPart* instance.
+
+        This is defined as ``part.size * voxel_size``, and is returned as a NumPy array.
+        If the instance is 2D, it will have two elements, otherwise it will have three."""
         return np.array([self.size[i] * self.voxel_size[i] for i in range(len(self.size))])
 
     @property
     def data(self):
-        """TODO"""
+        """asdasd
+        asdasd
+        TODO"""
         return self._data
 
     @data.setter
-    def data(self, value):
-        # TODO: check for ndim.
+    def data(self, value: ndarray):
         if not isinstance(value, ndarray):
             raise ValueError('data must be a numpy ndarray.')
         if not value.flags.c_contiguous:
             raise ValueError('data must be C-continuous.')
+        if (self.data is not None) and (self.data.ndim != value.ndim):
+            # Because in __init__, data is initially None.
+            raise ValueError('The new value must have the exact ndim as the current data attribute.')
+        if value.dtype != self.dtype:
+            raise ValueError('The new value must have the exact dtype as the VoxelPart instance.')
         self._data = value.astype(dtype=self.dtype, order='C', casting='safe', subok=True, copy=True)
 
     def __del__(self):
