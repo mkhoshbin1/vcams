@@ -4,11 +4,8 @@ from numpy import random
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 75, 100), base_material=1,
-                 voxel_size=(0.02, 0.02, 0.02),
-                 name='Ex A5 Random 3D Part',
-                 description='Example A-5: A 50*75*100 3D part filled with random elements.',
-                 log_debug=True)
+part = VoxelPart(size=(50, 75, 100), base_material=1, voxel_size=(0.02, 0.02, 0.02), name='Ex A5 Random 3D Part',
+                 description='Example A-5: A 50*75*100 3D part filled with random elements.', log_debug=True)
 
 # Prepare the random number generator.
 rng = random.default_rng()

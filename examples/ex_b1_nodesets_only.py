@@ -3,11 +3,8 @@
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 75, 100), base_material=1,
-                 voxel_size=(0.02, 0.02, 0.02),
-                 name='Ex B-1 Node Sets Only',
-                 description='Example B-1: A 3D part for which all node sets are defined.',
-                 log_debug=True)
+part = VoxelPart(size=(50, 75, 100), base_material=1, voxel_size=(0.02, 0.02, 0.02), name='Ex B-1 Node Sets Only',
+                 description='Example B-1: A 3D part for which all node sets are defined.', log_debug=True)
 
 # Ask for all node sets to be created for the model.
 part.add_bc(bc_type='Nodeset Only',

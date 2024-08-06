@@ -4,11 +4,9 @@ from vcams import mask
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 50, 50), base_material=1,
-                 voxel_size=(0.02, 0.02, 0.02),
+part = VoxelPart(size=(50, 50, 50), base_material=1, voxel_size=(0.02, 0.02, 0.02),
                  name='Ex C-2 Custom Mask Function 3D',
-                 description='A 3D cubic 50*50*50 part created using a custom mask function.',
-                 log_debug=True)
+                 description='A 3D cubic 50*50*50 part created using a custom mask function.', log_debug=True)
 
 
 # Define the function of a sphere so a Boolean mask can be created from it.

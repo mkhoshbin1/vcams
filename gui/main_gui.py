@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelection
 splash_update_text("Loading the VCAMS library...")
 from vcams import __name__ as vcams_name, __version__ as vcams_version
 from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
-from vcams.helper import return_default_results_path
+from vcams.helper import return_default_working_dir
 from vcams.mask.tpms import tpms_dict
 from vcams.voxelpart import from_config_file
 
@@ -202,7 +202,7 @@ class MainWindow(QMainWindow):
         # base_material_field
         self.base_material_field.setValidator(QIntValidator(0, 999999999, self))
         # working_dir
-        self.working_dir = str(return_default_results_path(part_name=self.part_name))
+        self.working_dir = str(return_default_working_dir(part_name=self.part_name))
         self.custom_working_dir = None
         self.working_dir_select_button.clicked.connect(self.select_working_dir)
 
@@ -387,7 +387,7 @@ class MainWindow(QMainWindow):
     def part_name_changed(self):
         self.part_name = self.part_name_field.text()
         if self.custom_working_dir is None:
-            self.working_dir = str(return_default_results_path(part_name=self.part_name))
+            self.working_dir = str(return_default_working_dir(part_name=self.part_name))
         else:
             self.working_dir = self.custom_working_dir
         self.working_dir_field.setText(self.working_dir)

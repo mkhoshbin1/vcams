@@ -4,11 +4,8 @@ from vcams.mask.shape import ShapeArray, Circle, Ellipse
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 50), base_material=1,
-                 voxel_size=(0.02, 0.02),
-                 name='Ex C-9 Shape Array',
-                 description='A 2D square 50*50 part containing an array of different shapes.',
-                 log_debug=True)
+part = VoxelPart(size=(50, 50), base_material=1, voxel_size=(0.02, 0.02), name='Ex C-9 Shape Array',
+                 description='A 2D square 50*50 part containing an array of different shapes.', log_debug=True)
 
 # Create a ShapeArray based on the VoxelPart object.
 shape_array_obj = ShapeArray(dim='2D', part=part)

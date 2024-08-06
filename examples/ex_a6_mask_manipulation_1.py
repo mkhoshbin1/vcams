@@ -4,11 +4,8 @@ from numpy import array, rot90
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(5, 5), base_material=0,
-                 voxel_size=(0.02, 0.02),
-                 name='Ex A6 Mask Manipulation 1',
-                 description='Example A-6: A 5*5 2D part create using three boolean masks.',
-                 log_debug=True)
+part = VoxelPart(size=(5, 5), base_material=0, voxel_size=(0.02, 0.02), name='Ex A6 Mask Manipulation 1',
+                 description='Example A-6: A 5*5 2D part create using three boolean masks.', log_debug=True)
 
 # Create the three masks according to the images.
 mask1 = array(((1, 1, 1, 1, 1),

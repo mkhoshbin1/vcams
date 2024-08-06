@@ -71,7 +71,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
         """
     logger.info("Attempting to output part '%s' to an Abaqus input file.", part.name)
     begin_time = time.perf_counter()
-    folder_path = part.results_path
+    folder_path = part.working_dir
 
     # Validate dim.
     validate_dim(dim)

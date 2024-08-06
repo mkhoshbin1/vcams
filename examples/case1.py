@@ -23,9 +23,7 @@ for pbc_flag in (False, True):
     # Create parts with different sizes based on num_voxels_list.
     for num_voxels in num_voxels_list:
         # Create the part.
-        part = VoxelPart(size=num_voxels, base_material=1,
-                         voxel_size=(1.0, 1.0, 1.0),
-                         name=(name_str%num_voxels),
+        part = VoxelPart(size=num_voxels, base_material=1, voxel_size=(1.0, 1.0, 1.0), name=(name_str % num_voxels),
                          log_debug=False)
 
         if pbc_flag:

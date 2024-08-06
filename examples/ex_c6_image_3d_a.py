@@ -11,11 +11,9 @@ image_mask = mask_from_image_sequence(load_pattern=r'D:\MicroCT of mouse tibiae-
                                       scale=0.5, denoise=True)
 
 # Create the part based on the size of image_mask.
-part = VoxelPart(size=image_mask.shape, base_material=0,
-                 voxel_size=(0.01012, 0.01012, 0.01012),
+part = VoxelPart(size=image_mask.shape, base_material=0, voxel_size=(0.01012, 0.01012, 0.01012),
                  name='Ex C-6 Part from Image Series 3D - A',
-                 description='A 3D part created based on a series of 2D images.',
-                 log_debug=True)
+                 description='A 3D part created based on a series of 2D images.', log_debug=True)
 
 # Apply the Boolean mask to the part.
 # The elements selected by the mask will be set to 1.

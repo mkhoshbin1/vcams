@@ -3,7 +3,7 @@
 See the :ref:`voxel-part` section for a complete explanation
 of the basic concepts.
 """
-import logging  # TODO: add function to close logger.
+import logging
 import textwrap
 from pathlib import Path
 from typing import Union
@@ -12,11 +12,11 @@ import numpy as np
 from numpy import ndarray, rot90, array
 
 from . import __version__, __website__
-from .helper import is_name_valid, return_default_results_path, read_configuration
+from .helper import is_name_valid, return_default_working_dir, read_configuration
 from .logger_conf import setup_main_logger
 from .mask.function import mask_from_function
 from .mask.image import mask_from_image, mask_from_image_sequence
-from .mask.shape import ShapeArray, Circle, Sphere
+from .mask.shape import Circle, Sphere
 from .mask.tpms import tpms_dict
 from .output import write_abaqus_inp
 
@@ -24,11 +24,12 @@ logger = logging.getLogger(__name__)
 
 
 class VoxelPart:
-    def __init__(self, size: Union[tuple[int, int, int], tuple[int, int]],
+    """A class representing a rectangular or cuboid part made of voxels."""
+    def __init__(self, size: tuple[int, int, int] | tuple[int, int],
                  base_material: int = 0,
-                 voxel_size: Union[tuple[float, float, float], tuple[float, float]] = (1.0, 1.0, 1.0),
+                 voxel_size: tuple[float, float, float] | tuple[float, float] = (1.0, 1.0, 1.0),
                  dtype: str = 'uint8', name: str = 'unnamed', description: str = '',
-                 results_path: Union[str, Path] = None,
+                 working_dir: str | Path = None,
                  overwrite_logs: bool = True, log_debug: bool = False):
         """
         Args:
@@ -36,7 +37,7 @@ class VoxelPart:
                   the number of voxel elements in the three dimensions.
 
                   For 2D structures, *size_z* can be omitted,
-                  but some part of the program take it to be 1 for calculations.
+                  but some parts of the program take it to be 1 for calculations.
 
                   This parameter determines the shape of the :attr:`data` attribute
                   and therefore must contain integers.
@@ -60,20 +61,20 @@ class VoxelPart:
                    Must be an unsigned integer type. Users are advised to study
                    the :ref:`materials` section for a thorough explanation of this parameter.
 
-                   Defaults to ``'uint8'`` which allows for 256 materials in the model.
+                   Defaults to *'uint8'ex_c11_* which allows for 256 materials in the model.
 
             name: Name of the voxel part which is used in a variety of places, including when exporting the part.
                   Must be valid according to the documentation for the :func:`.helper.is_name_valid` function.
 
-                  Defaults to ``'unnamed'``.
+                  Defaults to *'unnamed'*.
 
             description: A short description of the part which is used
                          in a variety of places, including when exporting the part.
                          Note that Abaqus™ only uses the first 80 characters of the string.
                          Defaults to an empty string.
 
-            results_path: Path to the folder where the final results, temporary file, and log files will be stored.
-                          If set to *None* a suitable folder is automatically created in the user's home directory.
+            working_dir: Path to the folder where the final results, temporary file, and log files will be stored.
+                         If set to *None* a suitable folder is automatically created in the user's home directory.
 
             overwrite_logs: If set to True, and the log file already exists, it will be overwritten.
                             Otherwise, the file will be opened in append mode.
@@ -122,13 +123,13 @@ class VoxelPart:
         self.description: str = textwrap.fill(description, width=80)
         """A short description of the part which is used in a variety of places, including when exporting the part."""
 
-        # Validate results_path.
-        if results_path is None:  # TODO: rename to working_dir.
-            results_path = return_default_results_path(part_name=self.name)
+        # Validate working_dir.
+        if working_dir is None:
+            working_dir = return_default_working_dir(part_name=self.name)
         else:
-            results_path = Path(results_path)
-        results_path.mkdir(parents=True, exist_ok=True)
-        self.results_path: Path = results_path
+            working_dir = Path(working_dir)
+        working_dir.mkdir(parents=True, exist_ok=True)
+        self.working_dir: Path = working_dir
         """Path to the folder where the final results, temporary file, and log files will be stored."""
 
         # Create an empty dictionary for element and node sets.
@@ -149,7 +150,7 @@ class VoxelPart:
         self._dummy_node_dict = dict()
 
         # Create and configure the logger.
-        self._log_file_path = Path(self.results_path) / (name + '.log')  # Make sure it's necessary.
+        self._log_file_path = Path(self.working_dir) / (name + '.log')  # Make sure it's necessary.
         setup_main_logger(log_file=self._log_file_path, display_log=True,
                           overwrite_logs=overwrite_logs, log_debug=log_debug)
         # TODO: add display_log as parameter.
@@ -220,7 +221,7 @@ class VoxelPart:
 
         This function simply calls :func:`.output.write_abaqus_inp`, except for the
         *scale* and *folder_path* parameters which are equal to :attr:`.VoxelPart.voxel_size`
-        and :attr:`.VoxelPart.results_path`, respectively.
+        and :attr:`.VoxelPart.working_dir`, respectively.
 
         Args:
             file_name: Name of the file. Must be valid according to the documentation
@@ -420,7 +421,7 @@ def voxelpart_from_image(image_dim: str, image_path: str,
                          background_material: int = 0, foreground_material: int = 1,
                          voxel_size: Union[tuple[float, float, float], tuple[float, float]] = (1.0, 1.0, 1.0),
                          dtype: str = 'uint8', name: str = 'unnamed',
-                         description: str = '', results_path: Union[str, Path] = None,
+                         description: str = '', working_dir: Union[str, Path] = None,
                          overwrite_logs: bool = True, log_debug: bool = False, **kwargs):
     """Create a :class:`VoxelPart` object from an image.
 
@@ -440,7 +441,7 @@ def voxelpart_from_image(image_dim: str, image_path: str,
         dtype: See TODO for docs.
         name: See TODO for docs.
         description: See TODO for docs.
-        results_path: See TODO for docs.
+        working_dir: See TODO for docs.
         overwrite_logs: See TODO for docs.
         log_debug: See TODO for docs
         **kwargs: TODO: used for preventing errors associated with unexpectd input.
@@ -472,11 +473,9 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     # TODO: same for part shape.
     image_mask = rot90(image_mask, -1)
     image_shape = image_mask.shape
-    part = VoxelPart(size=image_shape, base_material=background_material,
-                     voxel_size=voxel_size, dtype=dtype,
-                     name=name, description=description,
-                     results_path=results_path,
-                     overwrite_logs=overwrite_logs, log_debug=log_debug)
+    part = VoxelPart(size=image_shape, base_material=background_material, voxel_size=voxel_size, dtype=dtype, name=name,
+                     description=description, working_dir=working_dir, overwrite_logs=overwrite_logs,
+                     log_debug=log_debug)
     part.apply_mask(mask=image_mask, value=foreground_material)
     return part
 
@@ -570,7 +569,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add shape as a variable with a getter.
 # TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
 # TODO: in docs change output to export.
-# TODO: change results_path to working_directory
 #  add Open Results Folder to the run menu of the GUI.
 # TODO: typo in doc and readme.md: it's -> its
 # TODO: check various errors when 2D/3D doesn't match across part size, voxel size, etc.

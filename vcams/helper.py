@@ -71,7 +71,7 @@ def is_name_valid(name: str) -> bool:
         return True
 
 
-def return_default_results_path(part_name: str = None) -> Path:
+def return_default_working_dir(part_name: str = None) -> Path:
     """Return a suitable path in the user's Desktop for storing
     the intermediate and final results of the program.
 
@@ -167,7 +167,7 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         raise ValueError("Invalid value for field 'num_mats'.")
     part_creation_dict['name'] = basic_section['part_name']
     part_creation_dict['description'] = basic_section['part_description']
-    part_creation_dict['results_path'] = basic_section['working_dir']
+    part_creation_dict['working_dir'] = basic_section['working_dir']
     part_creation_dict['overwrite_logs'] = True
     part_creation_dict['log_debug'] = config.getboolean('Basic', 'log_debug')
 
@@ -258,6 +258,7 @@ def validate_dim(dim: str):
     """
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
+
 
 def validate_materials_to_be_output(part, material_list: str | int | Iterable | NDArray):
     """Validate the list of materials that are to be output and return a list of material codes.

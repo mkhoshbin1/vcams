@@ -5,11 +5,8 @@ from vcams.mask.tpms import TpmsSchwarzG
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 50, 50), base_material=0,
-                 voxel_size=(0.02, 0.02, 0.02),
-                 name='Ex C-7 TPMS Gyroid',
-                 description='Example C-7: A 50*50*50 porous part based on the Gyroid TPMS.',
-                 log_debug=True)
+part = VoxelPart(size=(50, 50, 50), base_material=0, voxel_size=(0.02, 0.02, 0.02), name='Ex C-7 TPMS Gyroid',
+                 description='Example C-7: A 50*50*50 porous part based on the Gyroid TPMS.', log_debug=True)
 
 # Create a Boolean mask based on the VoxelPart object.
 # Note that you can pass the TpmsSchwarzG class instead of TpmsSchwarzG.func().

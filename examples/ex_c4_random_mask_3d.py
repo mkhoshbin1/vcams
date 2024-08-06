@@ -4,8 +4,7 @@ from vcams.mask.random import random_binary_mask
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(100, 100, 100), base_material=1,
-                 voxel_size=(0.02, 0.02, 0.02),
+part = VoxelPart(size=(100, 100, 100), base_material=1, voxel_size=(0.02, 0.02, 0.02),
                  name='Ex C-4 Random Mask 3D Part',
                  description='Example C-4: A two-phase 100*100*100 part with a random distribution of elements.',
                  log_debug=True)

@@ -3,11 +3,8 @@
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 100), base_material=1,
-                 voxel_size=(0.02, 0.02),
-                 name='Ex A-1 Simple 2D Part',
-                 description='Example A-1: A simple 50*100 2D part filled with elements.',
-                 log_debug=True)
+part = VoxelPart(size=(50, 100), base_material=1, voxel_size=(0.02, 0.02), name='Ex A-1 Simple 2D Part',
+                 description='Example A-1: A simple 50*100 2D part filled with elements.', log_debug=True)
 
 # Output the part.
 part.output_abaqus_inp(file_name='ex_a1_simple_part_2d',

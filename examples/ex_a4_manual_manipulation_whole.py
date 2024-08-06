@@ -4,9 +4,7 @@ from numpy import random
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(5, 5), base_material=1,
-                 voxel_size=(0.02, 0.02),
-                 name='Ex A4 Manual Manipulation Whole',
+part = VoxelPart(size=(5, 5), base_material=1, voxel_size=(0.02, 0.02), name='Ex A4 Manual Manipulation Whole',
                  description='Example A-4: A 5*5 2D part filled with all elements replaced with a random array.',
                  log_debug=True)
 
