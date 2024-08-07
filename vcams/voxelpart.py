@@ -343,15 +343,15 @@ class VoxelPart:
         self._bc_nodeset_simple = simple_nodesets
 
     def apply_mask(self, mask: ndarray, value: int):
-        """Use a boolean mask to select some elements of the part's :attr:`data` array
+        """Use a Boolean mask to select some elements of the part's :attr:`data` array
         and change them to a *value*.
 
         Args:
             mask: The Boolean mask to be used.
             value: Integer value to be assigned to the elements of the :attr:`data` attribute
-                   where the boolean mask is True.
-            """
-        # Make sure mask is a boolean mask.
+                   where the Boolean mask is True.
+        """
+        # Make sure mask is a Boolean mask.
         if not mask.dtype == bool:
             raise ValueError("mask.dtype is not 'bool'.")
         # Make sure mask and self.data have the same shape.
@@ -369,8 +369,8 @@ class VoxelPart:
         if value < 0:
             raise ValueError('value is less than zero.')
         if value > np.iinfo(self.data.dtype).max:
-            raise ValueError('value is larger than the maximum supported by self.data.dtype,' +
-                             ' which is %d.' % np.iinfo(self.data.dtype).max)
+            raise ValueError(f'value is larger than the maximum supported by self.data.dtype, '
+                             f'which is {np.iinfo(self.data.dtype).max}.')
         # Apply the mask to self.data.
         np.putmask(self.data, mask, value)
 
@@ -388,7 +388,7 @@ class VoxelPart:
         if not single_node ^ three_nodes:
             raise ValueError("Exactly one of single_node or three_nodes must be True.")
         if fixed:
-            self._dummy_node_dict['RP0-NodeSet'] = 999999999  # TODO: change max nodes to reflect.
+            self._dummy_node_dict['RP0-NodeSet'] = 999999999
         if single_node:
             self._dummy_node_dict['RP1-NodeSet'] = 999999998
         if three_nodes:
