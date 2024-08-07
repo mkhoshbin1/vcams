@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class VoxelPart:
     """A class representing a rectangular or cuboid part made of voxels."""
+
     def __init__(self, size: tuple[int, int, int] | tuple[int, int],
                  base_material: int = 0,
                  voxel_size: tuple[float, float, float] | tuple[float, float] = (1.0, 1.0, 1.0),
@@ -145,9 +146,6 @@ class VoxelPart:
 
         # Create variables for bcs and their sets.
         self._bc_type = None
-        self._bc_nodeset_vertices = False
-        self._bc_nodeset_edges = False
-        self._bc_nodeset_faces = False
         self._bc_nodeset_explicit = False
         self._bc_nodeset_simple = False
         self._dummy_node_dict = dict()
@@ -221,7 +219,7 @@ class VoxelPart:
         return np.prod(self.size)
 
     def output_abaqus_inp(self, file_name: str, elem_code: str, dim: str,
-                          material_elem_sets: Union[str, tuple], custom_elem_sets: bool = True,
+                          material_elem_sets: str | tuple, custom_elem_sets: bool = True,
                           keep_temp_files: bool = False) -> Path:
         """Output the part to an Abaqus™ input file.
 
@@ -265,7 +263,7 @@ class VoxelPart:
                                 custom_elem_sets=custom_elem_sets,
                                 keep_temp_files=keep_temp_files)
 
-    def add_custom_elem_set(self, name: str, ids: Union[tuple, ndarray], replace: bool = True):
+    def add_custom_elem_set(self, name: str, ids: tuple | ndarray, replace: bool = True):
         """Add a custom element set to the part.
 
         Args:
@@ -286,9 +284,8 @@ class VoxelPart:
         self.elem_sets[name] = np.unique(ids).astype('uint32')
         logger.debug("Added custom element set '%s' with %u elements.", name, len(self.elem_sets[name]))
 
-    def add_node_set(self, name: str, ids: Union[tuple, ndarray], replace: bool = True):
+    def add_node_set(self, name: str, ids: tuple | ndarray, replace: bool = True):
         """Add a node set to the part.
-
 
         Args:
             name: Name of the set. Must be valid according to the documentation for :func:`.helper.is_name_valid`.
@@ -303,13 +300,12 @@ class VoxelPart:
         if not is_name_valid(name):
             raise ValueError('Invalid name. Check the documentation for validity criteria.')
         if name in self.node_sets and not replace:
-            raise RuntimeError("A node set with the name '%s' already exists." % name)
+            raise RuntimeError(f"A node set with the name '{name}' already exists.")
         self.node_sets[name] = np.unique(ids).astype('uint32')
-        logger.debug("Added custom node set '%s' with %u elements.", name, len(self.node_sets[name]))
+        logger.debug(f"Added custom node set '{name}' with {len(self.node_sets[name])} elements.")
 
-    def add_bc(self, bc_type: Union[str, None] = None,
-               vertices_nodeset: bool = True, edges_nodeset: bool = True, faces_nodeset: bool = True,
-               explicit_nodeset: bool = False, simple_nodeset: bool = False):
+    def add_bc(self, bc_type: str | None = None,
+               explicit_nodesets: bool = False, simple_nodesets: bool = False):
         """Define a boundary condition (BC) for the part.
         Refer to the :ref:`boundary-conditions` section for a full explanation of the available BCs.
 
@@ -325,16 +321,14 @@ class VoxelPart:
                      + 'Linear Displacement': :ref:`boundary-conditions-lin-disp` will be created.
                      + 'Periodic': :ref:`boundary-conditions-pbc` will be created.
 
-            vertices_nodeset: Add the individual vertices as node sets.
-            edges_nodeset: Add the individual edges as node sets.
-            faces_nodeset: Add the individual faces as node sets.
-            explicit_nodeset: Add the explicit node sets requested by *vertices_nodeset*,
-                              *edges_nodeset*, and *faces_nodeset*.
-            simple_nodeset: Add the simple node sets which are the full faces
-                            for the 3D models or the edges for the 2D models.
+            explicit_nodesets: If True, explicit node sets are created for vertices, edges, and faces.
+                               as described in the section titled :ref:`boundary-conditions-pbc`.
+                               Defaults to *False*.
+            simple_nodesets: If True, simplified node sets are created
+                             which are the full faces for the 3D models or the edges for the 2D models,
+                             as described in the section titled :ref:`boundary-conditions-lin-disp`.
+                             Defaults to *True*.
         """
-
-        # TODO: reconsider and simplify interface.
         if bc_type is None:
             self._bc_type = None
         elif bc_type.upper() in ['NODESET ONLY', 'LINEAR DISPLACEMENT', 'PERIODIC']:
@@ -342,13 +336,11 @@ class VoxelPart:
         else:
             raise ValueError('Invalid value for bc_type.')
 
-        if not any([vertices_nodeset, edges_nodeset, faces_nodeset]):
-            raise ValueError("At least one of vertices_nodeset, edges_nodeset and faces_nodeset must be set to True.")
-        self._bc_nodeset_vertices = vertices_nodeset
-        self._bc_nodeset_edges = edges_nodeset
-        self._bc_nodeset_faces = faces_nodeset
-        self._bc_nodeset_explicit = explicit_nodeset
-        self._bc_nodeset_simple = simple_nodeset
+        if (bc_type.upper() == 'NODESET ONLY') and not any([explicit_nodesets, simple_nodesets]):
+            raise ValueError("bc_type is set to 'NODESET ONLY', but no node sets are requested."
+                             "At least one of explicit_nodeset and simple_nodeset must be set to True.")
+        self._bc_nodeset_explicit = explicit_nodesets
+        self._bc_nodeset_simple = simple_nodesets
 
     def apply_mask(self, mask: ndarray, value: int):
         """Use a boolean mask to select some elements of the part's :attr:`data` array
@@ -552,8 +544,7 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
     if bc_type == '0':  # No BC.
         pass
     elif bc_type == '1':  # Sets only.
-        part.add_bc(bc_type='NODESET ONLY', vertices_nodeset=True, edges_nodeset=True, faces_nodeset=True,
-                    explicit_nodeset=True, simple_nodeset=True)
+        part.add_bc(bc_type='NODESET ONLY', explicit_nodesets=True, simple_nodesets=True)
     elif bc_type == '2':  # Linear Displacement Boundary Conditions.
         part.add_bc(bc_type='Linear Displacement')
     elif bc_type == '3':  # Periodic Boundary Condition.

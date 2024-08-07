@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
-                     scale: tuple, material_elem_sets: Union[tuple, str],
+                     scale: tuple, material_elem_sets: tuple | str,
                      custom_elem_sets: bool = True, keep_temp_files: bool = False) -> Path:
     """Write a VoxelPart instance to an Abaqus™ input file.
     This is the main function called by :meth:`.voxelpart.VoxelPart.output_abaqus_inp`.
