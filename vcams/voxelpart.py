@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
-from numpy import ndarray, rot90, array
+from numpy import ndarray, array
 
 from . import __version__, __website__
-from .helper import is_name_valid, return_default_working_dir, read_configuration
+from .helper import is_name_valid, read_configuration, process_working_dir
 from .logger_conf import setup_main_logger
 from .mask.function import mask_from_function
 from .mask.image import mask_from_image, mask_from_image_sequence
@@ -31,7 +31,8 @@ class VoxelPart:
                  voxel_size: tuple[float, float, float] | tuple[float, float] = (1.0, 1.0, 1.0),
                  dtype: str = 'uint8', name: str = 'unnamed', description: str = '',
                  working_dir: str | Path = None,
-                 overwrite_logs: bool = True, log_debug: bool = False, display_log: bool = True):
+                 overwrite_logs: bool = True, log_debug: bool = False,
+                 display_log: bool = True, main_logger_exists: bool = False):
         """
         Args:
             size: The tuple *(size_x, size_y, size_z)* which determines
@@ -84,6 +85,9 @@ class VoxelPart:
 
             display_log: If set to True, all logs will be displayed on the screen
                          in addition to being written to file.
+
+            main_logger_exists: If set to True, indicates that the main logger has already been created elsewhere.
+                                Defaults to False which creates the main logger.
         """
 
         # Validate dtype.
@@ -127,13 +131,8 @@ class VoxelPart:
         self.description: str = textwrap.fill(description, width=80)
         """A short description of the part which is used in a variety of places, including when exporting the part."""
 
-        # Validate working_dir.
-        if working_dir is None:
-            working_dir = return_default_working_dir(part_name=self.name)
-        else:
-            working_dir = Path(working_dir)
-        working_dir.mkdir(parents=True, exist_ok=True)
-        self.working_dir: Path = working_dir
+        # Process and Validate working_dir.
+        self.working_dir: Path = process_working_dir(working_dir, name)
         """Path to the folder where the final results, temporary file, and log files will be stored."""
 
         # Create an empty dictionary for element and node sets.
@@ -151,9 +150,9 @@ class VoxelPart:
         self._dummy_node_dict = dict()
 
         # Create and configure the logger.
-        self._log_file_path = Path(self.working_dir) / (name + '.log')  # Make sure it's necessary.
-        setup_main_logger(log_file=self._log_file_path, display_log=display_log,
-                          overwrite_logs=overwrite_logs, log_debug=log_debug)
+        if not main_logger_exists:
+            setup_main_logger(part_name=name, working_dir=working_dir,
+                              display_log=display_log, overwrite_logs=overwrite_logs, log_debug=log_debug)
 
         # Log creation of the object.
         logger.info('\n** Created using VCAMS v%s.'
@@ -472,12 +471,10 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     is not one of the inputs and is determined from the image.
     """
 
-    # TODO: can we add a logger here? Examples take a long time and then just finish.
-    # TODO: mask_from_image is not logged. Especially the warning for scale > 1.
-    #       may be set up the logger first?
-    #       also, test the warning in the end.
-    # TODO:  it seems to be logged in the GUI, check why/how
-    # TODO:  it also seems to have duplicates. why?
+    setup_main_logger(part_name=name, working_dir=working_dir,
+                      display_log=display_log, overwrite_logs=overwrite_logs, log_debug=log_debug)
+    logger.info('Attempting to create a VoxelPart instance from image(s).')
+
     if image_dim.upper() not in ['2D', '3D']:
         raise ValueError("image_dim can only be one of '2D' or '3D'.")
     if image_dim.upper() == '2D':
@@ -492,7 +489,8 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     part_shape = image_mask.shape
     part = VoxelPart(size=part_shape, base_material=background_material, voxel_size=voxel_size,
                      dtype=dtype, name=name, description=description, working_dir=working_dir,
-                     overwrite_logs=overwrite_logs, log_debug=log_debug, display_log=display_log)
+                     overwrite_logs=overwrite_logs, log_debug=log_debug, display_log=display_log,
+                     main_logger_exists=True)
     part.apply_mask(mask=image_mask, value=foreground_material)
     return part
 

@@ -96,6 +96,32 @@ def return_default_working_dir(part_name: str = None) -> Path:
     return Path.home().joinpath(*parts)
 
 
+def process_working_dir(working_dir: Path | str | None, part_name: str) -> Path:
+    """Process and validate the working_dir which represents
+    the path where the intermediate and final results of the program are stored.
+    This function validates the given *working_dir* parameter
+    and if set to *None*, creates a default value using the :func:`return_default_working_dir` function.
+    Then, the directory is created and finally a Path object referring to it is returned.
+
+    Args:
+        working_dir: Path to the folder where the final results, temporary file, and log files will be stored.
+                     If set to *None* a suitable folder is automatically created in the user's home directory.
+        part_name: Name of the part which is to be output
+                   which must be valid according to :func:`is_name_valid`.
+                   If set to *None*, the folder will be named :code:`results`.
+                   Defaults to *None*.
+
+    Returns:
+        A path object containing the full path of a valid working directory that exists.
+    """
+    if working_dir is None:
+        working_dir = return_default_working_dir(part_name)
+    else:
+        working_dir = Path(working_dir)
+    working_dir.mkdir(parents=True, exist_ok=True)
+    return working_dir
+
+
 def write_to_logger_streams(msg: str):
     """Write a message directly to all handlers of the module's root logger object.
 

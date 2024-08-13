@@ -183,8 +183,8 @@ def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
         raise ValueError('The image collection is empty. '
                          'The most likely reason is an incorrect load_pattern.')
     elif len(image_coll) == 1:
-        warn('Only one image has been loaded into the image collection. This may indicate misuse '
-             'or an incorrect load_pattern.')
+        RuntimeWarning('Only one image has been loaded into the image collection. This may indicate misuse '
+                       'or an incorrect load_pattern.')
     else:
         logger.info(f'Loaded {len(image_coll)} images in the image collection')
 

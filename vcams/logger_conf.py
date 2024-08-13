@@ -2,18 +2,25 @@ import logging
 from pathlib import Path
 from sys import stdout
 
+from vcams.helper import process_working_dir
 
-def setup_main_logger(log_file: Path, display_log: bool = True,
-                      overwrite_logs: bool = True, log_debug: bool = False):
+
+def setup_main_logger(part_name: str, working_dir: str | Path,
+                      display_log: bool = True, overwrite_logs: bool = True,
+                      log_debug: bool = False):
     """Set up the main logger for a *VoxelPart* object."""
     logger_name = 'vcams'  # This will become the root for all library-level logs.
     logger_obj = logging.getLogger(logger_name)
     filemode = 'w' if overwrite_logs else 'a'
+    # Process and Validate working_dir.
+    # This may be the second time that this is done, but it's OK.
+    working_dir = process_working_dir(working_dir, part_name)
+    log_file_path = Path(working_dir) / (part_name + '.log')  # Make sure it's necessary.
 
     log_level = logging.DEBUG if log_debug else logging.INFO
 
     # Create file handler and its format.
-    file_handler_obj = logging.FileHandler(log_file, filemode)
+    file_handler_obj = logging.FileHandler(log_file_path, filemode)
     file_handler_formatter = logging.Formatter(fmt='%(asctime)s - %(levelname) 5s - %(message)s',
                                                datefmt='%Y-%m-%d %H:%M:%S')
     file_handler_obj.setFormatter(file_handler_formatter)
