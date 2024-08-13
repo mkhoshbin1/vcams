@@ -1,26 +1,23 @@
-"""Classes defining geometrical shapes which can be used to create boolean masks.
+"""Classes defining geometrical shapes which can be used to create Boolean masks.
 
-These resulting mask can then be used
-for manipulating :class:`~vcams.voxelpart.VoxelPart` object
+The resulting masks can then be used
+for manipulating a :class:`~vcams.voxelpart.VoxelPart` instance
 using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 See the :ref:`predefined-shape` section for a complete explanation
 of the basic concepts.
 """
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from copy import deepcopy
 from itertools import count
-from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
-from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, copy, squeeze, pi, count_nonzero, \
-    prod, isscalar
+from numpy import logical_or, ndarray, sin, cos, radians, any, logical_and, full, pi, count_nonzero, \
+    prod, isscalar, array
 
 from vcams.mask.function import mask_from_function
 
-
-# TODO: see if this can be used for annotating the instances where subclasses are passed.
-#  https://stackoverflow.com/questions/38791739/
 
 class BaseShape(ABC):
     """Abstract base class describing a shape.
@@ -28,7 +25,7 @@ class BaseShape(ABC):
     All shapes must inherit from this class.
     Subclasses define their dimensionality using the *dim* class attribute
     which can be either be '2D' or '3D',
-    and define the level set function *func* describing the shape in 3D space.
+    and define the level-set function *func* describing the shape in 3D space.
     It must be compatible with :func:`vcams.mask.function.mask_from_function`.
     """
 
@@ -105,10 +102,9 @@ class BaseShape(ABC):
             return self.num_true_voxels / self.num_workspace_voxels
 
     @abstractmethod
-    def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = False) -> Union[float, ndarray]:
-        """The level set function *func* describing the shape in 3D space
+    def func(self, x: float | ndarray, y: float | ndarray, z: float | ndarray,
+             boundary_on: bool = False) -> float | ndarray:
+        """The level-set function describing the shape in 3D space
 
         It must be compatible with :func:`vcams.mask.function.mask_from_function`.
 
@@ -124,8 +120,7 @@ class BaseShape(ABC):
         Returns:
             An array of floats which may be negative, zero, or positive.
             If scalar values are passed, a float is returned instead of an array.
-            See TODO for interpretation of the results.
-            # TODO: add definition of level set (https://en.wikipedia.org/wiki/Level_set)
+            See :ref:`level-set-functions` for interpretation of the results.
         """
 
     pass
@@ -138,7 +133,7 @@ class BaseShape(ABC):
         This is a wrapper for :func:`vcams.mask.function.mask_from_function`.
 
         Args:
-            part (VoxelPart | None): The :class:`~.voxelpart.VoxelPart` based on which a mask is created.
+            part (VoxelPart | None): The *VoxelPart* instance based on which a mask is created.
                                      If *None*, *part_shape* and *voxel_size* must be specified
                                      otherwise they are ignored. Defaults to *None*.
             part_shape: A tuple containing three integers which determine
@@ -176,87 +171,101 @@ class BaseShape(ABC):
 
 
 class ShapeArray:
-    """Class for an array of shapes.
-    The array may contain any number of shapes of any class as long as they have the same *dim* attribute.
+    """Class for an array of shapes where each shape's parameters and location is predefined.
+    The array may contain any number of shapes of any class as long as they
+    are subclasses of :class:`.shape.BaseShape` and have the same *dim* attribute.
     """
 
     def __init__(self, dim: str, part=None,
-                 part_shape: tuple[int, int, int] = None,
-                 voxel_size: tuple[float, float, float] = None,
+                 part_shape: tuple[int, int] | tuple[int, int, int] = None,
+                 voxel_size: tuple[float, float] | tuple[float, float, float] = None,
                  is_mask_calculation_lazy: bool = True):
-        """
+        """Constructor for the *ShapeArray* class.
+
         Args:
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
-            part (VoxelPart | None): The :class:`~.voxelpart.VoxelPart` based on which a mask is created.
-                                     If *None*, *part_shape* and *voxel_size* must be specified
+            part (VoxelPart | None): The *VoxelPart* instance based on which the shape array is created.
+                                     If *None*, *part_shape* and *voxel_size* must be specified,
                                      otherwise they are ignored. Defaults to *None*.
-            part_shape: A tuple containing three integers which determine
+            part_shape: A tuple containing two or three integers which determine
                         the shape of the returned boolean mask.
                         Defaults to *None* and ignored if *part* is passed.
-            voxel_size: A tuple containing three floats which determine the size of a voxel
+            voxel_size: A tuple containing two or three floats which determine the size of a voxel
                         in the x, y, and z directions.
                         Defaults to *None* and ignored if *part* is passed.
-            is_mask_calculation_lazy: If True, the ShapeArray's private *_mask* property is updated
+            is_mask_calculation_lazy: If True, the instance's private *_mask* property is updated
                                       only when necessary which greatly improves performance.
                                       Otherwise, it is updated everytime a shape is added to the array.
-            part_shape: A tuple containing three integers which determines
-                        the shape of the returned boolean mask. Ignored if *part* is passed.
-            voxel_size: A tuple containing three floats which determine the size of a voxel
-                        in the x, y, and z directions. Ignored if *part* is passed.
         """
         if dim.upper() not in ['2D', '3D']:
             raise ValueError("dim can only be one of '2D' or '3D'.")
         self.dim = dim.upper()
-        """TODO"""
-        # TODO: for 2d, voxel_size should be OK with (x,y) but it isn't.
+        """Dimensionality of the *ShapeArray* instance which determines the shapes that
+           can be added to the shape array.
+           It is when creating the instance and must not be changed."""
 
         if part:
             self.part_name = part.name
             self.part_shape = part.size
             self.voxel_size = part.voxel_size
-            self.base_mask = (part.data == 0)  # TODO: check this with a TPMS.
+            self.base_mask = (part.data == 0)
             self._part_log_file_path = part._log_file_path  # noqa: PyProtectedMember
-            # TODO: check the above equality. I think it should be !=.
-            # TODO: document that this only works for empty space.
         else:
+            if (part_shape is None) or (voxel_size is None):
+                raise ValueError('The part argument is not specified,'
+                                 'therefore both part_shape and voxel_size must be specified.')
             self.part_name = None
-            """Name of the part for which the ShapeArray is created.
+            """Name of the part for which the *ShapeArray* instance is created.
             If a pert is not passed, it is set to *None* and it is not used."""
-            self.part_shape = part_shape  # TODO: make sure that len is OK for 2D/3D.
+            self.part_shape = array(part_shape)
             """See :meth:`.__init__`."""
-            self.voxel_size = voxel_size
+            self.voxel_size = array(voxel_size)
             """See :meth:`.__init__`."""
             self.base_mask = full(part_shape, False, dtype=bool)
             """A Boolean mask for the part which contains the background where the shapes are dispersed.
             If a VoxelPart instance is passed, its nonzero elements are considered occupied,
-            otherwise a blank part is used.
-            Also boundary pixels, as determined by the *num_bound_pixels*
-            variable, are considered occupied."""
-            # TODO: do something about bounddary and its doc.
+            otherwise a blank mask is used.
+            Also in the child :class:`~.shape_dispersion.ShapeDispersionArray` class,
+            the boundary pixels, as determined by the *num_bound_pixels* parameter,
+            are considered occupied."""
             self._part_log_file_path = None
 
+        # Validate and fix part_shape and voxel_size.
+        if self.part_shape.size not in [2, 3]:
+            raise ValueError(f'part_shape must have 2 or 3 elements, '
+                             f'but it has {self.part_shape.size}.')
+        if self.voxel_size.size not in [2, 3]:
+            raise ValueError(f'voxel_size must have 2 or 3 elements, '
+                             f'but it has {self.voxel_size.size}.')
         if dim.upper() == '2D':
-            self.part_volume = prod(self.part_shape * self.voxel_size[:2])
+            self.part_shape = self.part_shape[:2]
+            self.voxel_size = self.voxel_size[:2]
         else:
-            self.part_volume = prod(self.part_shape * self.voxel_size)
+            if self.part_shape.size != 3:
+                raise ValueError(f'The shape array is defined as 3D, '
+                                 f'but part_shape has {self.part_shape.size} elements.')
+            if self.voxel_size.size != 3:
+                raise ValueError(f'The shape array is defined as 3D, '
+                                 f'but voxel_size has {self.voxel_size.size} elements.')
+        self.part_volume = prod(self.part_shape * self.voxel_size)
 
         self.is_mask_calculation_lazy = is_mask_calculation_lazy
         """See :meth:`.__init__`."""
-        self._ignored_masks = []  # TODO: maybe rename to deferred_masks? FIXME
-        """TODO"""
+        self._deferred_masks = []
+        # Private attribute for masks that are have not been calculated
+        # in the _calculate_mask method due to is_mask_calculation_lazy being True.
+        # They will be included and this list will be emptied when necessary.
         self._mask = None  # Private attribute for the mask property.
         self._full_mask = None  # Private attribute for the _full_mask property.
-        # FIXME: do mask and full mask have sphinx docs?
         self.shapes = dict()
         """A dictionary containing the shapes in the instance.
         Keys are integer shape IDs, and values are subclasses of :class:`.shape.BaseShape`."""
 
         self._backup_dict = dict()
         """A dictionary containing the state of the instance
-        which is used by :meth:`_backup_state` and :meth:`_restore_state`."""
-
-        # TODO: maybe add boundary pixels? this is used for when we have a base mask.
+        which is used by :meth:`_backup_state` and :meth:`_restore_state`.
+        It should not be used directly."""
 
     def __len__(self):
         return len(self.shapes)
@@ -269,8 +278,8 @@ class ShapeArray:
         """A Boolean mask representing the union (logical OR) of the shapes in ShapeArray.
         This is guaranteed to be up-to-date.
         """
-        if self._ignored_masks or (self._mask is None):
-            self._calculate_mask(shape_id=self._ignored_masks)
+        if self._deferred_masks or (self._mask is None):
+            self._calculate_mask(shape_id=self._deferred_masks)
             # Updates both self._mask and self._full_mask.
         return self._mask
 
@@ -280,8 +289,8 @@ class ShapeArray:
         It is a union (logical OR) of the ShapeArray's :attr:`base_mask` and :attr:`mask` attributes
         and is stored to reduce repetitive computations. This is guaranteed to be up-to-date.
         """
-        if self._ignored_masks or (self._mask is None):
-            self._calculate_mask(shape_id=self._ignored_masks)
+        if self._deferred_masks or (self._mask is None):
+            self._calculate_mask(shape_id=self._deferred_masks)
             # Updates both self._mask and self._full_mask.
         return self._full_mask
 
@@ -329,25 +338,24 @@ class ShapeArray:
                 shape_id = (shape_id,)
             id_list = shape_id
 
-        # FIXME: add background mask here
         # Either way, we iterate over id_list and call logical_or.
         for i in id_list:
             self._mask = logical_or(self._mask,
                                     self.shapes[i].calculate_mask(
                                         part_shape=self.part_shape, voxel_size=self.voxel_size))
             try:
-                self._ignored_masks.remove(i)
+                self._deferred_masks.remove(i)
             except ValueError:
                 pass
 
-        # If all is calculated, empty _ignored_masks.
+        # If all is calculated, empty _deferred_masks.
         if recalculate_all:
-            self._ignored_masks = []
+            self._deferred_masks = []
 
-        # Update self._full_mask.  #TODO:recheck the entire function. FIXME
+        # Update self._full_mask.
         self._full_mask = logical_or(self._mask, self.base_mask)
 
-    def _add_shape_obj(self, shape_obj):
+    def _add_shape_obj(self, shape_obj: BaseShape):
         """Add an existing shape object to the ShapeArray."""
         idd = next(self.id_iter)
         shape_obj.id = idd
@@ -355,7 +363,7 @@ class ShapeArray:
         if not self.is_mask_calculation_lazy:
             self._calculate_mask(shape_id=idd)
         else:
-            self._ignored_masks.append(idd)
+            self._deferred_masks.append(idd)
 
     def _backup_state(self):
         """Backup the state of the instance, so it can be restored later.
@@ -374,8 +382,8 @@ class ShapeArray:
         else:
             self._backup_dict['mask'] = ndarray.copy(self.mask)
             self._backup_dict['full_mask'] = ndarray.copy(self.full_mask)
-        if len(self._ignored_masks) != 0:  # It is emptied by mask() and full_mask().
-            raise RuntimeError("The instance's _ignored_masks attribute"
+        if len(self._deferred_masks) != 0:  # It is emptied by mask() and full_mask().
+            raise RuntimeError("The instance's _deferred_masks attribute"
                                "is not an empty list, but it should be.")
 
     def _restore_state(self, backup_dict=None):
@@ -410,13 +418,15 @@ class ShapeArray:
             self._full_mask = ndarray.copy(backup_dict['full_mask'])
         self.shapes = deepcopy(backup_dict['shapes'])
 
-    def add_shape(self, cls, intersect_ok=True, **kwargs) -> bool:
+    def add_shape(self, cls, intersect_ok: bool = True, **kwargs) -> bool:
         """Add a shape to the ShapeArray using its class,
         while checking for intersection with other shapes.
         The arguments are passed as *\*\*kwargs* and the shape ID is set automatically.
 
         Args:
-            cls: The shape class that should be added. Arguments are passed as *kwargs*.
+            cls: The shape class that should be added.
+                 It should be a subclass of :class:`.shape.BaseShape`.
+                 Arguments are passed as *kwargs*.
             intersect_ok: Whether intersection of the new shape with the rest is OK.
                           If *True*, shapes are added without checking for intersection.
                           If *False*, the function checks the union (logical OR)
@@ -424,7 +434,8 @@ class ShapeArray:
                           and if they intersect, the shape is not added.
                           Defaults to *True*.
             **kwargs: A dictionary where the keys are the arguments for the shape class
-                      and the values are either dispersion objects or scalars.
+                      and the values are either scalar or dispersion objects
+                      from the :mod:`.shape_dispersion` module.
 
         Returns:
             *True* if the shape was added and *False* otherwise.
@@ -454,11 +465,11 @@ class ShapeArray:
                 self._add_shape_obj(shape_obj=new_shape_obj)
                 return True
 
-    def remove_shape(self, id_list: int | Iterable[int]):  # TODO: test in script.
+    def remove_shape(self, id_list: int | Iterable[int]):
         """Remove shapes from the :class:`ShapeDispersionArray` instance and update the masks.
 
         Args:
-            id_list: ID(s) of the shapes to be removed.
+            id_list: Scalar ID of the shape to be removed, or an iterable of the IDs.
         """
 
         # Validate id_list.
@@ -516,9 +527,8 @@ class Circle(BaseShape):
         Note that the word volume is used instead of surface to simplify the interface."""
         return pi * self.r ** 2
 
-    def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = False) -> Union[float, ndarray]:
+    def func(self, x: float | ndarray, y: float | ndarray, z: float | ndarray,
+             boundary_on: bool = False) -> float | ndarray:
         return (x - self.xc) ** 2 + (y - self.yc) ** 2 - (self.r + boundary_on * self.br) ** 2
 
 
@@ -563,9 +573,8 @@ class Sphere(BaseShape):
         it does not take into account voxelization errors and contacts with the boundary."""
         return (4 * pi * self.r ** 3) / 3
 
-    def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = False) -> Union[float, ndarray]:
+    def func(self, x: float | ndarray, y: float | ndarray, z: float | ndarray,
+             boundary_on: bool = False) -> float | ndarray:
         return (x - self.xc) ** 2 + (y - self.yc) ** 2 + (z - self.zc) ** 2 \
                - (self.r + (boundary_on * self.br)) ** 2
 
@@ -574,16 +583,6 @@ class Cylinder(BaseShape):
     """Class describing a 3D Cylinder with the axis in one of x, y, or z directions.
     """
 
-    # TODO: add cylinder formula in a table.
-    # TODO: change formula to equation in docs.
-    # TODO: This can probably optimized by using multiple classes and selecting the appropriate one.
-    # TODO: See if you can cylinder with general axis direction.
-    # TODO: We work with right cylinders. (https://www.math.net/cylinder) document this.
-    # TODO: 2D cylinder (rectangle)
-    # TODO: capped cylinder (half-circle vs line vs infinite)
-    # TODO: update predefined structures to add new shapes.
-    # TODO: add boundary.
-
     def __init__(self, id, dir: str, a: float, b: Union[float, None], c: Union[float, None], r: Union[float, None]):
         """
         Args:
@@ -591,7 +590,7 @@ class Cylinder(BaseShape):
             dir: Direction of the axis. Can be 'x', 'y', or 'z'.
             a:   x-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
             b:   y-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
-            c:   y-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
+            c:   z-coordinate of the center of the cylinder or *None* if it's in the direction of axis.
             r:   Radius of the cylinder.
         """
         super().__init__()
@@ -611,9 +610,8 @@ class Cylinder(BaseShape):
     def analytical_volume(self):
         raise NotImplementedError('This functionality has not been implemented.')
 
-    def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = False) -> Union[float, ndarray]:
+    def func(self, x: float | ndarray, y: float | ndarray, z: float | ndarray,
+             boundary_on: bool = False) -> float | ndarray:
         if self.dir == 'x':
             return (x - x) + (y - self.b) ** 2 + (z - self.c) ** 2 - self.r ** 2
         elif self.dir == 'y':
@@ -652,7 +650,8 @@ class Ellipse(BaseShape):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis.
+                   It must be in the range [0, 360] in degrees.
             xc: x-coordinate of the center of the ellipse where semi-axes meet.
             yc: y-coordinate of the center of the ellipse where semi-axes meet.
             a: Semi-axis of the ellipse along the unrotated x-axis. It must be positive.
@@ -692,9 +691,8 @@ class Ellipse(BaseShape):
         Note that the word volume is used instead of surface to simplify the interface."""
         return pi * self.a * self.b
 
-    def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = False) -> Union[float, ndarray]:
+    def func(self, x: float | ndarray, y: float | ndarray, z: float | ndarray,
+             boundary_on: bool = False) -> float | ndarray:
         return (
                 ((((x - self.xc) * cos(self.alpha) - (y - self.yc) * sin(self.alpha)) ** 2)
                  / (self.a + boundary_on * self.ba) ** 2)
@@ -714,7 +712,8 @@ class EllipseFromAspectRatio(Ellipse):
         """
         Args:
             id: ID of the shape which should be must be unique.
-            alpha: Counterclockwise rotation of the ellipse around the z-axis. It must be in the range [0, 360] in degrees.
+            alpha: Counterclockwise rotation of the ellipse around the z-axis.
+                   It must be in the range [0, 360] in degrees.
             xc: x-coordinate of the center of the ellipse where semi-axes meet.
             yc: y-coordinate of the center of the ellipse where semi-axes meet.
             a: Semi-axis of the ellipse along the unrotated x-axis. It must be positive.
@@ -883,9 +882,8 @@ class Ellipsoid(BaseShape):
         it does not take into account voxelization errors and contacts with the boundary."""
         return (4 * pi * self.a * self.b * self.c) / 3
 
-    def func(self, x: Union[float, ndarray],
-             y: Union[float, ndarray], z: Union[float, ndarray],
-             boundary_on: bool = False) -> Union[float, ndarray]:
+    def func(self, x: float | ndarray, y: float | ndarray, z: float | ndarray,
+             boundary_on: bool = False) -> float | ndarray:
         # Apply the translation.
         xx = x - self.xc
         yy = y - self.yc

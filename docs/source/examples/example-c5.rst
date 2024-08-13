@@ -1,45 +1,59 @@
-Example C-5: Gyroid TPMS
-========================
-In this example, a part is created based on the Gyroid
-`TPMS <https://en.wikipedia.org/wiki/Triply_periodic_minimal_surface>`__,
-and is then exported.
+Example C-5: Part from Image (2D)
+=================================
+In this example, a 2D part is created based on an image.
+Two methods are presented, with the first using
+the :func:`~vcams.mask.image.mask_from_image` function
+which binarizes the image using the default Otsu's Threshold
+and returns a Boolean mask, which is then applied to the part.
+The second method uses
+the :func:`~vcams.voxelpart.voxelpart_from_image` function
+that does all of this automatically.
 
-Normally, this operation would be complicated, but the :mod:`~vcams.mask.tpms` module
-has a number of classes that define some of the more popular TPMS functions.
-For an explanation of the TPMS predefined structures, refer to :ref:`predefined-tpms`.
+This procedure is especially useful for grayscale images obtained from microscopy.
+See :ref:`predefined-image` for more information and some important tips.
+In order to avoid copyright issues, a simple image of a dual-phase steel
+is taken from `Wikipedia <https://en.wikipedia.org/wiki/File:Dual_Phase_Steel.jpg>`__
+(licensed under CC BY-SA 4.0) and is used for this example.
 
-First, a 3D part with a shape of 50×50×50 voxels is created
-with a base material of 0 (empty space) and a voxel size of 0.02 units in all directions.
+The First Method
+----------------
+First, the image is converted to a mask without being re-scaled::
+
+    image_mask = mask_from_image(image_path='ex_c5_image_2d_input.jpg',
+                                 scale=1.0, denoise=True)
+
+Then the image is rotated -90 degrees to account for the
+difference between the XY directions in Abaqus and the picture::
+
+    image_mask = rot90(image_mask, -1)
+
+Afterwards, a 2D part with the same shape as the mask is created
+with a base material of 1 and a voxel size of 0.02 units in all directions.
 The parameter *log_debug* is set to *True* for demonstration purposes.
 
-Then a Boolean mask is created based on the voxel part
-using the :class:`~vcams.mask.tpms.TpmsSchwarzG` class.
-Unit cell length (*l*) is set to half of the parts real size
-and the constant (*c*) is set to zero::
-
-    t = part.real_size[0] / 2
-    tpms_mask = mask_from_function(part=part, func=TpmsSchwarzG, l=t, c=0)
-
-Afterwards, the Boolean mask is applied to the part with a value of 1.
-This means that the values of the elements selected by the mask are set to 1,
-making them the only non-empty elements in the model::
-
-    part.apply_mask(mask=tpms_mask, value=1)
-
-Finally, the part is then exported to an Abaqus™ input file in *3D* mode with *C3D8R* elements.
+The mask is then applied to the part with a value of 2.
+And finally, the part is then exported to an Abaqus™ input file in *2D* mode with *CPE4R* elements.
 The *Non-Empty* elements are requested to be exported.
 
 The code can be found in the *examples* folder of the main repository. It is also included below:
 
-.. literalinclude:: /../../examples/ex_c5_tpms_gyroid.py
+.. literalinclude:: /../../examples/ex_c5_image_2d_a.py
 
-The final model looks like :numref:`ex_c5_tpms_gyroid`.
-Note that the stepping visible in the part is due to the low resolution of the model.
-A bigger model will result in a better shape.
+The Second Method
+-----------------
+This method uses the :func:`~vcams.voxelpart.voxelpart_from_image` function
+which automatically does all of the steps used in the first method.
+it is more convenient, but allows for less customization.
 
-.. figure:: /images/ex_c5_tpms_gyroid.png
-   :name: ex_c5_tpms_gyroid
+.. literalinclude:: /../../examples/ex_c5_image_2d_b.py
+
+Results
+-------
+The initial image and the final model are shown in :numref:`ex_c5_image_2d`.
+
+.. figure:: /images/ex_c5_image_2d.png
+   :name: ex_c5_image_2d
    :align: center
-   :alt: A part created based on the Gyroid TPMS.
+   :alt: Initial image (left) and final model (right) for Example C-5.
 
-   A part created based on the Gyroid TPMS.
+   Initial image (left) and final model (right) for Example C-5.

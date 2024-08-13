@@ -1,74 +1,45 @@
-Example C-7: Part from Image Series (3D)
-========================================
-In this example, a 3D part is created based on a sequence of images.
-Two methods are presented, with the first using
-the :func:`~vcams.mask.image.mask_from_image_sequence` function
-which binarizes the image using the default Otsu's Threshold
-and returns a 3D Boolean mask, which is then applied to the part.
-The second method uses the :func:`~vcams.voxelpart.voxelpart_from_image` function
-that does all of this automatically.
+Example C-7: Gyroid TPMS
+========================
+In this example, a part is created based on the Gyroid
+`TPMS <https://en.wikipedia.org/wiki/Triply_periodic_minimal_surface>`__,
+and is then exported.
 
-The image set used in this example is a micro-CT scan of the tibia of a mouse.
-It has been made available by the authors of
-`this data paper <https://doi.org/10.1038/sdata.2018.100>`__ [1]_
-and its corresponding `figshare collection <https://doi.org/10.6084/m9.figshare.c.3795019.v1>`__.
+Normally, this operation would be complicated, but the :mod:`~vcams.mask.tpms` module
+has a number of classes that define some of the more popular TPMS functions.
+For an explanation of the TPMS predefined structures, refer to :ref:`predefined-tpms`.
 
-In the collection, the micro-CT scan used is named *MicroCT of mouse tibiae-oim4*
-and consists of 991 images (which will be in the z-direction of the model),
-each being 784×784 pixels. Each voxel is reported to be 5.06 micrometers.
-The model is scaled at 50%, which means that voxel size must doubled.
-
-The First Method
-----------------
-First, the image sequence is converted to a mask without being re-scaled.
-The *load_pattern* parameter is set to a path which describes all of the
-images in the sequence. They will be automatically be loaded in alphabetical order::
-
-    image_mask = mask_from_image_sequence(load_pattern=r'D:\MicroCT of mouse tibiae-oim4\28Oim__rec0???.bmp',
-                                          scale=1.0, denoise=True)
-
-Then, a 3D part with the same shape as the mask is created
-with a base material of 0 (empty space) and a voxel size of 0.01012 units in all directions.
+First, a 3D part with a shape of 50×50×50 voxels is created
+with a base material of 0 (empty space) and a voxel size of 0.02 units in all directions.
 The parameter *log_debug* is set to *True* for demonstration purposes.
+
+Then a Boolean mask is created based on the voxel part
+using the :class:`~vcams.mask.tpms.TpmsSchwarzG` class.
+Unit cell length (*l*) is set to half of the part's real size
+and the constant (*c*) is set to zero::
+
+    t = part.real_size[0] / 2
+    tpms_mask = mask_from_function(part=part, func=TpmsSchwarzG, l=t, c=0)
 
 Afterwards, the Boolean mask is applied to the part with a value of 1.
 This means that the values of the elements selected by the mask are set to 1,
-making them the only non-empty elements in the model.
-And finally, the part is then exported to an Abaqus™ input file in *3D* mode with *C3D8R* elements.
+making them the only non-empty elements in the model::
+
+    part.apply_mask(mask=tpms_mask, value=1)
+
+Finally, the part is exported to an Abaqus™ input file in *3D* mode with *C3D8R* elements.
 The *Non-Empty* elements are requested to be exported.
 
 The code can be found in the *examples* folder of the main repository. It is also included below:
 
-.. literalinclude:: /../../examples/ex_c7_image_3d_a.py
+.. literalinclude:: /../../examples/ex_c7_tpms_gyroid.py
 
-The Second Method
------------------
-This method uses the :func:`~vcams.voxelpart.voxelpart_from_image` function
-which automatically does all of the steps used in the first method.
-it is more convenient, but allows for less customization.
+The final model looks like :numref:`ex_c7_tpms_gyroid`.
+Note that the stepping visible in the part is due to the low resolution of the model.
+A bigger model will result in a better shape.
 
-.. literalinclude:: /../../examples/ex_c7_image_3d_b.py
-
-Results
--------
-The initial image and the final model are shown in :numref:`ex_c7_image_3d`.
-It should be noted that the method used here is very crude.
-Realistically, the images must be further processed
-to reduce noise (note the specks on the image),
-improve binarization, and remove the support structure.
-Also, even the scaled model is very big (3.9M elements) and
-may not be feasible for finite element analysis.
-
-.. figure:: /images/ex_c7_image_3d.png
-   :name: ex_c7_image_3d
+.. figure:: /images/ex_c7_tpms_gyroid.png
+   :name: ex_c7_tpms_gyroid
    :align: center
-   :alt: Isotropic image and two cross-sections of the model for Example C-7.
+   :alt: A part created based on the Gyroid TPMS.
 
-   Isotropic image and two cross-sections of the model for Example C-7.
-
-
-.. [1] Ranzoni, A. M., Corcelli, M., Arnett, T. R. & Guillot, P. V. (2018).
-       Micro-computed tomography reconstructions of tibiae of stem cell
-       transplanted osteogenesis imperfecta mice.
-       Sci. Data 5:180100.
-       `<https://doi.org/10.1038/sdata.2018.100>`__
+   A part created based on the Gyroid TPMS.

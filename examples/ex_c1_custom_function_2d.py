@@ -4,11 +4,8 @@ from vcams import mask
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 50), base_material=1,
-                 voxel_size=(0.02, 0.02),
-                 name='Ex C-1 Custom Mask Function 2D',
-                 description='A 2D square 50*50 part created using a custom mask function.',
-                 log_debug=True)
+part = VoxelPart(size=(50, 50), base_material=1, voxel_size=(0.02, 0.02), name='Ex C-1 Custom Mask Function 2D',
+                 description='A 2D square 50*50 part created using a custom mask function.', log_debug=True)
 
 
 # Define the function of a circle so a Boolean mask can be created from it.

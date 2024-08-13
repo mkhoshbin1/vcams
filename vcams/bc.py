@@ -8,11 +8,11 @@ of the basic concepts.
 
 import logging
 from abc import abstractmethod, ABC
-from typing import Union, Iterable
 from dataclasses import dataclass
+from typing import Union, Iterable
 
-from numpy import ravel_multi_index, array, arange, meshgrid, concatenate, unique, intersect1d, isin, count_nonzero
-from numpy._typing import NDArray
+from numpy import ravel_multi_index, array, arange, meshgrid, concatenate, isin, count_nonzero
+from numpy.typing import NDArray
 
 from vcams.helper import validate_materials_to_be_output
 
@@ -280,17 +280,14 @@ def create_bc(part, dim: str, mat_codes_to_accept: str | int | Iterable | NDArra
         raise BcNotApplicableError("The part's boundaries contain too many empty elements which invalidate BCs.")
 
     if bc_type.upper() == 'NODESET ONLY':
-        create_node_sets(part, dim, vertices=part._bc_nodeset_vertices,
-                         edges=part._bc_nodeset_edges, faces=part._bc_nodeset_faces,
-                         explicit_sets=part._bc_nodeset_explicit, simple_sets=part._bc_nodeset_simple)
+        create_node_sets(part, dim, explicit_sets=part._bc_nodeset_explicit,
+                         simple_sets=part._bc_nodeset_simple)
         logger.info('No BCs have been created but node sets were added to the part.')
         return []
 
     elif bc_type.upper() == 'LINEAR DISPLACEMENT':
         part._add_dummy_nodes(fixed=True, single_node=True)
-        create_node_sets(part, dim, vertices=part._bc_nodeset_vertices,
-                         edges=part._bc_nodeset_edges, faces=part._bc_nodeset_faces,
-                         explicit_sets=part._bc_nodeset_explicit, simple_sets=True)
+        create_node_sets(part, dim, explicit_sets=part._bc_nodeset_explicit, simple_sets=True)
         if dim.upper() == '2D':
             constraint_list = [TieConstraint(dof=1, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Edge11-NodeSet'),
                                TieConstraint(dof=2, rp_set_name='RP0-NodeSet', slave_set_name='Simple-Edge21-NodeSet'),
@@ -309,8 +306,7 @@ def create_bc(part, dim: str, mat_codes_to_accept: str | int | Iterable | NDArra
 
     elif bc_type.upper() == 'PERIODIC':
         part._add_dummy_nodes(fixed=False, three_nodes=True)
-        create_node_sets(part, dim, vertices=True, edges=True, faces=True,
-                         explicit_sets=True, simple_sets=part._bc_nodeset_simple)
+        create_node_sets(part, dim, explicit_sets=True, simple_sets=part._bc_nodeset_simple)
         constraint_list = []
         pl = part.real_size  # Length of the part.
 
@@ -383,14 +379,14 @@ def check_border_elements(part, dim: str,
                              :func:`helper.validate_materials_to_be_output`.
 
     Returns:
-        One of the following strings:
+        One of the following strings
 
-          - *'OK'* if all border elements are non-empty and the BC can be applied as is.
-          - *'WINDOW'* if there are empty elements in some border areas,
-            but the ratio of empty to non-empty is acceptable for each border area.
-            This means that BCs can be applied using the Window Method.
-          - *'FAIL'* if the part has too many non-empty elements in the borders and
-            BCs cannot be applied.
+        - *'OK'* if all border elements are non-empty and the BC can be applied as is.
+        - *'WINDOW'* if there are empty elements in some border areas,
+          but the ratio of empty to non-empty is acceptable for each border area.
+          This means that BCs can be applied using the Window Method.
+        - *'FAIL'* if the part has too many non-empty elements in the borders and
+          BCs cannot be applied.
 
     """
     # Validate parameters.
@@ -519,34 +515,22 @@ def add_3d_pbc_constraints(part, typ: str,
             for i in range(len(set1_ids))]
 
 
-def create_node_sets(part, dim: str,
-                     vertices: bool = True,
-                     edges: bool = True, faces: bool = True,
-                     explicit_sets: bool = False,
-                     simple_sets: bool = True):
+def create_node_sets(part, dim: str, explicit_sets: bool = False, simple_sets: bool = True):
     """Define node sets in a VoxelPart. They are created according to :numref:`bc-nodesets`:
 
     Args:
         part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
         dim: Dimensionality of the output part. Valid values are '2D' and '3D'.
-        vertices: If True, node sets for the vertices will be created.
-        edges: If True, node sets for the edges will be created.
-        faces: If True, node sets for the faces will be created.
-               If dim is set to '2D', this variable will be automatically set to False.
         explicit_sets: If True, explicit node sets are created for vertices, edges, and faces.
                        as described in the section titled :ref:`boundary-conditions-pbc`.
                        Defaults to *False*.
-        simple_sets: If True, simplified node sets are created for complete faces
+        simple_sets: If True, simplified node sets are created
+                     which are the full faces for the 3D models or the edges for the 2D models,
                      as described in the section titled :ref:`boundary-conditions-lin-disp`.
                      Defaults to *True*.
     """
     if dim.upper() not in ['2D', '3D']:
         raise ValueError("dim can only be one of '2D' or '3D'.")
-    if dim.upper() == '2D':
-        faces = False
-
-    if not any([vertices, edges, faces]):
-        raise ValueError('At least one of vertices, edges and faces must be set to True.')
 
     if not any([explicit_sets, simple_sets]):
         raise ValueError('At least one of explicit_sets and simple_sets must be set to True.')
@@ -559,7 +543,7 @@ def create_node_sets(part, dim: str,
     # Define a numpy.array containing a single number 0.
     zro = array([0])
     # Define elem_array_shape.
-    elem_array_shape = part.data.shape
+    elem_array_shape = part.size
     # In each direction, node array is larger by one.
     node_array_shape = tuple(i + 1 for i in elem_array_shape)
     if dim.upper() == '2D':
@@ -577,44 +561,42 @@ def create_node_sets(part, dim: str,
     face_dict = dict()
     simple_sets_dict = dict()
 
-    if vertices:
-        # Define vertices.
-        # Find IDs for vertices.
-        if dim.upper() == '2D':
-            vertex_coords = (array([0, max_x, max_x, 0]),
-                             array([0, 0, max_y, max_y]))
-        else:
-            vertex_coords = (array([0, max_x, max_x, 0, 0, max_x, max_x, 0]),
-                             array([0, 0, max_y, max_y, 0, 0, max_y, max_y]),
-                             array([0, 0, 0, 0, max_z, max_z, max_z, max_z]))  # noqa F823
-        # Find IDs and define node sets for the vertices.
-        vertex_ids = custom_ravel(vertex_coords)
-        for i in range(len(vertex_ids)):
-            vertex_dict['Vertex%i-NodeSet' % (i + 1)] = vertex_ids[i]
+    # Define vertices.
+    # Find IDs for vertices.
+    if dim.upper() == '2D':
+        vertex_coords = (array([0, max_x, max_x, 0]),
+                         array([0, 0, max_y, max_y]))
+    else:
+        vertex_coords = (array([0, max_x, max_x, 0, 0, max_x, max_x, 0]),
+                         array([0, 0, max_y, max_y, 0, 0, max_y, max_y]),
+                         array([0, 0, 0, 0, max_z, max_z, max_z, max_z]))  # noqa F823
+    # Find IDs and define node sets for the vertices.
+    vertex_ids = custom_ravel(vertex_coords)
+    for i in range(len(vertex_ids)):
+        vertex_dict['Vertex%i-NodeSet' % (i + 1)] = vertex_ids[i]
 
-    if edges:
-        # Define edges.
-        # Find IDs for edges. edge_ij refers to the edge formed by vertices i and j.
-        if dim.upper() == '2D':
-            edge_dict['Edge12-NodeSet'] = custom_ravel((inds_dir1, zro))
-            edge_dict['Edge23-NodeSet'] = custom_ravel((max_x, inds_dir2))
-            edge_dict['Edge34-NodeSet'] = custom_ravel((inds_dir1, max_y))
-            edge_dict['Edge14-NodeSet'] = custom_ravel((zro, inds_dir2))
-        else:
-            edge_dict['Edge12-NodeSet'] = custom_ravel((inds_dir1, zro, zro))
-            edge_dict['Edge23-NodeSet'] = custom_ravel((max_x, inds_dir2, zro))
-            edge_dict['Edge34-NodeSet'] = custom_ravel((inds_dir1, max_y, zro))
-            edge_dict['Edge14-NodeSet'] = custom_ravel((zro, inds_dir2, zro))
-            edge_dict['Edge56-NodeSet'] = custom_ravel((inds_dir1, zro, max_z))
-            edge_dict['Edge67-NodeSet'] = custom_ravel((max_x, inds_dir2, max_z))
-            edge_dict['Edge78-NodeSet'] = custom_ravel((inds_dir1, max_y, max_z))
-            edge_dict['Edge58-NodeSet'] = custom_ravel((zro, inds_dir2, max_z))
-            edge_dict['Edge15-NodeSet'] = custom_ravel((zro, zro, inds_dir3))  # noqa F823
-            edge_dict['Edge26-NodeSet'] = custom_ravel((max_x, zro, inds_dir3))
-            edge_dict['Edge37-NodeSet'] = custom_ravel((max_x, max_y, inds_dir3))
-            edge_dict['Edge48-NodeSet'] = custom_ravel((zro, max_y, inds_dir3))
+    # Define edges.
+    # Find IDs for edges. edge_ij refers to the edge formed by vertices i and j.
+    if dim.upper() == '2D':
+        edge_dict['Edge12-NodeSet'] = custom_ravel((inds_dir1, zro))
+        edge_dict['Edge23-NodeSet'] = custom_ravel((max_x, inds_dir2))
+        edge_dict['Edge34-NodeSet'] = custom_ravel((inds_dir1, max_y))
+        edge_dict['Edge14-NodeSet'] = custom_ravel((zro, inds_dir2))
+    else:
+        edge_dict['Edge12-NodeSet'] = custom_ravel((inds_dir1, zro, zro))
+        edge_dict['Edge23-NodeSet'] = custom_ravel((max_x, inds_dir2, zro))
+        edge_dict['Edge34-NodeSet'] = custom_ravel((inds_dir1, max_y, zro))
+        edge_dict['Edge14-NodeSet'] = custom_ravel((zro, inds_dir2, zro))
+        edge_dict['Edge56-NodeSet'] = custom_ravel((inds_dir1, zro, max_z))
+        edge_dict['Edge67-NodeSet'] = custom_ravel((max_x, inds_dir2, max_z))
+        edge_dict['Edge78-NodeSet'] = custom_ravel((inds_dir1, max_y, max_z))
+        edge_dict['Edge58-NodeSet'] = custom_ravel((zro, inds_dir2, max_z))
+        edge_dict['Edge15-NodeSet'] = custom_ravel((zro, zro, inds_dir3))  # noqa F823
+        edge_dict['Edge26-NodeSet'] = custom_ravel((max_x, zro, inds_dir3))
+        edge_dict['Edge37-NodeSet'] = custom_ravel((max_x, max_y, inds_dir3))
+        edge_dict['Edge48-NodeSet'] = custom_ravel((zro, max_y, inds_dir3))
 
-    if faces:
+    if dim.upper() == '3D':
         # Define faces.
         # Find IDs for faces. For face_ij, i refers the direction of normal vector
         # and j refers to whether this is the first or second edge in the direction.
@@ -722,7 +704,7 @@ def create_node_sets(part, dim: str,
         # Define node sets for the edges.
         for name, ids in edge_dict.items():
             part.add_node_set(name=name, ids=ids)
-        if faces:
+        if dim.upper() == '3D':
             # Define node sets for the faces.
             for name, ids in face_dict.items():
                 part.add_node_set(name=name, ids=ids)

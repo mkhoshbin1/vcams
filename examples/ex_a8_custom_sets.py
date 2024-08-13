@@ -3,11 +3,8 @@
 from vcams.voxelpart import VoxelPart
 
 # Create the part.
-part = VoxelPart(size=(50, 100), base_material=1,
-                 voxel_size=(0.02, 0.02),
-                 name='Ex A-8 Custom Sets',
-                 description='Example A-8: A 2D part with custom element and node sets.',
-                 log_debug=True)
+part = VoxelPart(size=(50, 100), base_material=1, voxel_size=(0.02, 0.02), name='Ex A-8 Custom Sets',
+                 description='Example A-8: A 2D part with custom element and node sets.', log_debug=True)
 
 # Add a node set that will always be exported.
 # Note that the ids list need not be sorted.

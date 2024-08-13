@@ -1,13 +1,15 @@
 """Classes defining Triply Periodic Minimal Surfaces (TPMS)
-which can be used to create boolean masks.
+which can be used to create Boolean masks.
 
-These resulting mask can then be used
-for manipulating :class:`~vcams.voxelpart.VoxelPart` object
+The resulting masks can then be used
+for manipulating a :class:`~vcams.voxelpart.VoxelPart` instance
 using its :meth:`~vcams.voxelpart.VoxelPart.apply_mask` method.
 See the :ref:`predefined-tpms` section for a complete explanation
 of the basic concepts.
 """
 from abc import ABC, abstractmethod
+from typing import Callable
+
 from numpy import cos, pi, sin, ndarray
 
 
@@ -16,7 +18,7 @@ class BaseTpms(ABC):
     Note that the subclasses will be static.
 
     All TPMS classes must inherit from this class.
-    Subclasses define the level set function *func* describing the shape in 3D space,
+    Subclasses define the level set function *func* describing the surface in 3D space,
     and the three attributes *name*, *tpms_id*, and *formula* which are used by PyQt
     for the GUI.
     """
@@ -56,7 +58,7 @@ class TpmsSchwarzP(BaseTpms):
        \\Phi = cos(\\frac{2\pi}{l}x) + cos(\\frac{2\pi}{l}y) + cos(\\frac{2\pi}{l}z) - c = 0
     """
     @staticmethod
-    def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float) -> ndarray:  # noqa: E741
+    def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float | Callable) -> float | ndarray:  # noqa: E741
         """Function describing a Schwarz Primitive (P) triply periodic minimal surface.
 
         Args:
@@ -64,14 +66,20 @@ class TpmsSchwarzP(BaseTpms):
             y: A numpy 1D array of y-coordinates.
             z: A numpy 1D array of z-coordinates.
             l: Length of the unit cell in all directions.
-            c: Constant C in the equation.
+            c: Parameter C in the equation.
+               It can either be a constant *float*, or a callable
+               that's a function of x, y, and z, is vectorized, and returns a float.
+               Note that c(x, y, z) is not validated so great care
+               should be taken when constructing and passing it.
 
         Returns:
             An array of floats which may be negative, zero, or positive.
             If scalar values are passed, a float is returned instead of an array.
-            See TODO for interpretation of the results.
+            See :ref:`level-set-functions` for interpretation of the results.
         """
         p = 2 * pi / l  # Period.
+        if callable(c):
+            c = c(x, y, z)
         return cos(p * x) + cos(p * y) + cos(p * z) - c
 
     tpms_id: int = 0
@@ -90,7 +98,7 @@ class TpmsSchwarzD(BaseTpms):
                      +\\ &cos(\\frac{2\pi}{l}x) \\ cos(\\frac{2\pi}{l}y) \\ sin(\\frac{2\pi}{l}z) - c = 0
     """
     @staticmethod
-    def func(x, y, z, l, c):  # noqa: E741
+    def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float | Callable) -> float | ndarray:  # noqa: E741
         """Function describing a Schwarz Diamond (D) triply periodic minimal surface.
 
         Args:
@@ -98,14 +106,20 @@ class TpmsSchwarzD(BaseTpms):
             y: A numpy 1D array of y-coordinates.
             z: A numpy 1D array of z-coordinates.
             l: Length of the unit cell in all directions.
-            c: Constant C in the equation.
+            c: Parameter C in the equation.
+               It can either be a constant *float*, or a callable
+               that's a function of x, y, and z, is vectorized, and returns a float.
+               Note that c(x, y, z) is not validated so great care
+               should be taken when constructing and passing it.
 
         Returns:
             An array of floats which may be negative, zero, or positive.
             If scalar values are passed, a float is returned instead of an array.
-            See TODO for interpretation of the results.
+            See :ref:`level-set-functions` for interpretation of the results.
         """
         p = 2 * pi / l  # Period.
+        if callable(c):
+            c = c(x, y, z)
         return (sin(p * x) * sin(p * y) * sin(p * z) +
                 sin(p * x) * cos(p * y) * cos(p * z) +
                 cos(p * x) * sin(p * y) * cos(p * z) +
@@ -129,7 +143,7 @@ class TpmsSchwarzG(BaseTpms):
                      +\\ &sin(\\frac{2\pi}{l}z) \\ cos(\\frac{2\pi}{l}x) - c = 0
     """
     @staticmethod
-    def func(x, y, z, l, c):  # noqa: E741
+    def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float | Callable) -> float | ndarray:  # noqa: E741
         """Function describing a Schwarz Gyroid (G) triply periodic minimal surface.
 
         Args:
@@ -137,14 +151,20 @@ class TpmsSchwarzG(BaseTpms):
             y: A numpy 1D array of y-coordinates.
             z: A numpy 1D array of z-coordinates.
             l: Length of the unit cell in all directions.
-            c: Constant C in the equation.
+            c: Parameter C in the equation.
+               It can either be a constant *float*, or a callable
+               that's a function of x, y, and z, is vectorized, and returns a float.
+               Note that c(x, y, z) is not validated so great care
+               should be taken when constructing and passing it.
 
         Returns:
             An array of floats which may be negative, zero, or positive.
             If scalar values are passed, a float is returned instead of an array.
-            See TODO for interpretation of the results.
+            See :ref:`level-set-functions` for interpretation of the results.
         """
         p = 2 * pi / l  # Period.
+        if callable(c):
+            c = c(x, y, z)
         return (sin(p * x) * cos(p * y) +
                 sin(p * y) * cos(p * z) +
                 sin(p * z) * cos(p * x) - c)

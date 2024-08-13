@@ -2,25 +2,21 @@
 
 import logging
 import time
-import matplotlib
-import numpy as np
-
-from ..logger_conf import setup_dispersion_logger, LogWithoutFormatContext
-
-matplotlib.use('TkAgg')  # FIXME: https://stackoverflow.com/a/73788178/7180705
-import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
-from pathlib import Path
 from copy import deepcopy
-from numpy import var, std, mean, random, max, abs, isscalar, sum, inf
+from typing import Iterable, Callable
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np  # This is intentional to simplify the formulae.
+from numpy import random, max, abs, isscalar, sum, inf, ndarray
 from scipy.stats import truncnorm
 
 from .shape import ShapeArray
+from ..logger_conf import setup_dispersion_logger, LogWithoutFormatContext
 
+matplotlib.use('TkAgg')  # From https://stackoverflow.com/a/73788178/7180705
 logger = logging.getLogger(__name__)
-
-
-# TODO: document all functions.
 
 
 class TooManyDispersionAttemptsError(Exception):
@@ -91,15 +87,30 @@ class BaseListDispersion(ABC):
         return ManualListDispersion(self.values * other)
 
     def __init__(self):
+        """Constructor for the :class:`BaseListDispersion` abstract base class.
+        It should be called by subclasses."""
         self.values = np.array([])
         """A numpy array containing the values in the instance."""
 
-    def plot(self, num_bins, plot_actual_normal_curve=False):
-        """Plot a histogram of the dispersion object."""
+    @staticmethod
+    def _set_plot_legend():
+        """Set the legend for the plots created by the :meth:`BaseListDispersion.plot` method."""
+        plt.gca().legend(frameon=False, prop={'family': 'monospace'},  # bbox_to_anchor=(1.04, 1),
+                         fontsize=2, numpoints=1, loc='upper right')
+        # plt.tight_layout()
+
+    def plot(self, num_bins: int, plot_actual_normal_curve: bool = False):
+        """Plot a histogram of the dispersion object.
+
+        Args:
+            num_bins: Number of bins for the histogram of actual values.
+            plot_actual_normal_curve: Whether the actual normal distribution of the values should be plotted.
+                                      Defaults to False.
+        """
         if self.__len__() < 1:
             raise ValueError('The object is empty. Has it been initialized?')
         plt.plot([], [], ' ', label=f'$\\bf{{Dispersion Type: {type(self).__name__}}}$')
-        plt.hist(self.values, num_bins, density=True, label='Actual Values Histogram')  # FIXME
+        plt.hist(self.values, num_bins, density=True, label='Actual Values Histogram')
         plt.xlabel('Value')
         plt.ylabel('Frequency')
 
@@ -107,22 +118,10 @@ class BaseListDispersion(ABC):
             x = np.linspace(-3 * self.actual_std + self.actual_mean, 3 * self.actual_std + self.actual_mean, 100)
             y = (np.exp(-np.power((x - self.actual_mean) / self.actual_std, 2.0) / 2)
                  / (np.sqrt(2.0 * np.pi) * self.actual_std))
-            plt.plot(x, y, label='Normal Distribution (Actual Values)')
+            plt.plot(x, y, label='Normal Distribution (Actual)')
 
         self._set_plot_legend()
         plt.show()
-
-    @staticmethod
-    def _set_plot_legend():
-        plt.gca().legend(frameon=False, prop={'family': 'monospace'},
-                         fontsize=1, numpoints=1, loc='upper right')
-        # TODO: see if legend can be correctly placed outside.
-        # It seems that the legend should be added to bbox_extra_artists
-        # which can only be done in savefig.
-        # plt.legend(title='MY TITLE', frameon=False,
-        #            prop={'family': 'monospace'}, fontsize=2,
-        #            numpoints=1, bbox_to_anchor=(1.05, 1),
-        #            loc='upper left')
 
 
 class ManualListDispersion(BaseListDispersion):
@@ -130,22 +129,27 @@ class ManualListDispersion(BaseListDispersion):
     This is simply a list and is only created to have a uniform naming.
     """
 
-    def __init__(self, values):
+    def __init__(self, values: Iterable | ndarray):
+        """Constructor for the :class:`ManualListDispersion` class.
+        It takes an iterable, creates a *NumPy* array from it, and then flattens it.
+        """
         super().__init__()
-        # TODO: make sure values is an iterable and flat.
-        self.values = np.array(values)
+        self.values = np.array(values).flatten()
 
     def __repr__(self):
-        return f"""{self.__class__}
-        Number of Values: {len(self)}
-        Actual Mean:      {self.actual_mean:{self._repr_float_length}.4f}
-        Actual SD:        {self.actual_std:{self._repr_float_length}.4f}
-        Actual Variance:  {self.actual_variance:{self._repr_float_length}.4f}
-        """
+        return (f'{self.__class__.__name__} Instance:\n'
+                f'    Number of Values: {len(self.values)}\n'
+                f'    Actual Mean:      {self.actual_mean:{self._repr_float_length}.4f}\n'
+                f'    Actual STD:       {self.actual_std:{self._repr_float_length}.4f}\n'
+                f'    Actual Variance:  {self.actual_variance:{self._repr_float_length}.4f}')
 
     # noinspection PyMethodOverriding
-    def plot(self, num_bins):
-        """Plot a histogram of the dispersion object."""
+    def plot(self, num_bins: int):
+        """Plot a histogram of the dispersion object.
+
+        Args:
+            num_bins: Number of bins for the histogram of actual values.
+        """
         BaseListDispersion.plot(self, num_bins, plot_actual_normal_curve=True)
         plt.plot([], [], ' ', label=self.__repr__().split('\n', 1)[1])
         BaseListDispersion._set_plot_legend()
@@ -154,7 +158,7 @@ class ManualListDispersion(BaseListDispersion):
 
 class BaseNormalDistributionDispersion(BaseListDispersion):
     """Abstract base class for dispersion classes that generate a list of values
-    with a normal (gaussian) distribution.
+    with a `normal (Gaussian) distribution <https://en.wikipedia.org/wiki/Normal_distribution>`_.
 
     Instances are defined using a target mean and standard deviation.
     Afterwards, a list is created using a random number generator.
@@ -173,7 +177,8 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
 
     def __init__(self, target_mean: float, target_std: float,
                  num_values: int = None, max_absolute_pct_error: int = 10):
-        """
+        """Constructor for the :class:`BaseNormalDistributionDispersion` class.
+
         Args:
             target_mean: Target mean for the randomly generated values.
                          Actual mean will be stored in *actual_mean*.
@@ -214,25 +219,31 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
 
     def __repr__(self):
         if len(self) == 0:
-            return (f'{self.__class__}\n'
+            return (f'{self.__class__.__name__} Instance:\n'
                     f'    The instance is empty. Use generate_values(num_values) to populate it.\n'
                     f'    Target Mean:      {self.target_mean:{self._repr_float_length}.4f}\n'
-                    f'    Target SD:        {self.target_std:{self._repr_float_length}.4f}')
+                    f'    Target STD:       {self.target_std:{self._repr_float_length}.4f}')
         else:
             mean_pct_error = 100 * (self.actual_mean - self.target_mean) / self.target_mean
-            sd_pct_error = 100 * (self.actual_std - self.target_std) / self.target_std
-            return (f'{self.__class__}\n'
+            std_pct_error = 100 * (self.actual_std - self.target_std) / self.target_std
+            return (f'{self.__class__.__name__} Instance:\n'
                     f'    Number of Values: {len(self.values)}\n'
                     f'    Target Mean:      {self.target_mean:{self._repr_float_length}.4f}\n'
                     f'    Actual Mean:      {self.actual_mean:{self._repr_float_length}.4f} ({mean_pct_error:+.4f}%)\n'
-                    f'    Target SD:        {self.target_std:{self._repr_float_length}.4f}\n'
-                    f'    Actual SD:        {self.actual_std:{self._repr_float_length}.4f} ({sd_pct_error:+.4f}%)\n'
+                    f'    Target STD:       {self.target_std:{self._repr_float_length}.4f}\n'
+                    f'    Actual STD:       {self.actual_std:{self._repr_float_length}.4f} ({std_pct_error:+.4f}%)\n'
                     f'    Actual Variance:  {self.actual_variance:{self._repr_float_length}.4f}')
 
     # noinspection PyMethodOverriding
-    def plot(self, num_bins):
-        """Plot a histogram of the dispersion object."""
-        BaseListDispersion.plot(self, num_bins)
+    def plot(self, num_bins: int, plot_actual_normal_curve: bool = False):
+        """Plot a histogram of the dispersion object.
+
+        Args:
+            num_bins: Number of bins for the histogram of actual values.
+            plot_actual_normal_curve: Whether the actual normal distribution of the values should be plotted.
+                                      Defaults to False.
+        """
+        BaseListDispersion.plot(self, num_bins, plot_actual_normal_curve)
         x = np.linspace(-3 * self.target_std + self.target_mean, 3 * self.target_std + self.target_mean, 1000)
         y = (np.exp(-np.power((x - self.target_mean) / self.target_std, 2.0) / 2)
              / (np.sqrt(2.0 * np.pi) * self.target_std))
@@ -243,14 +254,20 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
 
     @abstractmethod
     def _generate_values_once(self, num_values: int, qc_results=True):
-        """Abstract method for generating a single set of :attr:`values`
+        """Abstract method for generating a single set of random values
         based on the instance's attributes.
         This method can be called as many times as necessary to regenerate the instance's
-        *values* list and change its *num_values*."""
+        *values* list and change its *num_values*.
+
+        Args:
+            num_values: Number of values to be generated and stored in the *values* property.
+            qc_results: If *True*, the values are quality controlled
+                        using :meth:`_qc_dispersion`. Defaults to *True*.
+        """
         pass
 
-    def generate_values(self, num_values: int, qc_results=True, max_attempts=1000):
-        """TODO note that error is raised and attempts are made.
+    def generate_values(self, num_values: int, qc_results=True, max_attempts=10000):
+        """Generate values based on the normal dispersion's parameters.
 
         Args:
             num_values: Number of values to be generated and stored in the *values* property.
@@ -259,6 +276,9 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
                         Defaults to *True*.
             max_attempts: The maximum number of attempts for generation of valid values.
                           If exceeded, :class:`TooManyValueGenerationAttemptsError` is raised.
+                          Note that some parameters require much more tries
+                          because the distribution keeps getting rejected
+                          by the quality control process.
 
         Raises:
             TooManyValueGenerationAttemptsError: Too many attempts were made for value generation.
@@ -272,7 +292,7 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
         raise TooManyValueGenerationAttemptsError(f'Too many attempts ({max_attempts}) made '
                                                   f'for generating valid values.')
 
-    def _qc_dispersion(self, min_size=0, max_absolute_pct_error: int | None = None):
+    def _qc_dispersion(self, min_size: int = 0, max_absolute_pct_error: int | None = None):
         """Control the quality of the dispersion using two tests:
 
         - The number of values in the dispersion must be more than *min_size*. Defaults to 0.
@@ -305,18 +325,20 @@ class BaseNormalDistributionDispersion(BaseListDispersion):
 
 class NormalDistributionDispersion(BaseNormalDistributionDispersion):
     """A dispersion class that generates a list of values with
-    a normal (gaussian) distribution.
+    a `normal (Gaussian) distribution <https://en.wikipedia.org/wiki/Normal_distribution>`_.
 
-    The generated distribution will be truly normal, but may include negative values.
+    The generated distribution will be truly normal,
+    but may include values that are negative or too small.
     This will cause issues for some purposes such as geometrical features.
-    Other classes will not be truly normal but not won't have this problem.
+    The :class:`TruncatedNormalDistributionDispersion` class
+    can fix this problem but its values will not be truly normal.
 
     This is a subclass of :class:`BaseNormalDistributionDispersion`.
     See its docs for other details.
     """
 
     def _generate_values_once(self, num_values: int, qc_results=True):
-        """Generate values randomly with the given mean and standard deviation.
+        """Generate a single set of random values with the given mean and standard deviation.
         This method can be called as many times as necessary to regenerate the instance's
         *values* list and change its *num_values*.
 
@@ -325,7 +347,7 @@ class NormalDistributionDispersion(BaseNormalDistributionDispersion):
         Args:
             num_values: Number of values to be generated and stored in the *values* property.
             qc_results: If *True*, the values are quality controlled
-                        using :meth:`BaseNormalDistributionDispersion._qc_dispersion`.
+                        using :meth:`~BaseNormalDistributionDispersion._qc_dispersion`.
                         Defaults to *True*.
         """
         if num_values < 1:
@@ -336,11 +358,29 @@ class NormalDistributionDispersion(BaseNormalDistributionDispersion):
 
 
 class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
-    """todo"""
+    """A dispersion class that generates a list of values with
+    a `truncated normal (Gaussian) distribution <https://en.wikipedia.org/wiki/Truncated_normal_distribution>`_.
+
+    A regular normal distribution created by the :class:`NormalDistributionDispersion` class
+    has the problem that it may include values that are negative or too small
+    which will cause issues for some purposes such as geometrical features.
+    This class allows for defining boundaries for the start and end of the distribution
+    which solves this problem.
+    However, there are two problems:
+
+      1. The results will not be truly normal.
+      2. The generated values may not pass the quality control process
+         which means that many attempts may be necessary
+         when calling the :meth:`~BaseNormalDistributionDispersion.generate_values` method.
+
+    This is a subclass of :class:`BaseNormalDistributionDispersion`.
+    See its docs for other details.
+    """
 
     def __init__(self, target_mean: float, target_std: float,
                  bound_a: float = -inf, bound_b: float = inf, num_values: int = None):
-        """
+        """Constructor for the :class:`TruncatedNormalDistributionDispersion` class.
+
         Args:
             target_mean: Target mean for the randomly generated values.
                          Actual mean will be stored in *actual_mean*.
@@ -350,7 +390,8 @@ class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
             bound_b:    The end of the range from which values should be drawn.
             num_values: Number of values to be generated and stored in the *values* property.
                         Defaults to *None* which defers value generation and
-                        requires a call to :meth:`generate_values` to generate the values.
+                        requires a call to :meth:`~BaseNormalDistributionDispersion.generate_values`
+                        to generate the values.
         """
         # target_mean and target_std are assigned in super().__init__.
         self.bound_a = bound_a
@@ -362,32 +403,45 @@ class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
         self._truncnorm_b = (bound_b - target_mean) / target_std
         super().__init__(target_mean, target_std, num_values)
 
-    def plot(self, num_bins):
-        """Plot a histogram of the dispersion object."""
+    def plot(self, num_bins: int, plot_equivalent_normal_curve: bool = True):
+        """Plot a histogram of the dispersion object.
+
+        Args:
+            num_bins: Number of bins for the histogram of actual values.
+            plot_equivalent_normal_curve: Whether an equivalent (untruncated) normal distribution
+                                          should be plotted based on the parameters.
+                                          Defaults to True.
+        """
         BaseListDispersion.plot(self, num_bins)
 
         x = np.linspace(-3 * self.target_std + self.target_mean, 3 * self.target_std + self.target_mean, 1000)
         y = truncnorm.pdf(x, a=self._truncnorm_a, b=self._truncnorm_b,
                           loc=self.target_mean, scale=self.target_std)
         plt.plot(x, y, label='Truncated Normal Distribution (Target)')
+        if plot_equivalent_normal_curve:
+            y_eq_normal = (np.exp(-np.power((x - self.target_mean) / self.target_std, 2.0) / 2)
+                           / (np.sqrt(2.0 * np.pi) * self.target_std))
+            plt.plot(x, y_eq_normal, label='Equivalent Normal Distribution (Target)')
+
         plt.plot([], [], ' ', label=self.__repr__().split('\n', 1)[1])
         BaseListDispersion._set_plot_legend()
         plt.show()
 
     def _generate_values_once(self, num_values: int, qc_results=True):
-        """Generate values randomly based on a truncated normal distribution
+        """Generate a single set of random values based on a truncated normal distribution
         with the given mean and standard deviation.
         This method can be called as many times as necessary to regenerate the instance's
         *values* list and change its *num_values*.
-        
+
         This function uses SciPy's `stats.truncnorm.rvs` function.
-        
+
         Args:
             num_values: Number of values to be generated and stored in the *values* property.
             qc_results: If *True*, the values are quality controlled
-                        using :meth:`BaseNormalDistributionDispersion._qc_dispersion`.
+                        using the :meth:`~BaseNormalDistributionDispersion._qc_dispersion` method.
                         Defaults to *True*.
-        """  # See __init__ for _truncnorm_a and _truncnorm_b.
+        """
+        # See __init__ for _truncnorm_a and _truncnorm_b.
         self.values = truncnorm.rvs(a=self._truncnorm_a, b=self._truncnorm_b,
                                     loc=self.target_mean, scale=self.target_std,
                                     size=num_values)
@@ -395,83 +449,181 @@ class TruncatedNormalDistributionDispersion(BaseNormalDistributionDispersion):
             self._qc_dispersion()
 
 
-class RandomDispersion:  # TODO: doc
-    def __init__(self, low, high, boundary=0):
-        self.low = low + boundary
-        self.high = high - boundary
+class RandomDispersion:
+    """A dispersion class that generates a single random float value in a half-open interval.
+
+    The constructor (:meth:`__init__`) takes three arguments,
+    which are *low*, *high*, and boundary, and then calculates
+    :attr:`actual_low` and :attr:`actual_high` using the following equations:
+
+    .. math::
+
+       \\begin{cases}
+       \\text{actual_low} &=& \\text{low} &+& \\text{boundary}\\\\
+       \\text{actual_high} &=& \\text{high} &-& \\text{boundary}
+       \\end{cases}
+
+    This class uses *numpy.random.uniform()* in the half-open interval
+    :math:`[\\text{actual_low}, \\text{actual_high})`.
+
+    Instances of this class are callables, meaning that they can be called like a function.
+    For example:
+
+    .. code-block:: python
+
+       rand_disp_ins = RandomDispersion(low=2, high=10)
+       v1 = rand_disp_ins()  # A random value between 2 and 10.
+       v2 = rand_disp_ins()  # Another random value between 2 and 10.
+
+    """
+
+    def __init__(self, low: float, high: float, boundary: float = 0):
+        """Constructor for the :class:`RandomDispersion` class.
+
+        Args:
+            low: Lower boundary of the output interval.
+            high: Upper boundary of the output interval.
+            boundary: A boundary applied to the *low* and *high* arguments
+                      to calculate :attr:`actual_low` and :attr:`actual_high`.
+        """
+        self.low = low
+        self.high = high
+        self.boundary = boundary
+        self.actual_low = low + boundary
+        """Actual lower boundary from which the random number is generated.
+        Values will be equal or greater than this number."""
+        self.actual_high = high - boundary
+        """Actual upper boundary from which the random number is generated.
+        Values will be less than this number."""
 
     def __call__(self):
-        return random.uniform(low=self.low, high=self.high, size=None)
+        return random.uniform(low=self.actual_low, high=self.actual_high, size=None)
 
     def __repr__(self):
-        return f"""{self.__class__}
-        Actual Low:  {self.low}
-        Actual High: {self.high}
-        """
+        return (f'{self.__class__.__name__} Instance:\n'
+                f'    Low:         {self.low}\n'
+                f'    High:        {self.high}\n'
+                f'    Boundary:    {self.boundary}\n'
+                f'    Actual Low:  {self.actual_low}\n'
+                f'    Actual High: {self.actual_high}\n')
 
     def plot(self):
+        """A nonfunctional method that raises a *NotImplementedError*
+        because it is not applicable to the :class:`RandomDispersion` class."""
         raise NotImplementedError('This function is not available for the RandomDispersion class '
                                   'because it only return a random scalar.')
 
 
 class ShapeDispersionArray(ShapeArray):
-    """TODO: doc
-    TODO: if part is specified, it's used as background. Is this a question or a statement??"""
+    """Class for an array of shapes that are dispersed in the workspace.
+    For each shape, its xyz coordinates are randomly assigned
+    and the rest of the parameters may be predefined or randomly generated.
+
+    This is, in fact, a subclass of :class:`~.shape.ShapeArray`
+    which can disperse shapes inside itself.
+
+    The array may contain any number of shapes of any class as long as they
+    are subclasses of :class:`.shape.BaseShape` and have the same *dim* attribute.
+
+    When constructing an instance, a :class:`~vcams.voxelpart.VoxelPart` instance
+    can be passed which allows for defining a *background* in the shape array.
+    This means that the shapes will only be dispersed in the nonempty regions
+    of the *VoxelPart* instance.
+    """
 
     def __init__(self, dim: str, part=None,
-                 mask_shape: tuple[int, int, int] = None,
+                 part_shape: tuple[int, int, int] = None,
                  voxel_size: tuple[float, float, float] = None,
                  num_bound_pixels: int = 0,
                  short_msg: bool = True):
-        """A subclass of ShapeArray(TODO) which can disperse shapes inside itself.
+        """Constructor for the *ShapeDispersionArray* class.
+
         Args:
-            part (VoxelPart | None): The VoxelPart object (TODO) based on which the ShapeArray is created.
-                                     If None, *mask_shape* and *voxel_size* must be specified (%TODO: enforce).
             dim: Dimensionality of the shape array which determines the shapes that
                  can be added to the shape array. Valid values are '2D' and '3D'.
-            mask_shape: A tuple containing three integers which determines
-                        the shape of the returned boolean mask. Ignored if *part* is passed.
-            voxel_size: A tuple containing three floats which determine the size of a voxel
-                        in the x, y, and z directions. Ignored if *part* is passed.
+            part (VoxelPart | None): The *VoxelPart* instance based on which the shape array is created.
+                                     If *None*, *part_shape* and *voxel_size* must be specified,
+                                     otherwise they are ignored. Defaults to *None*.
+            part_shape: A tuple containing two or three integers which determine
+                        the shape of the returned boolean mask.
+                        Defaults to *None* and ignored if *part* is passed.
+            voxel_size: A tuple containing two or three floats which determine the size of a voxel
+                        in the x, y, and z directions.
+                        Defaults to *None* and ignored if *part* is passed.
             num_bound_pixels: An int specifying the number of pixels to add to the boundary of the base mask.
                               The boundary will become a region that the dispersed shapes cannot touch.
                               Defaults to 0.
             short_msg: A boolean specifying whether the placement message should be printed
                        as a single updating line or in many lines with extensive details.
-                       Passed to :func:`.print_placement_message` Defaults to *True*.
+                       Passed to :meth:`._log_placement` Defaults to *True*.
         """
 
-        super().__init__(dim, part, mask_shape, voxel_size, is_mask_calculation_lazy=False)
-        # TODO: doc that is_mask_calculation_lazy is True
+        # Call the parent class's constructor.
+        # Note that is_mask_calculation_lazy is set to True.
+        super().__init__(dim, part, part_shape, voxel_size, is_mask_calculation_lazy=True)
 
         self.short_msg = short_msg
         """See :meth:`.__init__`."""
 
         self.shape_requests = []
         """A list of shapes shape classes and related parameters that should be dispersed.
-        This list is emptied after a successful dispersion."""  # TODO: talk about structure.
+        
+        Members of this list are added by the :meth:`add_shape_request` method.
+        Each is a list containing the following:
+        
+          - **cls**: The *class* object for the shape that is requested.
+            It is a subclass of :class:`.shape.BaseShape`
+            and has the same *dim* attribute (2D or 3D) as the shape array.
+            The last two members of the list will be keyword arguments
+            that can be used to define the shape. 
+          
+          - **num_shapes**: Number of requested shapes. This should be an integer.
+            If set to *None*, the number can be determined by the object.
+            In that case, all members of the list should have *num_shapes* set to *None*.
+          
+          - **iterable_kwargs**: A dictionary of keyword arguments for *cls*.
+            Each dictionary key will be the name of a keyword argument for *cls*,
+            and the dictionary value will be the keyword argument's value.
+            Here, keys are either iterables or subclasses of :class:`BaseListDispersion`,
+            except for :class:`RandomDispersion` which is treated as a scalar.
+            Note that the dictionary values should have the same length as *num_shapes*.
+          
+          - **scalar_kwargs**: A dictionary of keyword arguments for *cls*.
+            Each dictionary key will be the name of a keyword argument for *cls*,
+            and the dictionary value will be the keyword argument's value.
+            Here, keys are either scalars or instances :class:`RandomDispersion`.
+            Scalars will be used for all the shapes requested (by this member)
+            and instances :class:`RandomDispersion` will be called
+            by the appropriate methods to generate random values.
+          
+        Addition to this list should be done by the :meth:`add_shape_request` method
+        and the list is emptied after a successful dispersion.
+        Users should not interact with this list. This is not enforced but highly recommended.
+        """
 
         self._dispersion_log_file_path = \
             part._log_file_path.with_stem(part._log_file_path.stem + '_dispersion_log')  # noqa: PyProtectedMember
         self.dispersion_logger = setup_dispersion_logger(part.name, log_file=self._dispersion_log_file_path,
                                                          display_log=True)
-        # TODO: make concise
 
         # Add boundary to the base mask so the shapes don't touch the outside.
-        if num_bound_pixels:  # FIXME: here or in ShapeArray?
+        if num_bound_pixels:
             self.base_mask[:, :num_bound_pixels] = True
             self.base_mask[:, -num_bound_pixels:] = True
             self.base_mask[:num_bound_pixels, :] = True
             self.base_mask[-num_bound_pixels:, :] = True
 
     @property
-    def num_requested_shapes(self):  # TODO: test
-        """Total number of shapes requested in :meth:`shape_requests`."""
+    def num_requested_shapes(self) -> int:
+        """Total number of shapes requested in :attr:`shape_requests`.
+        This is calculated automatically on the fly.
+        If any of the *num_shapes* in *shape_requests* is set to *None*,
+        the number -1 is returned."""
         num_shapes_list = [sr[1] for sr in self.shape_requests]
         if None in num_shapes_list:
-            return '???'
+            return -1
         else:
-            return sum(num_shapes_list)
+            return int(sum(num_shapes_list, axis=None))
 
     def _backup_state(self):
         super()._backup_state()
@@ -486,7 +638,10 @@ class ShapeDispersionArray(ShapeArray):
     @staticmethod
     def _test_cls_kwargs(cls, iterable_kwargs, scalar_kwargs):
         """Try to create a shape with a set of iterable_kwargs and scalar_kwargs
-        to make sure they are valid. It raises an error if unsuccessful and is otherwise silent."""
+        to make sure they are valid. It raises an error if unsuccessful and is otherwise silent.
+
+        This is a method function used by the :meth:`add_shape_request` method
+        and should not be directly called by the users."""
         iter0_dict_temp = dict()
         scalar_dict_temp = dict()
         for (k, v) in iterable_kwargs.items():
@@ -508,21 +663,25 @@ class ShapeDispersionArray(ShapeArray):
 
     def _place_shape_randomly(self, cls, shape_number: int, max_attempts: int,
                               trial_number: int = None, **kwargs):
-        """Place a shape in a random position. Placement is tried *max_attempts* number of times.
+        """Place a shape in a random position. Placement is tried *max_attempts* number of times
+        and if not successful, :class:`TooManyDispersionAttemptsError` is raised.
+
+        This is a private method used by the :meth:`disperse_shapes` method
+        and should not be directly called by the users.
 
         Args:
             cls: The shape class that should be placed. Arguments are passed as *kwargs*.
             shape_number: The number of this shape.
                           This number keeps track of the shapes that are dispersed
-                          and is used for logging the progress.
-                          it is *not* the shape's eventual ID.
+                          and is used for logging the progress. it is *not* the shape's eventual ID.
             max_attempts: The maximum number of attempts for placement of a shape.
                           If exceeded, :class:`TooManyDispersionAttemptsError` is raised.
             trial_number: The number for this trial. Used for logging the progress.
             **kwargs:     A dictionary where the keys are the arguments for the shape class
                           and the values are either dispersion objects or scalars.
-                          Coordinate arguments should be passes as :class:`RandomDispersion` instances.
-                          These are then called to generate a random value for each attempt.
+                          Coordinate arguments should always be passed as :class:`RandomDispersion`
+                          instances that are then called to generate a random value for each attempt.
+                          This is not enforced.
 
         Raises:
             TooManyDispersionAttemptsError: Too many attempts were made for this shape.
@@ -554,7 +713,9 @@ class ShapeDispersionArray(ShapeArray):
 
     def _log_placement(self, cls, attempt_number, shape_number, scalar_dict,
                        random_value_dict, trial_number=None):
-        """Log the placement of the shape."""
+        """Log the placement of the shape.
+        This is a private method used by the :meth:`_place_shape_randomly` method
+        and should not be directly called by the users."""
         if trial_number is None:
             trial_str = ''
         else:
@@ -571,7 +732,9 @@ class ShapeDispersionArray(ShapeArray):
         self.dispersion_logger.debug(msg_str)
 
     def _log_shape_placement_status(self, shape_status):
-        """Log the placement status of shape."""
+        """Log the placement status of shape.
+        This is a private method used by the :meth:`_place_shape_randomly` method
+        and should not be directly called by the users."""
         if shape_status:
             with LogWithoutFormatContext(self.dispersion_logger):
                 self.dispersion_logger.debug('Success!\r')
@@ -586,7 +749,7 @@ class ShapeDispersionArray(ShapeArray):
             cls: The shape class that should be placed. Arguments are passed as *kwargs*.
             num_shapes: Number of shapes that are requested with the given arguments.
                         Should either be an integer or *None* so it can be determined using
-                        the instance's :meth:`_find_suitable_num_shapes()` method.
+                        the instance's :meth:`_find_suitable_num_shapes` method.
                         If set to *None*, all other shape requests must also have this argument
                         set to *None*. Defaults to *None*.
             **kwargs: A dictionary where the keys are the arguments for the shape class
@@ -645,12 +808,12 @@ class ShapeDispersionArray(ShapeArray):
         the shape requests. All shape requests are processed
         and then :attr:`shape_requests` is emptied.
 
-        It is necessary for the instance's shape requests (TODO)
+        It is necessary for all the members in the instance's :attr:`shape_requests`
         to have valid *num_shapes*, otherwise an error is raised.
         If you need to disperse without knowing the number of shapes
-        (based on volume fraction), use the TODO method instead.
+        (based on volume fraction), use the :meth:`disperse_shapes_vf` method instead.
 
-        The function uses the :meth:`_place_shape_randomly()` function to place each shape
+        The function uses the :meth:`_place_shape_randomly` function to place each shape
         in a random position. Placement is tried *max_attempts* number of times
         and if the attempts run out, the *trial* ends and a new trial begins with
         a clean ShapeArray, and the same shapes will be dispersed again.
@@ -662,7 +825,8 @@ class ShapeDispersionArray(ShapeArray):
                           If exceeded, the trial ends and the process is restarted.
             max_trials:   The maximum number of trials. If exceeded,
                           :class:`TooManyDispersionTrialsError` is raised.
-            log_main:     TODO
+            log_main:     Whether the start and end of dispersion should be logged by the main logger.
+                          Defaults to True.
 
         Raises:
             TooManyDispersionTrialsError: Too many trials were done.
@@ -728,81 +892,79 @@ class ShapeDispersionArray(ShapeArray):
             logger.info(success_msg)
 
     def _find_suitable_num_shapes(self, target_vf: float, vf_tolerance: float,
-                                  start_num_shapes: int = 5, max_num_shapes: int = 5000,
+                                  min_num_shapes: int, max_num_shapes: int,
                                   solver_mode: str = 'BISECTION') -> int:
-        """Find a suitable number of shapes for the *ShapeDispersionArray*'s requested shapes.
+        """Find the suitable number of shapes for the *ShapeDispersionArray*'s requested shapes.
 
         This function first makes sure that all the shape requests are without *num_shapes*,
         then finds a suitable number of shapes that satisfies a *target_vf*.
-        In the case of multiple requests each of them will be assumed to have an equal number of shapes.
+        In the case of multiple requests, an equal number of shapes will be used for all of them.
 
         Read the documentation for the :meth:`_find_vf_for_shape_number` for more information.
+        This is a private method used by the :meth:`disperse_shapes_vf` method
+        and should not be directly called by the users.
 
         Args:
             target_vf: Target volume fraction.
             vf_tolerance: Maximum tolerable difference between the reached volume fraction and *target_vf*.
                           It should be a float greater than 1E-4.
-            start_num_shapes: The initial value of *num_shapes* investigated by the function.
+            min_num_shapes: The initial value of *num_shapes* investigated by the function.
             max_num_shapes: The maximum value of *num_shapes* investigated by the function.
             solver_mode: The solver used for finding the suitable number of shapes.
-                         If set to *'BRUTE FORCE'*, all values from *start_num_shapes* to *max_num_shapes*
+                         If set to *'BRUTE FORCE'*, all values from *min_num_shapes* to *max_num_shapes*
                          are tested and if set to *'BISECTION'*, the bisection method
                          is used to find the suitable value.
                          Defaults to *'BISECTION'* which is faster and more reliable.
 
         Returns:
-            A suitable value for *num_shapes* that can be used in conjunction with the knapsack algorithm.
+            A suitable value for *num_shapes*.
 
         Raises:
             SuitableNumShapesNotFoundError: If a suitable number of shapes is not found in the given range.
         """
         begin_log_msg = 'Trying to find a suitable number of shapes ' \
                         'for the given shape requests and target volume fraction.'
-        self.dispersion_logger.debug(begin_log_msg)
+        self.dispersion_logger.debug(begin_log_msg + '\n')
         logger.info(begin_log_msg)
+
         # Validate input.
         if target_vf <= 0:
             raise ValueError('target_volume_fraction should be a positive number.')
+        if (int(min_num_shapes) != min_num_shapes) or (min_num_shapes < 1):
+            raise ValueError(f'min_num_shapes must be an integer greater than 1, but is {min_num_shapes}.')
+        if (int(max_num_shapes) != max_num_shapes) or (max_num_shapes < 1):
+            raise ValueError(f'max_num_shapes must be an integer greater than 2, but is {max_num_shapes}.')
+        if max_num_shapes <= min_num_shapes:
+            raise ValueError(f'max_num_shapes must be greater than min_num_shapes.')
+        if vf_tolerance < 1E-4:
+            raise ValueError('vf_tolerance should be a float greater than 1E-4.')
+        if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
+            raise ValueError('Invalid value for solver_mode.')
         # Make sure all num_shapes in the shape requests are None.
         num_shapes_list = [sr[1] for sr in self.shape_requests]
         if not all(ns is None for ns in num_shapes_list):
             raise ValueError(f'Some of the num_shapes in shape_requests are *not* None.'
                              f'If you want to find suitable num_shapes, they should *all* start as None.'
                              f'The list is: {num_shapes_list}')
-        if vf_tolerance < 1E-4:
-            raise ValueError('max_vf_diff should be None or a float greater than 1E-4.')
-        if max_num_shapes <= start_num_shapes:
-            raise ValueError('max_num_shapes should be greater than start_num_shapes.')
-        if solver_mode.upper() not in ['BRUTE FORCE', 'BISECTION']:
-            raise ValueError('Invalid value for solver_mode.')
+
         with LogWithoutFormatContext(self.dispersion_logger):
             self.dispersion_logger.debug(f' Using the {solver_mode.title()} solver mode.\n')
-
         line_str = ('=' * 80) + '\n'
         if solver_mode.upper() == 'BRUTE FORCE':
-            # TODO: consider making a function.
-            # TODO: test this option.
-            for num_shapes in range(start_num_shapes, max_num_shapes + 1):
-                vf_diff = self._find_vf_for_shape_number(num_shapes, target_vf)
-                # If within acceptable range, return here.
-                if abs(vf_diff) <= vf_tolerance:
-                    self.dispersion_logger.debug(f'Suitable number of shapes was found '
-                                                 f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
-                    return num_shapes
-                # If we are here, all values have been checked. Raise error.
-                raise SuitableNumShapesNotFoundError(
-                    f'Suitable num_shapes not found in the range [{start_num_shapes},{max_num_shapes}].')
+            solver_function = integer_solver_brute_force
         elif solver_mode.upper() == 'BISECTION':
-            num_shapes = bisection_solver_integer(func=self._find_vf_for_shape_number,
-                                                  a=start_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
-                                                  target_vf=target_vf)
-            self.dispersion_logger.debug(f'Suitable number of shapes was found '
-                                         f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
-            return num_shapes
+            solver_function = integer_solver_bisection
         else:
             raise RuntimeError('Invalid value for solver_mode. This should have been caught earlier.')
 
-    def _find_vf_for_shape_number(self, num_shapes, target_vf) -> float:
+        num_shapes = solver_function(func=self._find_vf_for_shape_number,
+                                     a=min_num_shapes, b=max_num_shapes, tolerance=vf_tolerance,
+                                     target_vf=target_vf)
+        self.dispersion_logger.debug(f'Suitable number of shapes was found '
+                                     f'to be {num_shapes}x{len(self.shape_requests)}.\n' + line_str)
+        return num_shapes
+
+    def _find_vf_for_shape_number(self, num_shapes: int, target_vf: float) -> float:
         """Calculate the volume fraction (VF) for the *ShapeDispersionArray*'s requested shapes,
         given the input number of shapes and return the difference between the actual and target VF.
 
@@ -819,7 +981,7 @@ class ShapeDispersionArray(ShapeArray):
               dispersable in a ShapeDispersionArray. This function is only about the VFs.
             - The nature of shape generation is stochastic. This means that no two calls
               will have an equal output. This is generally OK as the results are expected
-              to be used in a knapsack algorithm.
+              within a tolerance.
             - The volume used is the analytical volume of each shape
               which is fast but inaccurate for larger voxel sizes.
             - The volume of each voxel is calculated individually.
@@ -833,9 +995,6 @@ class ShapeDispersionArray(ShapeArray):
         Returns:
             The difference between the actual VF and *target_vf*.
         """
-        # TODO: What about overlap? at least raise an error somewhere.
-        # TODO: this can get better. Maybe a switch for analytical / real volume?
-
         # This function is used many times and therefore logs nothing.
         # Validate input.
         if target_vf <= 0:
@@ -892,38 +1051,52 @@ class ShapeDispersionArray(ShapeArray):
         return vf_diff
 
     def disperse_shapes_vf(self, target_vf: float, vf_tolerance: float,
-                           start_num_shapes: int = 5, max_num_shapes: int = 5000,
+                           min_num_shapes: int = 5, max_num_shapes: int = 5000,
                            solver_mode: str = 'BISECTION',
                            max_attempts: int = 5000, max_trials: int = 100,
                            max_generations: int = 100):
-        """FIXME
-        Disperse shapes in the *ShapeDispersionArray* instance according to
-        the shape requests. All shape requests are processed and then :attr:`shape_requests`
-        is emptied.
+        """Disperse shapes in the *ShapeDispersionArray* instance to reach a target volume fraction (VF).
+        All shape requests are processed and then :attr:`shape_requests` is emptied.
 
-        The function uses the :meth:`_place_shape_randomly()` function to place each shape
-        in a random position. Placement is tried *max_attempts* number of times
-        and if the attempts run out, the *trial* ends and a new trial begins with
-        a clean ShapeArray, and the same shapes will be dispersed again.
-        If after the given maximum number of trials (*max_trials*) all shapes are not placed,
-        :class:`TooManyDispersionTrialsError` will be raised to indicate an error.
+        Here, all shape requests should have a *num_shapes* value of *None*.
+        The function uses the :meth:`_find_suitable_num_shapes` function to find
+        a suitable number of shapes (for all requests).
+
+        Then, for *max_generations* number of times, the following is performed:
+
+          1. The random values in shape requests are regenerated.
+          2. The :meth:`disperse_shapes` method is used to disperse the shapes.
+             Make sure to read that function's documents for its intricacies.
+             If the shapes cannot be dispersed, a new generation is started.
+          3. If dispersion is successful, the final volume fraction (VF)
+             is checked to make sure it is within tolerances.
 
         Args:
+            target_vf: Target volume fraction.
+            vf_tolerance: Maximum tolerable difference between the reached volume fraction and *target_vf*.
+                          It should be a float greater than 1E-4.
+            min_num_shapes: The initial value used to find a suitable *num_shapes*.
+            max_num_shapes: The maximum value used for finding a suitable *num_shapes*.
+            solver_mode: The solver used for finding the suitable number of shapes.
+                         If set to *'BRUTE FORCE'*, all values from *min_num_shapes* to *max_num_shapes*
+                         are tested and if set to *'BISECTION'*, the bisection method
+                         is used to find the suitable value.
+                         Defaults to *'BISECTION'* which is faster and more reliable.
             max_attempts: The maximum number of attempts for placement of a shape.
                           If exceeded, the trial ends and the process is restarted.
-            max_trials:   The maximum number of trials. If exceeded,
-                          :class:`TooManyDispersionTrialsError` is raised.
+            max_trials:   The maximum number of trials for a shape generation attempt.
+                          If exceeded, a new shape generation attempt will be made.
+            max_generations: Maximum number of shape generation attempts.
+                             If exceeded, :class:`TooManyDispersionGenerationsError` is raised.
 
         Raises:
-            TooManyDispersionTrialsError: Too many trials were done.
-                                          Note that each trials entails many attempts.
+            TooManyDispersionGenerationsError: Too many trials were done.
+                                               Note that each generation entails many trials.
         """
-        # Note that the shape request are already there. FIXME: validate this!!
-        # self.dispersion_logger.debug('Dispersing shapes in the ShapeDispersionArray.\n')
-        # logger.debug('Dispersing shapes in the ShapeDispersionArray.')
+        self.dispersion_logger.debug('Dispersing shapes in the ShapeDispersionArray.\n')
+        logger.debug('Dispersing shapes in the ShapeDispersionArray.')
         # Find the suitable number of shapes.
-        num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance,
-                                                    start_num_shapes, max_num_shapes,
+        num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance, min_num_shapes, max_num_shapes,
                                                     solver_mode)
         # Set num_shapes in all shape requests and regenerate subclasses of BaseNormalDistributionDispersion.
         for sr in self.shape_requests:
@@ -940,10 +1113,10 @@ class ShapeDispersionArray(ShapeArray):
                     f"Target volume fraction is {target_vf:.6} and tolerance is {vf_tolerance}.")
         # Backup the shape array instance's state.
         # Note that the instance's _backup_dict will be overwritten
-        # as part of the process so we have to create a copy for this loop.
+        # as part of the process, so we have to create a copy for this loop.
         self._backup_state()
         vf_dispersion_backup = deepcopy(self._backup_dict)
-        for gen_number in range(1, max_generations+1):
+        for gen_number in range(1, max_generations + 1):
             # fix this. it doesn't loop properly.
             # Regenerate all shape requests (subclasses of BaseNormalDistributionDispersion).
             self.dispersion_logger.debug(f'** Generation {gen_number}: Regenerating shape requests ... ')
@@ -956,7 +1129,14 @@ class ShapeDispersionArray(ShapeArray):
                 self.dispersion_logger.debug('Done. **\n')
 
             # Try to disperse this generation of shapes in the structure.
-            self.disperse_shapes(max_attempts=max_attempts, max_trials=max_trials, log_main=False)
+            try:
+                self.disperse_shapes(max_attempts=max_attempts, max_trials=max_trials, log_main=False)
+            except TooManyDispersionTrialsError:
+                self.dispersion_logger.debug(
+                    f'Generation {gen_number} could not be dispersed '
+                    f'after {max_trials} trials. Regenerating.\n')
+                self._restore_state(backup_dict=vf_dispersion_backup)
+                continue
 
             # Compare target VF with the instance's real voxel-based VF.
             vf_diff = abs(self.shape_array_volume_fraction - target_vf)
@@ -985,20 +1165,86 @@ class ShapeDispersionArray(ShapeArray):
                 continue
         raise TooManyDispersionGenerationsError(f'Dispersion failed after {max_generations} generations.')
 
-    # FIXME: add knapsack here.
-    # It should use the analytical volume for finding the optimal numner of shapes.
-    # then use that to disperse and apply the knapsack algorithm to find a good list of shapes.
+
+def integer_solver_validator(func: Callable, a: int, b: int, tolerance: float):
+    """Validate inputs for the integer solver functions.
+
+    Args:
+        func: The continuous function :math:`F()` to be solved.
+              This function only checks if it is callable.
+        a: The start of the range where the search takes place. Should be an integer less than *b*.
+        b: The end of the range where the search takes place. Should be an integer greater than *a*.
+        tolerance: The tolerance for finding the root of the function. It should be greater than 1E-4.
+
+    Raises:
+        ValueError: If any of the input values are invalid.
+    """
+    if not callable(func):
+        raise ValueError(f'func should be a function or a method but its type is {type(func)}')
+    if (int(a) != a) or (a < 1):
+        raise ValueError(f'a must be an integer greater than 1, but is {a}.')
+    if (int(b) != b) or (b < 1):
+        raise ValueError(f'b must be an integer greater than 1, but is {b}.')
+    if b <= a:
+        raise ValueError(f'b must be greater than a.')
+    if tolerance < 1E-4:
+        raise ValueError('tolerance should be a float greater than 1E-4.')
 
 
-def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
-    """A solver for finding the root of the function *F()* function using
+def integer_solver_brute_force(func: Callable, a: int, b: int, tolerance: float, **kwargs) -> int:
+    """A solver for finding the root of the function :math:`F()` using a brute force approach.
+
+    This solver checks all values between *a* and *b* for a root that satisfies the given *tolerance*.
+    The main difference between this and a regular solver is that in here, everything is an integer.
+
+    Note that since the function :math:`F()` is stochastic in nature, there will always be
+    an error associated with the result. This is OK as the result is acceptable with a tolerance.
+
+    Args:
+        func: The continuous function :math:`F()` to be solved. This solver is meant for and tested with
+              the :meth:`ShapeDispersionArray._find_vf_for_shape_number` function,
+              but should work for other functions.
+        a: The start of the range where the search takes place. Should be an integer less than *b*.
+        b: The end of the range where the search takes place. Should be an integer greater than *a*.
+        tolerance: The tolerance for finding the root of the function. It should be greater than 1E-4.
+        kwargs: The keyword arguments to be passed to *func*.
+
+    Returns:
+        An integer root for the function :math:`F()`.
+
+    Raises:
+        SuitableNumShapesNotFoundError: If a suitable root is not found.
+    """
+    # Validate inputs.
+    integer_solver_validator(func, a, b, tolerance)
+
+    old_vf_diff = None
+    for num_shapes in range(a, b + 1):
+        vf_diff = func(num_shapes, **kwargs)
+        # If within acceptable range, return here.
+        if abs(vf_diff) <= tolerance:
+            return num_shapes
+        # If the sign of new and old vf_diff are different,
+        # it means we are only getting further from a good solution
+        # and the best two solutions on the boundary have already
+        # been determined to be outside tolerance.
+        # So we should break the loop and raise SuitableNumShapesNotFoundError.
+        if np.sign(old_vf_diff) == np.sign(vf_diff):
+            break
+    # If we are here, all values have been checked or a solution cannot be found. Raise error.
+    raise SuitableNumShapesNotFoundError(f'Suitable num_shapes not found in the range [{a},{b}].')
+
+
+def integer_solver_bisection(func: Callable, a: int, b: int, tolerance: float, **kwargs) -> int:
+    """A solver for finding the root of the function :math:`F()` using
     the `bisection method <https://en.wikipedia.org/wiki/Bisection_method>`_.
+
     The main difference between this and a regular solver is that in here, everything is an integer.
     This means that if :math:`a=b`, or if :math:`b-a<1` and :math:`F(a)` or :math:`F(b)`
     are within the tolerances, the algorithms stops.
 
     Note that since the function :math:`F()` is stochastic in nature, there will always be
-    an error associated with the result. This is OK as the result is used in a knapsack algorithm.
+    an error associated with the result. This is OK as the result is acceptable with a tolerance.
 
     Args:
         func: The continuous function :math:`F()` to be solved. This solver is meant for and tested with
@@ -1007,28 +1253,25 @@ def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
               Note that :math:`F(a)` and :math:`F(b)` should have opposing signs.
         a: The start of the range where the search takes place. Should be an integer less than *b*.
         b: The end of the range where the search takes place. Should be an integer greater than *a*.
-        tolerance: The tolerance for finding the root of the function.
+        tolerance: The tolerance for finding the root of the function. It should be greater than 1E-4.
         kwargs: The keyword arguments to be passed to *func*.
 
     Returns:
-        An integer root for the function.
+        An integer root for the function :math:`F()`.
+
+    Raises:
+        SuitableNumShapesNotFoundError: If a suitable root is not found.
     """
-    # Validate everything.
-    if (int(a) != a) or (a < 1):
-        raise ValueError(f'a must be an integer greater than 1, but is {a}.')
-    if (int(b) != b) or (b < 1):
-        raise ValueError(f'b must be an integer greater than 1, but is {b}.')
-    if b < a:
-        raise ValueError(f'b must be greater than a.')
-    if (b - a) < 1:  # Note that b is greater than a and both are positive, so abs() is not necessary.
-        raise ValueError(f'(b-a) must be greater than 1.')
+    # Validate inputs.
+    integer_solver_validator(func, a, b, tolerance)
+
     f_a = func(a, **kwargs)
     f_b = func(b, **kwargs)
     if (f_a * f_b) > 0:
         raise ValueError('func(a) and func(b) must have opposite values. Try changing a and b.')
 
     while True:
-        if (b - a) < 1:
+        if abs(b - a) <= 1:
             if a == b:
                 return a
             elif abs(f_a) < tolerance:
@@ -1036,12 +1279,12 @@ def bisection_solver_integer(func, a: int, b: int, tolerance: float, **kwargs):
             elif abs(f_b) < tolerance:
                 return b
             else:
-                raise RuntimeError(f'The solver reached F(a={a})={f_a} and F(b={b})={f_b}, '
-                                   f'but could not find a root with the given tolerance ({tolerance}).')
+                raise SuitableNumShapesNotFoundError(
+                    f'The solver reached F(a={a})={f_a:.6} and F(b={b})={f_b:.6}, '
+                    f'but could not find a root with the given tolerance ({tolerance:.6}).')
         # Calculate the *integer* midpoint c. Note that it will not be equal to a or b because of the above check.
         c = int((a + b) / 2)
         f_c = func(c, **kwargs)
-
         if abs(f_c) < tolerance:  # F(c) is OK.
             return c
         elif f_a * f_c < 0:  # The root is between a and c.

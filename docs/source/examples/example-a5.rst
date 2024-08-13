@@ -1,6 +1,6 @@
 Example A-5: Random 3D Model
 ============================
-This example, a 3D part is created with random dispersion of three elements.
+This example, a 3D part is created with random dispersion of three materials.
 This can be achieved by combining :doc:`Example A-2 <example-a2>` and :doc:`Example A-4 <example-a4>`.
 
 These kinds of models are very useful.
@@ -27,7 +27,7 @@ We must specify the size, highest and lowest numbers, and the *dtype* of the ran
 These can be extracted from the part's *data* array.
 We will then assign the created array to part.data, thus replacing its previous contents::
 
-   random_array = rng.integers(low=1, high=3, size=part.data.shape,
+   random_array = rng.integers(low=1, high=3, size=part.size,
                             dtype=part.data.dtype, endpoint=True)
    part.data = random_array
 

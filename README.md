@@ -9,7 +9,7 @@ is a free and open source software for creating complex FEA models using voxels.
 This software allows for accurate, fast, and reproducible modelling
 and can be used and extended by anyone in accordance with the GNU AGPLv3 license.
 
-It's main features are:
+Its main features are:
 
 + **Powerful Library**: The VCAMS library is simple but powerful, allowing for easy scripting
   which makes the results highly reproducible. Also, the scripts can be archived and shared with others.

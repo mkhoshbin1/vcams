@@ -1,10 +1,11 @@
-"""Functions used for exported a :class:`~vcams.voxelpart.VoxelPart` object
+"""Functions used for exporting a :class:`~vcams.voxelpart.VoxelPart` instance
 for use in other programs. Currently, only Abaqus™ is supported.
 
 These functions are not meant to be directly used.
 The main function (:func:`~write_abaqus_inp`) is called
-by a part's :meth:`~.voxelpart.VoxelPart.output_abaqus_inp` method
+by a part's :meth:`~.voxelpart.VoxelPart.output_abaqus_inp` method,
 and it uses the *VoxelPart*'s attributes for determining what is exported.
+
 Refer to the :ref:`export` section for instructions on how to properly output a model.
 """
 
@@ -23,14 +24,15 @@ from tabulate import tabulate
 from . import __version__, __website__
 from . import helper
 from .bc import create_bc
+from .helper import validate_materials_to_be_output, validate_dim
 
 logger = logging.getLogger(__name__)
 
 
 def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
-                     scale: tuple, material_elem_sets: Union[tuple, str],
+                     scale: tuple, material_elem_sets: tuple | str,
                      custom_elem_sets: bool = True, keep_temp_files: bool = False) -> Path:
-    """Write a VoxelPart object to an Abaqus™ input file.
+    """Write a VoxelPart instance to an Abaqus™ input file.
     This is the main function called by :meth:`.voxelpart.VoxelPart.output_abaqus_inp`.
     It should not be directly used.
 
@@ -41,7 +43,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     It is not written to the output.
 
     Args:
-        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` instance on which the operation is performed.
         file_name: Name of the file. Must be valid according to the documentation
                    for the :func:`.helper.is_name_valid` function and should not contain file extensions.
         elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
@@ -68,21 +70,16 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
             Path object pointing to final Abaqus™ input file.
         """
     logger.info("Attempting to output part '%s' to an Abaqus input file.", part.name)
-    # TODO: recheck everything about BCs. especially sets and args.
-    # TODO: add BC type to report.
-
     begin_time = time.perf_counter()
-
-    folder_path = part.results_path
+    folder_path = part.working_dir
 
     # Validate dim.
-    if dim.upper() not in ['2D', '3D']:
-        raise ValueError("dim can only be one of '2D' or '3D'.")
+    validate_dim(dim)
     if dim == '2D' and len(part.size) == 3:
-        raise ValueError('Attempted to export a 3D part as a 2D part.'
-                         'This is not supported due to unnecessary complexity.'
-                         'Please create a new 2D VoxelPart object with the slice of VoxelPart.data'
-                         'That is desired and export that VoxelPart. ')
+        raise ValueError('Attempted to export a 3D part as a 2D part. '
+                         'This is not supported due to unnecessary complexity. '
+                         'Instead, create a new 2D VoxelPart instance '
+                         'with the desired slice of VoxelPart.data and export it.')
 
     # Validate file_name and add file extension.
     if not helper.is_name_valid(file_name):
@@ -90,22 +87,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     file_name = file_name + '.inp'
 
     # Validate and process material_elem_sets.
-    #TODO: use helper.validate_materials_to_be_output()
-    valid_materials = unique(part.data)
-    if isinstance(material_elem_sets, str):
-        if material_elem_sets.upper() in ['ALL', 'NON-EMPTY']:
-            selected_mats = list(valid_materials)
-            if (0 in selected_mats) and (material_elem_sets.upper() == 'NON-EMPTY'):
-                selected_mats.remove(0)
-            material_elem_sets = selected_mats
-        else:
-            raise ValueError("Invalid string '%s' for material_elem_sets. Valid values are 'All' "
-                             "and 'Non-Empty'." % material_elem_sets)
-    else:  # Will raise most errors.
-        for mat in material_elem_sets:
-            if mat not in valid_materials:
-                raise ValueError('Material %i specified in material_elem_sets is not present in '
-                                 'the model.' % mat)
+    material_elem_sets = validate_materials_to_be_output(part, material_list=material_elem_sets)
 
     # Process BCs.
     # max_empty_border_elems has not been specified.
@@ -133,7 +115,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
                                                                folder_path=folder_path)
 
     # Write node sets.
-    node_set_file_path = write_node_set_def(part, node_id_list, folder_path)
+    (node_set_file_path, node_set_stats) = write_node_set_def(part, node_id_list, folder_path)
 
     # Write constraints.
     if constraint_list:
@@ -141,8 +123,7 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     else:
         num_constraints = 0
 
-    # Write the final input file.  #TODO: better logging.
-    # TODO: use Path for everything.
+    # Write the final Abaqus input file.
     main_file_path = os.path.join(folder_path, file_name)
     logger.debug("Assembling temporary files to the main input file at '%s'.", main_file_path)
     with open(main_file_path, 'w', encoding='latin1') as main_file:
@@ -213,11 +194,13 @@ def write_abaqus_inp(part, file_name: str, elem_code: str, dim: str,
     logger.info("Finished exporting part '%s' to the Abaqus™ input file at '%s'.",
                 part.name, main_file_path)
 
-    write_output_summary(part, dim, elem_code, num_nodes, num_elems, elem_set_stats, num_constraints, elapsed_time)
+    write_output_summary(part, dim, elem_code, num_nodes, num_elems,
+                         elem_set_stats, node_set_stats, num_constraints, elapsed_time)
     return Path(main_file_path)
 
 
-def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder_path: str) -> tuple[str, int, ndarray]:
+def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str,
+                   folder_path: str) -> tuple[str, int, ndarray]:
     """Write the element definition portion of an Abaqus™ input file to a temporary file,
     which will be concatenated with other portions to form an input file.
 
@@ -227,7 +210,7 @@ def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder
     in rest of the columns in a specific order based on the element geometry.
 
     Args:
-        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
+        part (VoxelPart): The VoxelPart instance on which the operation is performed.
         elem_id_list: A 1-D Numpy ndarray containing IDs of elements which must be output.
                       The function makes sure that it is unique and sorted.
                       Note that Abaqus only accepts element IDs that are positive and less than 999999999.
@@ -260,8 +243,7 @@ def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder
                             ' which is not supported by Abaqus™.'))
 
     # Validate dim.
-    if dim.upper() not in ['2D', '3D']:
-        raise ValueError("dim can only be one of '2D' or '3D'.")
+    validate_dim(dim)
 
     # Make sure elem_id_list is unique and sorted.
     elem_id_list = unique(elem_id_list)
@@ -340,8 +322,8 @@ def write_elem_def(part, elem_id_list: ndarray, elem_code: str, dim: str, folder
     node_id_list = unique(connectivity_table[:, 1:]) - 1
     num_elems = len(elem_id_list)
 
-    logger.debug("Wrote %u %s elements of type '%s' to the temporary file 'elem_def.tmp'.",
-                 num_elems, dim.upper(), elem_code.upper())
+    logger.debug(f"Wrote {num_elems} {dim.upper()} elements "
+                 f"of type '{elem_code.upper()}' to the temporary file 'elem_def.tmp'.")
     return file_path, num_elems, node_id_list
 
 
@@ -350,16 +332,17 @@ def write_node_def(part, node_id_list: ndarray, scale: tuple, dim: str, folder_p
     which will be concatenated with other portions to form an input file.
 
     Node definition consists of specifying the node ID and writing its coordinates in the x, y, and z directions.
-    The code uses a global cartesian coordinate system which is sufficient.
+    The code uses a global cartesian coordinate system which is compatible with its data structure and sufficient
+    for our purposes.
 
     Args:
-        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` instance on which the operation is performed.
         node_id_list: A 1-D Numpy ndarray containing IDs of nodes which must be output.
-              The function makes sure that it is unique and sorted.
-              Note that Abaqus only accepts node IDs that are positive and less than 999999999
-              and this is reduced to 999999990 to account for possible dummy nodes.
-              Node IDs must also be integers. This is not directly checked,
-              but an error will be raised once they are passed as indices to numpy.
+                      The function makes sure that it is unique and sorted.
+                      Note that Abaqus only accepts node IDs that are positive and less than 999999999
+                      and this is reduced to 999999990 to account for possible dummy nodes.
+                      Node IDs must also be integers. This is not directly checked,
+                      but an error will be raised once they are passed as indices to numpy.
         scale: A tuple containing two or three floats which are used to scale
                the pixels or voxels in the x, y, and z directions.
                For example, if the tuple ``(0.02, 0.1, 1.5)`` is specified,
@@ -388,8 +371,7 @@ def write_node_def(part, node_id_list: ndarray, scale: tuple, dim: str, folder_p
     num_real_nodes = node_id_list.size
 
     # Validate dim.
-    if dim.upper() not in ['2D', '3D']:
-        raise ValueError("dim can only be one of '2D' or '3D'.")
+    validate_dim(dim)
 
     # Get dummy_node_dict from the part.
     # noinspection PyProtectedMember
@@ -457,8 +439,8 @@ def write_set_ids(file_obj: TextIO, kind: str, name: str, ids: ndarray,
         file_obj: The file object in which the set is written. It must be opened in text mode.
         kind: The kind of set that is to be output.
               Valid values are *'ELSET'* for an element set and *'NSET'* for a node set.
-        name: Name of the set. Must be valid
-              according to the documentation for the :func:`.helper.is_name_valid` function.
+        name: Name of the set. Must be valid according to
+              the documentation for the :func:`.helper.is_name_valid` function.
         ids: A 1-D Numpy ndarray containing zero-based IDs of nodes or elements which form the set.
              The function makes sure that it is unique and sorted.
              Note that Abaqus only accepts IDs that are positive and less than 999999999.
@@ -480,11 +462,11 @@ def write_set_ids(file_obj: TextIO, kind: str, name: str, ids: ndarray,
     if len(ids) == 0:
         raise ValueError('ids is empty. At least one ID must be selected for output.')
     if any(ids < 0):
-        raise ValueError('At least on element in ids is negative' +
-                         ' which will result in a non-positive ID in the input file.')
+        raise ValueError('At least on element in ids is negative '
+                         'which will result in a non-positive ID in the input file.')
     if max(ids) >= 999999999:
-        raise RuntimeError(('At least one ID is greater than 999999999,' +
-                            ' which is not supported by Abaqus™.'))
+        raise RuntimeError('At least one ID is greater than 999999999, '
+                           'which is not supported by Abaqus™.')
     # Make sure ids is unique and sorted.
     ids = unique(ids)
 
@@ -500,9 +482,9 @@ def write_set_ids(file_obj: TextIO, kind: str, name: str, ids: ndarray,
 
     # If there are 9 or fewer IDs, they are written manually.
     # Otherwise, they are written as chunks of 9 IDs, ensuring low line length.
-    # numpy.savetxt can only write a full 2D array, meaning that sometimes
-    # the array needs to be broken into chunks.
-    # For simplicity, the array is always broken into two chunks.
+    # numpy.savetxt can only write a 2D array, meaning that the extra IDs
+    # need to be written separately.
+    # For simplicity, the last 9 elements are always written separately.
     if len(ids) <= 9:
         extra_chunk = ids
     else:
@@ -529,7 +511,7 @@ def write_elem_set_def(part, material_elem_sets: tuple, folder_path: str,
     This function also returns which elements must be output.
 
     Args:
-        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` instance on which the operation is performed.
         material_elem_sets: A tuple containing integer values of the materials that should be output.
                             For each material *x*, a set named *'MAT-x'* is defined.
         custom_elem_sets: If set to True, the custom sets are defined and output.
@@ -552,38 +534,40 @@ def write_elem_set_def(part, material_elem_sets: tuple, folder_path: str,
         # Write custom element sets. The element IDs are unique and sorted.
         if custom_elem_sets and bool(part.elem_sets):
             for (name, elem_ids) in part.elem_sets.items():
+                if elem_ids.size > 0:
+                    (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
+                                                        name=name, ids=elem_ids)
+                    elem_id_list = union1d(elem_id_list, elem_ids)
+                    elem_set_stats[set_name] = num_ids
+        # Write the materials that should be output.
+        for mat_code in material_elem_sets:
+            # noinspection PyProtectedMember
+            (name, elem_ids) = part._return_material_elem_set(mat_code)
+            if elem_ids.size > 0:
                 (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
                                                     name=name, ids=elem_ids)
                 elem_id_list = union1d(elem_id_list, elem_ids)
                 elem_set_stats[set_name] = num_ids
-        # Write the the materials that should be output.
-        # TODO: make sure all materials have at least one element.
-        for mat_code in material_elem_sets:
-            (name, elem_ids) = part._return_material_elem_set(mat_code)  # noqa: W0212
-            (set_name, num_ids) = write_set_ids(file_obj=file_obj, kind='ELSET',
-                                                name=name, ids=elem_ids)
-            elem_id_list = union1d(elem_id_list, elem_ids)
-            elem_set_stats[set_name] = num_ids
 
     logger.debug("Wrote %u element sets to the temporary file 'elemset.tmp'.", len(elem_set_stats))
     return elem_set_file_path, elem_id_list, elem_set_stats
 
 
-def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
+def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> tuple[str, dict]:
     """Write the node set portion of an Abaqus™ input file to a temporary file.
 
     Args:
-        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` instance on which the operation is performed.
         node_id_list: A 1-D Numpy ndarray containing IDs of the nodes that have been written to the output.
-                      It is used to determine which nodes from the node set should actually be defined in the output.
+                      It is used to determine which nodes from the node sets should be defined in the output.
         folder_path: Path to the folder where the temporary nodeset definition file will be placed.
 
     Returns:
         The path to the temporary node set definition file.
     """
     logger.debug("Attempting to write node sets to the temporary file 'nodeset.tmp'.")
+    node_set_stats = dict()
     node_set_file_path = os.path.join(folder_path, 'nodeset.tmp')
-    # TODO: add node sets to summary.
     with open(node_set_file_path, 'w', encoding='latin1') as file_obj:
         # Write node sets.
         num_omitted = 0
@@ -597,25 +581,27 @@ def write_node_set_def(part, node_id_list: ndarray, folder_path: str) -> str:
                 # noinspection PyTypeChecker
                 write_set_ids(file_obj=file_obj, kind='NSET', name=name,
                               ids=node_set_ids, instance_name=part.instance_name)
+                node_set_stats[name] = len(node_set_ids)
 
     logger.debug("Wrote %u node sets to the temporary file 'nodeset.tmp'.",
                  len(part.node_sets) - num_omitted)
-    return node_set_file_path
+    return node_set_file_path, node_set_stats
 
 
 def write_constraints(folder_path: str, constraint_list: list) -> tuple[int, str]:
-    """Write the node set portion of an Abaqus™ input file to a temporary file.
+    """Write the defined constraints portion of an Abaqus™ input file to a temporary file.
 
     Args:
         constraint_list: Tuple of constraint objects defined in :doc:`bc-module`.
-        Their `repr()` function is written to the file.
+                         Their `repr()` function is written to the file.
         folder_path: Path to the folder where the temporary constraint definition file will be placed.
 
     Returns:
         A tuple containing the number of constraints and the path to the temporary constraint definition file.
     """
-    # TODO: some kind of concatenation for optimization.
-    # TODO: buffer size for optimization.
+    # Note: Creation of a 2D PBC with 16M elements was tested.
+    # Since the number of constrain equations are actually small (16000),
+    # This function takes almost no time and so no further optimization is necessary.
     logger.debug("Attempting to write constraints to the temporary file 'constraints_def.tmp'.")
     constraints_file_path = os.path.join(folder_path, 'constraints_def.tmp')
     with open(constraints_file_path, 'w', encoding='latin1') as file_obj:
@@ -629,20 +615,37 @@ def write_constraints(folder_path: str, constraint_list: list) -> tuple[int, str
 
 
 def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_elems: int,
-                         elem_set_stats: dict, num_constraints: int, elapsed_time: float):
+                         elem_set_stats: dict, node_set_stats: dict, num_constraints: int,
+                         elapsed_time: float):
     """Write a summary of the output to the main log.
 
     Args:
-        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` object on which the operation is performed.
+        part (VoxelPart): The :class:`~.voxelpart.VoxelPart` instance on which the operation is performed.
         dim: Dimensionality of the output part. Valid values are *'2D'* and *'3D'*.
         elem_code: An uppercase string denoting the element code assigned to *all* elements in the model.
                    See :func:`write_abaqus_inp` for complete description.
         num_nodes: Number of nodes written to the output.
         num_elems: Number of elements written to the output.
         elem_set_stats: The dict object returned by :func:`write_elem_set_def`.
+        node_set_stats: The dict object returned by :func:`write_node_set_def`.
         num_constraints: Number of constraint equations written to the output.
         elapsed_time: Elapsed time for the output process in seconds.
     """
+
+    # noinspection PyProtectedMember
+    part_bc_type = part._bc_type
+    if part_bc_type is None:
+        bc_name = 'None'
+    elif part_bc_type.upper() == 'NODESET ONLY':
+        bc_name = 'Nodeset Only'
+    elif part_bc_type.upper() == 'LINEAR DISPLACEMENT':
+        bc_name = 'Linear Displacement'
+    elif part_bc_type.upper() == 'PERIODIC':
+        bc_name = 'Periodic Boundary Conditions'
+    else:
+        raise RuntimeError(f'part has an invalid bc_type {part_bc_type}. '
+                           f'This should have been caught earlier.')
+
     # Prepare part summary.
     part_summary = (
         ('Part Name', part.name),
@@ -653,7 +656,10 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
         ('Element Type', elem_code),
         ('Number of Elements', num_elems),
         ('Number of Nodes', num_nodes),
+        ('Number of Element Sets', len(elem_set_stats)),
+        ('Number of Node Sets', len(node_set_stats)),
         ('Number of Material Codes', len(np.unique(part.data))),
+        ('Requested BC Constraints', bc_name),
         ('Number of Constraint Equations', num_constraints),
         ('Total Output Time', time.strftime('%H:%M:%S', time.gmtime(elapsed_time)))
     )
@@ -662,6 +668,7 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
     mat_elem_sets = []
     custom_elem_sets = []
     elem_set_stats_list = sorted(elem_set_stats.items(), key=lambda x: x[1], reverse=True)
+    node_set_stats_list = sorted(node_set_stats.items(), key=lambda x: x[1], reverse=True)
     for item in elem_set_stats_list:
         if item[0].upper().startswith('MAT-'):
             mat_elem_sets.append((item[0], item[1],
@@ -685,6 +692,14 @@ def write_output_summary(part, dim: str, elem_code: str, num_nodes: int, num_ele
                          tabulate(custom_elem_sets,
                                   headers=('Set Name', 'Number of Elements',
                                            'Percent of All Elements'),
+                                  tablefmt='pretty') + '\n'
+                         )
+    if len(node_set_stats_list) == 0:
+        summary_text += '\n*Node Sets*\nNo node sets were defined.\n'
+    else:
+        summary_text += ('\n*Node Sets*\n' +
+                         tabulate(node_set_stats_list,
+                                  headers=('Set Name', 'Number of Nodes'),
                                   tablefmt='pretty') + '\n'
                          )
     logger.info('A summary of the created part is as follows:\n***\n%s***\n' % summary_text)

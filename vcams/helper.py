@@ -1,4 +1,5 @@
 """Various helper functions used throughout the library."""
+
 import csv
 from configparser import ConfigParser
 from io import StringIO
@@ -7,7 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from numpy import unique
-from numpy._typing import NDArray
+from numpy.typing import NDArray
 
 from vcams.mask.tpms import tpms_dict
 
@@ -18,7 +19,7 @@ def is_name_valid(name: str) -> bool:
     # noinspection GrazieInspection
     """Check whether a string represents a valid name.
     Abaqus™ has many rules for names (labels) in the input files.
-    Here, The most strict combination is implemented here to ensure that
+    The strictest combination is implemented here to ensure that
     a name is suitable for all purposes.
 
     This means that a name:
@@ -48,7 +49,8 @@ def is_name_valid(name: str) -> bool:
     Returns:
         Returns True for a valid name otherwise returns False.
     """
-    # TODO: consider regex: ^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$
+    # The regex ^(?=.*[ -~])(?=.*[^$&*~!()\[\]{}|;'`",.?/\\])(?=^[A-Za-z])^.{1,37}[^_]$
+    # MAY be useful but the following method is easier to understand.
     forbidden_chars = "$&*~!()[]{}|;\'`\",.?/\\"
     if not isinstance(name, str):
         return False
@@ -69,8 +71,9 @@ def is_name_valid(name: str) -> bool:
         return True
 
 
-def return_default_results_path(part_name: str = None) -> Path:
-    """Return a suitable path in the user's Desktop for storing the intermediate and final results of the program.
+def return_default_working_dir(part_name: str = None) -> Path:
+    """Return a suitable path in the user's Desktop for storing
+    the intermediate and final results of the program.
 
     Args:
         part_name: Name of the part which is to be output
@@ -91,6 +94,32 @@ def return_default_results_path(part_name: str = None) -> Path:
         raise ValueError('part_name is not valid.')
 
     return Path.home().joinpath(*parts)
+
+
+def process_working_dir(working_dir: Path | str | None, part_name: str) -> Path:
+    """Process and validate the working_dir which represents
+    the path where the intermediate and final results of the program are stored.
+    This function validates the given *working_dir* parameter
+    and if set to *None*, creates a default value using the :func:`return_default_working_dir` function.
+    Then, the directory is created and finally a Path object referring to it is returned.
+
+    Args:
+        working_dir: Path to the folder where the final results, temporary file, and log files will be stored.
+                     If set to *None* a suitable folder is automatically created in the user's home directory.
+        part_name: Name of the part which is to be output
+                   which must be valid according to :func:`is_name_valid`.
+                   If set to *None*, the folder will be named :code:`results`.
+                   Defaults to *None*.
+
+    Returns:
+        A path object containing the full path of a valid working directory that exists.
+    """
+    if working_dir is None:
+        working_dir = return_default_working_dir(part_name)
+    else:
+        working_dir = Path(working_dir)
+    working_dir.mkdir(parents=True, exist_ok=True)
+    return working_dir
 
 
 def write_to_logger_streams(msg: str):
@@ -114,7 +143,7 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         A tuple of the following dictionaries (part_creation_dict, part_manipulation_dict, bc_dict, output_dict).
     """
     # Read the config file.
-    logger.debug('Trying to read configuration file at %s' % file_path)
+    logger.debug('Reading configuration file at %s' % file_path)
     config = ConfigParser()
     config.read(file_path)
 
@@ -164,7 +193,7 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
         raise ValueError("Invalid value for field 'num_mats'.")
     part_creation_dict['name'] = basic_section['part_name']
     part_creation_dict['description'] = basic_section['part_description']
-    part_creation_dict['results_path'] = basic_section['working_dir']
+    part_creation_dict['working_dir'] = basic_section['working_dir']
     part_creation_dict['overwrite_logs'] = True
     part_creation_dict['log_debug'] = config.getboolean('Basic', 'log_debug')
 
@@ -246,6 +275,15 @@ def csv_string_to_list(csv_string: str) -> list:
     buffer_io.seek(0)
     csv_reader = csv.reader(buffer_io, dialect)
     return [row for row in csv_reader]
+
+
+def validate_dim(dim: str):
+    """Validate the *dim* parameter used throughout the library.
+    Returns:
+        ValueError: If dim is not '2D' or '3D'.
+    """
+    if dim.upper() not in ['2D', '3D']:
+        raise ValueError("dim can only be one of '2D' or '3D'.")
 
 
 def validate_materials_to_be_output(part, material_list: str | int | Iterable | NDArray):
