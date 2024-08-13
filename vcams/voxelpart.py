@@ -580,13 +580,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: face, edge, vertex -> f, e, v
 # TODO: add ddbc based on walters2021, eq 24. x is node coordinates.
 # TODO: 2d pbc edges does not have shear components.
-# TODO: add disp values for all bcs.
-# TODO: redo ndarray types. see https://stackoverflow.com/questions/35673895
-# TODO: change size to shape.
-# TODO: add shape as a variable with a getter.
-# TODO: add a random inclusion mode. use np.arange + np.shuffle and np.reshape to proper size.
-# TODO: in docs change output to export.
-#  add Open Results Folder to the run menu of the GUI.
 # TODO: typo in doc and readme.md: it's -> its
 # TODO: check various errors when 2D/3D doesn't match across part size, voxel size, etc.
 # TODO: Add docs for random including examples.
