@@ -580,7 +580,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: face, edge, vertex -> f, e, v
 # TODO: add ddbc based on walters2021, eq 24. x is node coordinates.
 # TODO: 2d pbc edges does not have shear components.
-# TODO: typo in doc and readme.md: it's -> its
 # TODO: check various errors when 2D/3D doesn't match across part size, voxel size, etc.
 # TODO: Add docs for random including examples.
 # TODO: update to Python 3.10.
