@@ -355,7 +355,7 @@ class VoxelPart:
         if not mask.dtype == bool:
             raise ValueError("mask.dtype is not 'bool'.")
         # Make sure mask and self.data have the same shape.
-        if mask.shape != self.size:
+        if not np.array_equal(self.size, mask.shape):
             if self.data.ndim == 2 and mask.shape[2] == 1:
                 pass
             else:
@@ -485,16 +485,12 @@ def voxelpart_from_image(image_dim: str, image_path: str,
                                      denoise=denoise, show_image=show_image,
                                      thresh_mode=thresh_mode, thresh_value=thresh_value)
     else:  # dim.upper() == '3D'
-        # TODO: add show_image here.
         image_mask = mask_from_image_sequence(load_pattern=image_path,
                                               scale=scale, denoise=denoise,
                                               thresh_mode=thresh_mode, thresh_value=thresh_value)
-
-    # TODO: determine voxel size array (2 or 3 elements?). (Make sure a 1*3 array is always OK)
-    # TODO: same for part shape.
-    image_mask = rot90(image_mask, -1)
-    image_shape = image_mask.shape
-    part = VoxelPart(size=image_shape, base_material=background_material, voxel_size=voxel_size,
+    # Create a VoxelPart instance.
+    part_shape = image_mask.shape
+    part = VoxelPart(size=part_shape, base_material=background_material, voxel_size=voxel_size,
                      dtype=dtype, name=name, description=description, working_dir=working_dir,
                      overwrite_logs=overwrite_logs, log_debug=log_debug, display_log=display_log)
     part.apply_mask(mask=image_mask, value=foreground_material)

@@ -11,10 +11,6 @@ from vcams.voxelpart import VoxelPart
 image_mask = mask_from_image(image_path='ex_c5_image_2d_input.jpg',
                              scale=1.0, denoise=True)
 
-# The mask must be rotated -90 degrees to account for the
-# difference between the XY directions in Abaqus and the picture.
-image_mask = rot90(image_mask, -1)
-
 # Create the part based on the size of image_mask.
 part = VoxelPart(size=image_mask.shape, base_material=1, voxel_size=(0.02, 0.02), name='Ex C-5 Part from Image 2D - A',
                  description='A 2D part created based on a 2D image.', log_debug=True)

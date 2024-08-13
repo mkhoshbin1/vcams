@@ -12,7 +12,7 @@ from warnings import warn
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-from numpy import moveaxis, unique, ndarray, where
+from numpy import moveaxis, unique, ndarray, where, rot90
 from skimage.filters.thresholding import threshold_otsu
 from skimage.io import imread, ImageCollection
 from skimage.restoration import denoise_bilateral
@@ -62,7 +62,8 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         raise ValueError(f"Invalid thresh_mode. Valid values are: {', '.join(valid_thresh_modes)}.")
 
     if (thresh_mode.lower() == 'manual') and ((thresh_value >= 1) or (thresh_value <= 0)):
-        raise ValueError(f'For manual thresholding, thresh_value must be in the range (0, 1), but it is {thresh_value:.3f}.')
+        raise ValueError(f'For manual thresholding, thresh_value must be in the range (0, 1), '
+                         f'but it is {thresh_value:.3f}.')
 
     # Open the image and convert it to grayscale.
     gray_image = imread(fname=image_path, as_gray=True)  # Note that the dtype will be float, i.e. [0, 1].
@@ -71,6 +72,13 @@ def mask_from_image(image_path: str, scale: float = 1.0,
 
     # Apply the scale.
     gray_image = resize_image(gray_image, scale, verbose_log)
+
+    # The image must be rotated -90 degrees to account for the
+    # difference between the XY directions in Abaqus and the picture.
+    gray_image = rot90(gray_image, -1)
+    if verbose_log:
+        logger.debug('Rotated the image -90 degrees to account for '
+                     'the difference between the XY directions in Abaqus and the picture.')
 
     # Denoise the image using a Bilateral filer.
     if denoise:
@@ -159,14 +167,15 @@ def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
         raise ValueError(f"Invalid thresh_mode. Valid values are: {', '.join(valid_thresh_modes)}.")
 
     if (thresh_mode.lower() == 'manual') and ((thresh_value >= 1) or (thresh_value <= 0)):
-        raise ValueError(f'For manual thresholding, thresh_value must be in the range (0, 1), but it is {thresh_value:.3f}.')
+        raise ValueError(f'For manual thresholding, thresh_value must be in the range (0, 1), '
+                         f'but it is {thresh_value:.3f}.')
 
     # Create an ImageCollection function which loads the images using
     # the mask_from_image() function. No scaling is applied and denoising is done if requested.
     image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=False,
                                  load_func=mask_from_image,
                                  scale=1.0, denoise=denoise,
-                                 thresh_mode=thresh_mode, thresh=thresh_value,
+                                 thresh_mode=thresh_mode, thresh_value=thresh_value,
                                  show_image=False, verbose_log=False)
 
     # Make sure the collection has an appropriate number of images.
