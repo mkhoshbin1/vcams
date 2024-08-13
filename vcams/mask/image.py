@@ -23,7 +23,7 @@ logger = getLogger(__name__)
 
 def mask_from_image(image_path: str, scale: float = 1.0,
                     denoise: bool = True, show_image: bool = False,
-                    thresh_mode: str = 'otsu', thresh: float = None,
+                    thresh_mode: str = 'otsu', thresh_value: float = None,
                     verbose_log: bool = True) -> ndarray:
     """Return a boolean mask by thresholding an image.
 
@@ -41,9 +41,9 @@ def mask_from_image(image_path: str, scale: float = 1.0,
         denoise: If set to True, the image will be denoised using a Bilateral filter.
         thresh_mode: The kind of threshold to be applied to the image.
                      Valid values are 'none', 'manual', and 'otsu'. Defaults to 'otsu'.
-        thresh: If *thresh_mode* is set to 'manual', should be a float in the range (0, 1)
-                Which is used as a threshold for binarizing the image.
-                Defaults to 0 which raises an error when used.
+        thresh_value: If *thresh_mode* is set to 'manual', should be a float in the range (0, 1)
+                      Which is used as a threshold for binarizing the image.
+                      Defaults to *None* which raises an error when used.
         show_image: If set to True, the opened image and the final binary image
                     will be shown side by side in a figure.
                     The program may be paused while the window is open.
@@ -61,8 +61,8 @@ def mask_from_image(image_path: str, scale: float = 1.0,
     if thresh_mode.lower() not in ('manual', 'otsu'):
         raise ValueError(f"Invalid thresh_mode. Valid values are: {', '.join(valid_thresh_modes)}.")
 
-    if (thresh_mode.lower() == 'manual') and ((thresh >= 1) or (thresh <= 0)):
-        raise ValueError(f'For manual thresholding, thresh must be in the range (0, 1), but it is {thresh:.3f}.')
+    if (thresh_mode.lower() == 'manual') and ((thresh_value >= 1) or (thresh_value <= 0)):
+        raise ValueError(f'For manual thresholding, thresh_value must be in the range (0, 1), but it is {thresh_value:.3f}.')
 
     # Open the image and convert it to grayscale.
     gray_image = imread(fname=image_path, as_gray=True)  # Note that the dtype will be float, i.e. [0, 1].
@@ -84,16 +84,16 @@ def mask_from_image(image_path: str, scale: float = 1.0,
     else:
         # Apply Otsu’s method to make a binary image.
         if thresh_mode == 'manual':
-            pass  # thresh is assumed to be correct.
+            pass  # thresh_value is assumed to be correct.
         elif thresh_mode == 'otsu':
-            thresh = threshold_otsu(gray_image)
+            thresh_value = threshold_otsu(gray_image)
         else:
             raise ValueError(f"Invalid thresh_mode. Valid values are: {', '.join(valid_thresh_modes)}. "
                              f"This should have been caught earlier.")
-        # Threshold the image based on the thresh value
-        binary_image = gray_image > thresh
+        # Threshold the image based on the thresh_value value
+        binary_image = gray_image > thresh_value
         if verbose_log:
-            logger.debug(f'Applied a {thresh_mode} threshold to the image with a value of {thresh:.3f}.')
+            logger.debug(f'Applied a {thresh_mode} threshold to the image with a value of {thresh_value:.3f}.')
 
     # Show the image.
     if show_image:
@@ -125,7 +125,7 @@ def mask_from_image(image_path: str, scale: float = 1.0,
 
 def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
                              denoise: bool = True,
-                             thresh_mode: str = 'otsu', thresh: float = None):
+                             thresh_mode: str = 'otsu', thresh_value: float = None):
     """Return a boolean mask by opening and thresholding an image sequence.
 
     This function opens all images using the :func:`mask_from_image` function,
@@ -137,13 +137,13 @@ def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
     Args:
         load_pattern: A pattern describing the path of all images in the sequence.
                       Use the *?* symbol as a placeholder for a single character.
-        scale: Scale to be applied to the image. Note that a scale greater than 1.0
+        scale: Scale to be applied to the images. Note that a scale greater than 1.0
                will introduce fake precision by interpolating the data and issues a warning.
         thresh_mode: The kind of threshold to be applied to the image.
                      Valid values are 'none', 'manual', and 'otsu'. Defaults to 'otsu'.
-        thresh: If *thresh_mode* is set to 'manual', should be a float in the range (0, 1)
-                Which is used as a threshold for binarizing the image.
-                Defaults to 0 which raises an error when used.
+        thresh_value: If *thresh_mode* is set to 'manual', should be a float in the range (0, 1)
+                      Which is used as a threshold for binarizing the image.
+                      Defaults to *None* which raises an error when used.
         denoise: If set to True, the image will be denoised using a Bilateral filter.
 
     Returns:
@@ -158,15 +158,15 @@ def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
     if thresh_mode.lower() not in ('manual', 'otsu'):
         raise ValueError(f"Invalid thresh_mode. Valid values are: {', '.join(valid_thresh_modes)}.")
 
-    if (thresh_mode.lower() == 'manual') and ((thresh >= 1) or (thresh <= 0)):
-        raise ValueError(f'For manual thresholding, thresh must be in the range (0, 1), but it is {thresh:.3f}.')
+    if (thresh_mode.lower() == 'manual') and ((thresh_value >= 1) or (thresh_value <= 0)):
+        raise ValueError(f'For manual thresholding, thresh_value must be in the range (0, 1), but it is {thresh_value:.3f}.')
 
     # Create an ImageCollection function which loads the images using
     # the mask_from_image() function. No scaling is applied and denoising is done if requested.
     image_coll = ImageCollection(load_pattern=load_pattern, conserve_memory=False,
                                  load_func=mask_from_image,
                                  scale=1.0, denoise=denoise,
-                                 thresh_mode=thresh_mode, thresh=thresh,
+                                 thresh_mode=thresh_mode, thresh=thresh_value,
                                  show_image=False, verbose_log=False)
 
     # Make sure the collection has an appropriate number of images.

@@ -421,38 +421,55 @@ class VoxelPart:
 def voxelpart_from_image(image_dim: str, image_path: str,
                          scale: float = 1.0, denoise: bool = True,
                          show_image: bool = False,
-                         thresh_mode: str = 'otsu', thresh: float = None,
+                         thresh_mode: str = 'otsu', thresh_value: float = None,
                          background_material: int = 0, foreground_material: int = 1,
-                         voxel_size: Union[tuple[float, float, float], tuple[float, float]] = (1.0, 1.0, 1.0),
+                         voxel_size: tuple[float, float, float] | tuple[float, float] = (1.0, 1.0, 1.0),
                          dtype: str = 'uint8', name: str = 'unnamed',
-                         description: str = '', working_dir: Union[str, Path] = None,
-                         overwrite_logs: bool = True, log_debug: bool = False, **kwargs):
-    """Create a :class:`VoxelPart` object from an image.
+                         description: str = '', working_dir: str | Path = None,
+                         overwrite_logs: bool = True, log_debug: bool = False, display_log: bool = True):
+    """Create a :class:`VoxelPart` instance from a 2D or 3D image.
+
+    This function creates a Boolean mask using either
+    :func:`~vcams.mask.image.mask_from_image` or :func:`~vcams.mask.image.mask_from_image_sequence`,
+    and then creates a :class:`VoxelPart` with the same size as the mask
+    and properties given as input.
+    The mask is then applied to the part using the *VoxelPart*'s :meth:`~VoxelPart.apply_mask` method.
 
     Args:
-        image_dim: Dimensionality of the input image. Valid values are '2D' and '3D':
-                   - If '2D', *image_path* refers to the path of the input image.
-                   - If '3D', *image_path* refers the the path string used by the (TODO) function.
-        image_path: The path referring to a 2D image, or the path string (TODO) referring to a 3D image.
-        show_image: See TODO for docs.
-        scale: See TODO for docs.
-        denoise: See TODO for docs.
-        thresh_mode: See TODO for docs.
-        thresh: See TODO for docs.
+        image_dim: Dimensionality of the input image. Valid values are '2D' and '3D'.
+        image_path:
+
+          - For 2D images: The path string referring to the 2D image.
+          - For 3D images: A string containing a loading pattern
+            which describes the path of all images in the sequence.
+            Use the *?* symbol as a placeholder for a single character.
+
+        show_image: If set to True, the opened image and the final binary image
+                    will be shown side by side in a figure.
+                    The program may be paused while the window is open.
+                    Currently, this has only been implemented for 2D images
+                    and will be silently ignored for 3D images.
+        scale: Scale to be applied to the image(s). Note that a scale greater than 1.0
+               will introduce fake precision by interpolating the data and issues a warning.
+        denoise: If set to True, the image will be denoised using a Bilateral filter.
+        thresh_mode: The kind of threshold to be applied to the image.
+                     Valid values are 'none', 'manual', and 'otsu'. Defaults to 'otsu'.
+        thresh_value: If *thresh_mode* is set to 'manual', should be a float in the range (0, 1)
+                      Which is used as a threshold for binarizing the image.
+                      Defaults to *None* which raises an error when used.
         background_material: After the image is binarized, this material will be assigned to the *OFF* pixels.
         foreground_material: After the image is binarized, this material will be assigned to the *ON* pixels.
-        voxel_size: See TODO for docs.
-        dtype: See TODO for docs.
-        name: See TODO for docs.
-        description: See TODO for docs.
-        working_dir: See TODO for docs.
-        overwrite_logs: See TODO for docs.
-        log_debug: See TODO for docs
-        **kwargs: TODO: used for preventing errors associated with unexpectd input.
+        voxel_size: See the documentation for the :meth:`VoxelPart.__init__` method.
+        dtype: See the documentation for the :meth:`VoxelPart.__init__` method.
+        name: See the documentation for the :meth:`VoxelPart.__init__` method.
+        description: See the documentation for the :meth:`VoxelPart.__init__` method.
+        working_dir: See the documentation for the :meth:`VoxelPart.__init__` method.
+        overwrite_logs: See the documentation for the :meth:`VoxelPart.__init__` method.
+        log_debug: See the documentation for the :meth:`VoxelPart.__init__` method.
+        display_log: See the documentation for the :meth:`VoxelPart.__init__` method.
 
-        Note: The size parameter used for creating a :class:`VoxelPart` is determined from the image (expand).
-        Note: This function uses TODO and TODO.
-        Read the appropriate documentation (expand).
+    Note that the size parameter used in the :meth:`VoxelPart.__init__` method
+    is not one of the inputs and is determined from the image.
     """
 
     # TODO: can we add a logger here? Examples take a long time and then just finish.
@@ -466,20 +483,20 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     if image_dim.upper() == '2D':
         image_mask = mask_from_image(image_path=image_path, scale=scale,
                                      denoise=denoise, show_image=show_image,
-                                     thresh_mode=thresh_mode, thresh=thresh)
+                                     thresh_mode=thresh_mode, thresh_value=thresh_value)
     else:  # dim.upper() == '3D'
         # TODO: add show_image here.
         image_mask = mask_from_image_sequence(load_pattern=image_path,
                                               scale=scale, denoise=denoise,
-                                              thresh_mode=thresh_mode, thresh=thresh)
+                                              thresh_mode=thresh_mode, thresh_value=thresh_value)
 
     # TODO: determine voxel size array (2 or 3 elements?). (Make sure a 1*3 array is always OK)
     # TODO: same for part shape.
     image_mask = rot90(image_mask, -1)
     image_shape = image_mask.shape
-    part = VoxelPart(size=image_shape, base_material=background_material, voxel_size=voxel_size, dtype=dtype, name=name,
-                     description=description, working_dir=working_dir, overwrite_logs=overwrite_logs,
-                     log_debug=log_debug)
+    part = VoxelPart(size=image_shape, base_material=background_material, voxel_size=voxel_size,
+                     dtype=dtype, name=name, description=description, working_dir=working_dir,
+                     overwrite_logs=overwrite_logs, log_debug=log_debug, display_log=display_log)
     part.apply_mask(mask=image_mask, value=foreground_material)
     return part
 
