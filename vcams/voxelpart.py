@@ -109,7 +109,8 @@ class VoxelPart:
             self.data = np.zeros(shape=size, dtype=dtype.lower())  #: data attribute.
         else:
             self.data = np.full(shape=size, fill_value=base_material, dtype=dtype.lower())
-            """TODO after adding property."""
+            """The *data* property of the *VoxelPart* instance.
+            See the :ref:`data_structure` section for an in depth discussion."""
 
         # Validate and set voxel_size. Make sure that it has three elements.
         voxel_size = np.array(voxel_size, dtype='float')  # This catches strings and such.
@@ -190,9 +191,6 @@ class VoxelPart:
 
     @property
     def data(self):
-        """asdasd
-        asdasd
-        TODO"""
         return self._data
 
     @data.setter
@@ -571,19 +569,3 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 
     logger.info('Creation of the model from the configuration file completed successfully.')
     return part
-
-# TODO: 2D part with 3d size and voxel size.
-# TODO: Fix example 3
-# TODO: unconnected regions: https://stackoverflow.com/questions/46737409
-# TODO: add only some of the bc node sets.
-# TODO: nodeset -> nset
-# TODO: face, edge, vertex -> f, e, v
-# TODO: add ddbc based on walters2021, eq 24. x is node coordinates.
-# TODO: 2d pbc edges does not have shear components.
-# TODO: check various errors when 2D/3D doesn't match across part size, voxel size, etc.
-# TODO: Add docs for random including examples.
-# TODO: update to Python 3.10.
-# TODO: In Python 3.10, use | instead of Union for type hints.
-#       See https://medium.com/techtofreedom/8-levels-of-using-type-hints-in-python-a6717e28f8fd
-# TODO: type annotation can be used for specific values.
-#  See https://stackoverflow.com/q/58114837 and https://stackoverflow.com/q/39398138

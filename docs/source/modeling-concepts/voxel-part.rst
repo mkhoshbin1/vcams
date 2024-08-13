@@ -23,6 +23,8 @@ Some of these properties are as follows:
 For a complete list, refer to the documentation
 for the :class:`~vcams.voxelpart.VoxelPart` class.
 
+.. _data_structure:
+
 The Underlying Data Structure
 -----------------------------
 The main property (variable) in the *VoxelPart* class is named *data*.
