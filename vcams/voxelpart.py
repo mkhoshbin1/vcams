@@ -59,6 +59,8 @@ class VoxelPart:
                         If a part is 2D, the third value can be omitted and the program assigns 1.0
                         as the rest of the library requires *voxel_size* to have three elements.
 
+                        All values should be between 1E-5 and 1E+3.
+
             dtype: Data type used for creation of :attr:`data`.
                    Must be an unsigned integer type. Users are advised to study
                    the :ref:`materials` section for a thorough explanation of this parameter.
@@ -116,6 +118,8 @@ class VoxelPart:
                 voxel_size = np.append(voxel_size, 1.0)
             else:
                 raise ValueError('Invalid value for voxel_size.')
+        if any(voxel_size <= 1E-5) or any(voxel_size >= 1E+3):
+            raise ValueError('Invalid value for voxel_size. Values should be between 1E-5 and 1E+3.')
         self.voxel_size: ndarray = voxel_size
         """A numpy array containing three floats which determines the size of a voxel in the three directions."""
 
@@ -577,7 +581,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
 # TODO: add ddbc based on walters2021, eq 24. x is node coordinates.
 # TODO: 2d pbc edges does not have shear components.
 # TODO: add disp values for all bcs.
-# TODO: add min and max values for voxel_size.
 # TODO: redo ndarray types. see https://stackoverflow.com/questions/35673895
 # TODO: change size to shape.
 # TODO: add shape as a variable with a getter.
