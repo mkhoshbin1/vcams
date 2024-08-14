@@ -156,8 +156,11 @@ class VoxelPart:
 
         # Create and configure the logger.
         if not main_logger_exists:
-            setup_main_logger(part_name=name, working_dir=working_dir,
-                              display_log=display_log, overwrite_logs=overwrite_logs, log_debug=log_debug)
+            self._log_file_path = setup_main_logger(part_name=name, working_dir=working_dir,
+                                                    display_log=display_log, overwrite_logs=overwrite_logs,
+                                                    log_debug=log_debug)
+        else:
+            self._log_file_path = None
 
         # Log creation of the object.
         logger.info('\n** Created using VCAMS v%s.'
@@ -473,8 +476,9 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     is not one of the inputs and is determined from the image.
     """
 
-    setup_main_logger(part_name=name, working_dir=working_dir,
-                      display_log=display_log, overwrite_logs=overwrite_logs, log_debug=log_debug)
+    part_log_file_path = setup_main_logger(part_name=name, working_dir=working_dir,
+                                           display_log=display_log, overwrite_logs=overwrite_logs,
+                                           log_debug=log_debug)
     logger.info('Attempting to create a VoxelPart instance from image(s).')
 
     if image_dim.upper() not in ['2D', '3D']:
@@ -493,6 +497,7 @@ def voxelpart_from_image(image_dim: str, image_path: str,
                      dtype=dtype, name=name, description=description, working_dir=working_dir,
                      overwrite_logs=overwrite_logs, log_debug=log_debug, display_log=display_log,
                      main_logger_exists=True)
+    part._log_file_path = part_log_file_path
     part.apply_mask(mask=image_mask, value=foreground_material)
     return part
 

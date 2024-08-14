@@ -6,7 +6,7 @@ from vcams.voxelpart import VoxelPart
 
 # Create the part.
 part = VoxelPart(size=(200, 200), base_material=1, voxel_size=(0.005, 0.005),
-                 name='Ex C-10 Dispersion of a Specified Number of Shapes',
+                 name='Ex C-10 Dispersion Num Shapes',
                  description='A 2D square 200*200 part created with '
                              'a specified number of shapes randomly dispersed in it.', log_debug=True)
 

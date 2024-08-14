@@ -7,8 +7,8 @@ from vcams.helper import process_working_dir
 
 def setup_main_logger(part_name: str, working_dir: str | Path,
                       display_log: bool = True, overwrite_logs: bool = True,
-                      log_debug: bool = False):
-    """Set up the main logger for a *VoxelPart* object."""
+                      log_debug: bool = False) -> Path:
+    """Set up the main logger for a *VoxelPart* object and return its file Path."""
     logger_name = 'vcams'  # This will become the root for all library-level logs.
     logger_obj = logging.getLogger(logger_name)
     filemode = 'w' if overwrite_logs else 'a'
@@ -33,6 +33,7 @@ def setup_main_logger(part_name: str, working_dir: str | Path,
         stream_handler_obj.setFormatter(stream_handler_formatter)
         logger_obj.addHandler(stream_handler_obj)
     logger_obj.setLevel(log_level)
+    return log_file_path
 
 
 def setup_dispersion_logger(part_name: str, log_file: Path, display_log: bool = False,

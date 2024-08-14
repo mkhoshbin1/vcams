@@ -421,7 +421,7 @@ class ShapeArray:
     def add_shape(self, cls, intersect_ok: bool = True, **kwargs) -> bool:
         """Add a shape to the ShapeArray using its class,
         while checking for intersection with other shapes.
-        The arguments are passed as *\*\*kwargs* and the shape ID is set automatically.
+        The arguments are passed as *\\*\\*kwargs* and the shape ID is set automatically.
 
         Args:
             cls: The shape class that should be added.
