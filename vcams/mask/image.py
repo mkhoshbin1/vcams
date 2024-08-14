@@ -13,6 +13,7 @@ from warnings import warn
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from numpy import moveaxis, unique, ndarray, where, rot90
+from numpy.core.numeric import array_equal
 from skimage.filters.thresholding import threshold_otsu
 from skimage.io import imread, ImageCollection
 from skimage.restoration import denoise_bilateral
@@ -24,7 +25,7 @@ logger = getLogger(__name__)
 def mask_from_image(image_path: str, scale: float = 1.0,
                     denoise: bool = True, show_image: bool = False,
                     thresh_mode: str = 'otsu', thresh_value: float = None,
-                    verbose_log: bool = True) -> ndarray:
+                    verbose_log: bool = True, final_log: bool = True) -> ndarray:
     """Return a boolean mask by thresholding an image.
 
     This function does the following in the given order:
@@ -48,6 +49,7 @@ def mask_from_image(image_path: str, scale: float = 1.0,
                     will be shown side by side in a figure.
                     The program may be paused while the window is open.
         verbose_log: If set to True, logs will be verbose, otherwise only one entry will be made.
+        final_log: If set to True, the final log entry will be made.
 
     Returns:
         The binary mask derived from the image.
@@ -66,7 +68,7 @@ def mask_from_image(image_path: str, scale: float = 1.0,
                          f'but it is {thresh_value:.3f}.')
 
     # Open the image and convert it to grayscale.
-    gray_image = imread(fname=image_path, as_gray=True)  # Note that the dtype will be float, i.e. [0, 1].
+    gray_image = imread(fname=image_path, as_gray=True)  # Note gray_image has a dtype of float, i.e. [0, 1].
     if verbose_log:
         logger.debug(f"Opened image '{image_path}'.")
 
@@ -88,7 +90,8 @@ def mask_from_image(image_path: str, scale: float = 1.0,
 
     if thresh_mode.lower() == 'none':
         binary_image = gray_image
-        logger.debug('No thresholding applied to the image.')
+        if verbose_log:
+            logger.debug('No thresholding applied to the image.')
     else:
         # Apply Otsu’s method to make a binary image.
         if thresh_mode == 'manual':
@@ -124,10 +127,11 @@ def mask_from_image(image_path: str, scale: float = 1.0,
 
     # Return the binary mask.
     final_log_msg = f"Created a binary mask from the image at '{image_path}' with a scale of {scale:.2f}."
-    if verbose_log:
+    if final_log:
         logger.info(final_log_msg)
     else:
-        logger.debug(final_log_msg)
+        if verbose_log:
+            logger.debug(final_log_msg)
     return binary_image
 
 
@@ -176,7 +180,7 @@ def mask_from_image_sequence(load_pattern: str, scale: float = 1.0,
                                  load_func=mask_from_image,
                                  scale=1.0, denoise=denoise,
                                  thresh_mode=thresh_mode, thresh_value=thresh_value,
-                                 show_image=False, verbose_log=False)
+                                 show_image=False, verbose_log=False, final_log=False)
 
     # Make sure the collection has an appropriate number of images.
     if len(image_coll) == 0:
@@ -200,7 +204,7 @@ def resize_image(image: ndarray, scale: float, verbose_log: bool = True) -> ndar
     Args:
         image: The image to be resized.
                If the input image is a boolean mask, nearest-neighbor interpolation
-               will be used without anti-aliasing and the output will be cast to a boolean mask.
+               will be used without antialiasing and the output will be cast to a boolean mask.
                Otherwise, a simple resizing operation with the default parameters
                of ``skimage.transform.rescale()`` will be attempted.
         scale: The scale to be applied. If equal to 1.0, the function logs the call and returns.
@@ -217,14 +221,14 @@ def resize_image(image: ndarray, scale: float, verbose_log: bool = True) -> ndar
     if image.dtype == bool:
         # For boolean images, interpolation order must be 0, which means that
         # the nearest-neighbor interpolation method will be used.
-        # Also, anti aliasing must be turned off.
+        # Also, antialiasing must be turned off.
         # See https://github.com/scikit-image/scikit-image/issues/4292
         # and https://github.com/scikit-image/scikit-image/issues/4998.
         image = rescale(image, scale, order=0, anti_aliasing=False)
 
         # Rescale returns a float array which needs to be converted to bool.
         if image.dtype == float:
-            if all(unique(image) == [0.0, 1.0]):
+            if array_equal(unique(image), [0.0, 1.0]):
                 image = image.astype(bool)
             else:
                 raise RuntimeError('It is expected that skimage.transform.rescale '
