@@ -1,5 +1,5 @@
-from io import StringIO
 import csv
+from io import StringIO
 
 from PyQt5.QtCore import QEvent
 from PyQt5.QtGui import QKeySequence, QIntValidator, QDoubleValidator

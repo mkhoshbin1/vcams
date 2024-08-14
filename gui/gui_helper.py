@@ -2,7 +2,8 @@
 
 # The pyi_splash module is only included when using PyInstaller.
 try:
-    import pyi_splash  # noqa: F403
+    # noinspection PyUnresolvedReferences
+    import pyi_splash
 except ImportError:
     is_pyi_splash_available = False
 else:
