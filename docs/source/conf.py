@@ -13,8 +13,8 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join('..','..')))
-from vcams import __version__ as vcams_version
-
+# from vcams import __version__ as vcams_version   # TODO
+vcams_version = '1.0.0'
 
 # -- Project information -----------------------------------------------------
 
@@ -42,7 +42,7 @@ extensions = ['sphinx.ext.autodoc' ,
               'sphinx.ext.napoleon',
               'sphinx_autodoc_typehints',
               'sphinx.ext.mathjax' ,
-              'matplotlib.sphinxext.plot_directive',
+              # 'matplotlib.sphinxext.plot_directive',  TODO
               'sphinx_rtd_theme']
 
 # Options for autodoc.

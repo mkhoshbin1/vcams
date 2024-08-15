@@ -5,3 +5,6 @@ scikit-image~=0.24.0
 matplotlib~=3.9.2
 PyQt5~=5.15.10
 pyinstaller-versionfile~=2.1.1
+sphinx
+sphinx-rtd-theme
+sphinx-autodoc-typehints
