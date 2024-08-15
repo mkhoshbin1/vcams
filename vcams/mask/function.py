@@ -32,7 +32,7 @@ def mask_from_function(func: Callable | object, vectorized: bool = True,
 
               + A function which evaluates a point and returns a value.
                 This function must accept x, y, and z parameters (if not use them)
-                and can receive other keyword arguments through *\**kwargs*.
+                and can receive other keyword arguments through *\\**kwargs*.
               + A class that defined a method named *func* working according
                 to the aforementioned specs.
                 For example, it is possible to pass a subclass of :class:`~.BaseTpms`
@@ -121,7 +121,7 @@ def is_voxel_inside(x: float | ndarray, y: float | ndarray, z: float | ndarray,
 
     This function compiles three vectors that together form the coordinates
     of these points and passes them to the vectorized function.
-    Any other arguments that the surface function needs are passed to it using \**kwargs.
+    Any other arguments that the surface function needs are passed to it using \\**kwargs.
 
     The result is a vector of values. If these values are negative,
     that particular PoI is considered to be inside the surface.
