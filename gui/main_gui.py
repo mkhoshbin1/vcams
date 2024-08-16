@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 splash_update_text("Loading PyQt5...")
-# noinspection PyUnresolvedReferences
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
@@ -29,12 +28,20 @@ from vcams.helper import return_default_working_dir
 from vcams.mask.tpms import tpms_dict
 from vcams.voxelpart import from_config_file
 
+splash_update_text("Loading GUI modules...")
 from custom_table import MatCodeDelegate, RadiusFloatDelegate, PositionFloatDelegate
 from settings_io import export_settings, import_settings
-import main_gui_resources
 
 logger = logging.getLogger(vcams_name)
 
+# This is a list of different modeling modes.
+# To add/change:
+#   - Make sure the value of page_id corresponds to the pages of modeling_stacked_widget in main_window.ui.
+#   - Update settings_io.export_settings().
+#   - Update settings_io.import_settings().
+#   - Update vcams.helper.read_configuration().
+#   - Update vcams.voxelpart.from_config_file().
+#   - Add the relevant example scripts, .vcams files, and docs.
 ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form will be used to model a structure after you select '
@@ -65,13 +72,7 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form is used to model a spatial particle reinforced '
                                    'composite with spherical inclusions:'),
                       )
-# Note: To add/change any ModelingMode:
-#   - Make sure the value of page_id corresponds to the pages of modeling_stacked_widget in main_window.ui.
-#   - Update settings_io.export_settings().
-#   - Update settings_io.import_settings().
-#   - Update vcams.helper.read_configuration().
-#   - Update vcams.voxelpart.from_config_file().
-#   - Add the relevant example scripts, .vcams files, and docs.
+#
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
@@ -82,7 +83,7 @@ def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it sho
     fig.set_canvas(FigureCanvasAgg(fig))
     renderer = fig.canvas.get_renderer()
     # Add the plot.
-    ax = fig.add_axes([0, 0, 1, 1])
+    ax = fig.add_axes((0, 0, 1, 1))
     ax.axis('off')
     ax.patch.set_facecolor('none')
     t = ax.text(0, 0, math_tex, ha='left', va='bottom', fontsize=font_size)
@@ -410,7 +411,6 @@ class MainWindow(QMainWindow):
         if file_name:
             self.single_image_path_field.setText(file_name)
 
-
     # def closeEvent(self, event):
     #     #TODO: add save prompt.
     #     reply = QMessageBox.question(self, 'Close Program?',
@@ -536,7 +536,7 @@ class MainWindow(QMainWindow):
         import webbrowser
         dir_path = Path(self.working_dir)
         if dir_path.exists() and dir_path.is_dir():
-            webbrowser.open(self.dir_path)
+            webbrowser.open(dir_path)
         else:
             QMessageBox.critical(self, 'Error!',
                                  'The results folder does not exist.\nHave you run the model?')
