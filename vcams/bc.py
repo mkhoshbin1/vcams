@@ -162,7 +162,7 @@ class Pbc2DEdgeConstraint:
 
     .. math::
        u_{dof}^{V2} - u_{dof}^{V1} + C u_{dof}^{D} = 0 \\\\
-       u_{aux\_dof}^{V2} - u_{aux\_dof}^{V1} = 0
+       u_{aux\\_dof}^{V2} - u_{aux\\_dof}^{V1} = 0
 
     where :math:`V1` and :math:`V2` are two compatible vertices,
     :math:`D` and :math:`C` are the dummy node and coefficient

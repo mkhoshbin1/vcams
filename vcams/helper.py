@@ -30,7 +30,7 @@ def is_name_valid(name: str) -> bool:
     + May contain whitespace (if enclosed by double quotation marks).
     + Must start with a letter.
     + Must not begin or end with an underscore.
-    + Must not include the following characters: ``$&*~!()[]{}|;'`",.?/\``
+    + Must not include the following characters: ``$&*~!()[]{}|;'`",.?/\\``
     + Must not contain periods. This also means that any file names
       cannot contain any extensions. They will be added automatically.
     + Must be ASCII-compatible. This is checked by attempting :code:`str.decode('ascii')`
