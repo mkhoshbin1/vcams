@@ -37,10 +37,12 @@ logger = logging.getLogger(vcams_name)
 # This is a list of different modeling modes.
 # To add/change:
 #   - Make sure the value of page_id corresponds to the pages of modeling_stacked_widget in main_window.ui.
+#   - Decide on the names of the fields and add it to list_widgets_fields.xlsx.
 #   - Update settings_io.export_settings().
 #   - Update settings_io.import_settings().
 #   - Update vcams.helper.read_configuration().
 #   - Update vcams.voxelpart.from_config_file().
+#   - Add validators for the names of the fields.
 #   - Add the relevant example scripts, .vcams files, and docs.
 ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
@@ -51,24 +53,28 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This option does noting.\n'
                                    'The model will completely consist of the elements '
                                    'with the base material specified in the previous tab.'),
+                      ModelingMode('Random Element Dispersion',
+                                   0, 2,
+                                   'This form is used to model a structure where certain amount '
+                                   'of a second phase is randomly dispersed in the structure:'),
                       ModelingMode('Triply Periodic Minimal Surface (TPMS)',
-                                   3, 2,
+                                   3, 3,
                                    'This form is used to model a triply periodic minimal '
                                    'surface (TPMS) in the 3D space:'),
                       ModelingMode('Image Processing (Single 2D Image)',
-                                   2, 3,
+                                   2, 4,
                                    'This form is used to create a 2D model based on a single '
                                    'binary or grayscale image:'),
                       ModelingMode('Image Processing (Image Stack for 3D Part)',
-                                   3, 4,
+                                   3, 5,
                                    'This form is used to create a 3D model based on a stack of '
                                    'binary or grayscale images:'),
                       ModelingMode('Planar Particle Reinforced Composite (Circular Inclusions)',
-                                   2, 5,
+                                   2, 6,
                                    'This form is used to model a planar particle reinforced '
                                    'composite with circular inclusions:'),
                       ModelingMode('Spatial Particle Reinforced Composite (Spherical Inclusions)',
-                                   3, 6,
+                                   3, 7,
                                    'This form is used to model a spatial particle reinforced '
                                    'composite with spherical inclusions:'),
                       )
@@ -219,6 +225,11 @@ class MainWindow(QMainWindow):
         # Code and signals for tab: Modeling.
         # Modeling tabs "Please select a modeling mode..."
         # and "No Further Manipulation" require no additional code.
+
+        # Modeling: Random Element Dispersion
+        self.random_phase_fraction_field.setValidator(QDoubleValidator(0.01, 0.99, 4))
+        self.random_phase_matcode_field.setValidator(QIntValidator(0, 999999999, self))
+
 
         # Modeling: TPMS
         self.formula_font_size = 20

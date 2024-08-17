@@ -548,10 +548,58 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>4</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
           <widget class="QWidget" name="modeling_nothing"/>
+          <widget class="QWidget" name="modeling_random">
+           <layout class="QVBoxLayout" name="verticalLayout_15">
+            <item>
+             <layout class="QFormLayout" name="formLayout_9">
+              <item row="0" column="0">
+               <widget class="QLabel" name="random_phase_fraction_label">
+                <property name="text">
+                 <string>Second Phase Fraction</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="random_phase_fraction_field">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="random_phase_matcode_label">
+                <property name="text">
+                 <string>Second Phase Material Code</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="random_phase_matcode_field">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
           <widget class="QWidget" name="modeling_tpms">
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>
