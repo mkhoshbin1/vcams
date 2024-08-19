@@ -1,5 +1,5 @@
 [Basic]
-part_name = Ex G-6 2D Shape Array 2
+part_name = Ex G-6 2D Shape Array
 dim = 2D
 num_voxels_x = 50
 num_voxels_y = 50
@@ -8,11 +8,11 @@ voxel_size_y = 0.02
 num_mats = 0
 base_material = 1
 part_description = A 2D square 50*50 part created using an array of circular shapes.
-working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\Ex G-6 2D Shape Array 2
+working_dir = 
 log_debug = True
 
 [Modeling]
-modeling_mode = 3
+modeling_mode = 6
 modeling_circle_table = 0.0,0.0,0.1,2
 	0.4,0.2,0.15,3
 	0.7,0.5,0.1,0
@@ -22,7 +22,7 @@ modeling_circle_table = 0.0,0.0,0.1,2
 bc_type = 0
 
 [Output]
-file_name = ex_g6_shape_array_2d_2
+file_name = ex_g6_shape_array_2d
 elem_code = CPE4R
 output_mats_type = 1
 

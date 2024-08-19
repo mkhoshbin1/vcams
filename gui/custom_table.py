@@ -102,20 +102,12 @@ class CustomTableWidget(QTableWidget):
             start_col = 0
             end_col = self.columnCount() - 1
 
-        # Case 1: selection is a single cell.
-        if (start_row == end_row) and (start_col == end_col):
-            # Make sure enough rows and columns exist. Add rows if necessary.
-            if self.columnCount() < start_col + num_csv_cols:
-                raise ValueError('Number of columns in row_list exceeds the number of columns in '
-                                 'the table. Either the selection or row_list are inappropriate')
-            while self.rowCount() < start_row + num_csv_rows:
-                self.insertRow(self.rowCount())
-        else:  # Case 2: selection is multiple cells which must have the same size as row_list.
-            if not ((end_row - start_row == num_csv_rows - 1)
-                    and (end_col - start_col == num_csv_cols - 1)):
-                raise ValueError('Dimensions of the selected and pasted cells are different. '
-                                 'Either reselect cells or select a single cell as the start '
-                                 'point.')
+        # Make sure enough rows and columns exist. Add rows if necessary.
+        if self.columnCount() < start_col + num_csv_cols:
+            raise ValueError('Number of columns in row_list exceeds the number of columns in '
+                             'the table. Either the selection or row_list are inappropriate')
+        while self.rowCount() < start_row + num_csv_rows:
+            self.insertRow(self.rowCount())
 
         # Validate contents of row_list using the table's validators.
         csv_r = 0

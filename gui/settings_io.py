@@ -80,7 +80,7 @@ def set_qcombobox_value(qcombobox_obj, field_name, value, combo_index_mode=False
             qcombobox_obj.setCurrentIndex(ind)
 
 
-def set_qtablewidget_value(qtablewidget_obj, field_name, value):
+def set_qtablewidget_value(qtablewidget_obj: QTableWidget, field_name, value):
     # Validation is done in inside the function as the ValueError is caught by the calling function.
     try:
         qtablewidget_obj.import_from_csv_string(csv_string=value, selection=None)
