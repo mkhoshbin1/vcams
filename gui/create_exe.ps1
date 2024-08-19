@@ -6,7 +6,7 @@
 
 # Use --console and run the executable in cmd when debugging.
 
-..\venv\Scripts\Activate.ps1
+..\venv312\Scripts\Activate.ps1
 pyrcc5 .\resources\main_gui_resources.qrc -o main_gui_resources.py
 
 $exe_name = python create_versionfile.py
