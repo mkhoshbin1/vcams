@@ -47,9 +47,10 @@ extensions = ['sphinx.ext.autodoc' ,
 
 # Options for autodoc.
 autodoc_member_order = 'bysource'
-autodoc_mock_imports = ['numpy',
+autodoc_mock_imports = ['numpy', 'scipy', 'six', 'matplotlib', 'skimage',
                         'abaqus', 'abaqusConstants', 'abaqusExceptions',
                         'part', 'mesh', 'odbAccess', 'regionToolset']
+# TODO: Why are these here? Has it been copied from PyAuxetic?
 autodoc_default_options = {
     'members': True,
     'member-order': 'bysource',
