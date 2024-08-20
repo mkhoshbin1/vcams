@@ -11,16 +11,6 @@ pyrcc5 .\resources\main_gui_resources.qrc -o main_gui_resources.py
 
 $exe_name = python create_versionfile.py
 
-# pyinstaller --onedir --clean --noupx --windowed `
-#     --add-data 'main_window.ui;.' `
-#     --add-data 'resources\main_gui_resources.qrc;.\resources\' `
-#     --hidden-import=pyi_splash `
-#     --icon=".\resources\icon.ico" `
-#     --splash=".\resources\splash.png" `
-#     --paths .. `
-#     --name VCAMS `
-#     main_gui.spec
-
 pyi-makespec --onefile --noupx --windowed `
     --add-data 'main_window.ui;.' `
     --add-data 'resources\main_gui_resources.qrc;.\resources\' `

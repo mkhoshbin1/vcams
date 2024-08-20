@@ -1,6 +1,7 @@
 # noqa: E402
 
 from gui_helper import splash_update_text, splash_close
+import main_gui_resources
 
 splash_update_text("Loading standard Python libraries...")
 import logging
@@ -132,21 +133,23 @@ class MainWindow(QMainWindow):
         # Set the paths.
         this_file_path = Path(__file__).resolve().parent
         ui_file_path = this_file_path / 'main_window.ui'
-        program_icon_path = this_file_path / 'resources/icon.ico'
-        logo_path = this_file_path / 'resources/transparent_logo.png'
+        # These are addresses from the main_gui_resources.py file
+        # which is imported above as a Python module.
+        program_icon_path = ':/icon.ico'
+        logo_path = ':/transparent_logo.png'
 
         # Load the UI Page.
         uic.loadUi(ui_file_path, self)
         # Set the window title.
         self.setWindowTitle(f'VCAMS GUI v{vcams_version}')
         # Set the window icon.
-        self.setWindowIcon(QIcon(program_icon_path.as_posix()))
+        self.setWindowIcon(QIcon(program_icon_path))
         # Make the window size fixed.
         self.setFixedSize(self.size())
 
         # Set and configure the logo on the welcome page.
         logo_size = int(1.1 * self.welcome_page.frameGeometry().width())
-        logo_pixmap = QPixmap(logo_path.as_posix()).scaledToWidth(logo_size, mode=Qt.SmoothTransformation)
+        logo_pixmap = QPixmap(logo_path).scaledToWidth(logo_size, mode=Qt.SmoothTransformation)
         self.logo_label.setPixmap(logo_pixmap)
         self.logo_label.setAlignment(Qt.AlignCenter)
         self.logo_label.setTextInteractionFlags(Qt.NoTextInteraction)
