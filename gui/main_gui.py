@@ -129,18 +129,24 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
+        # Set the paths.
+        this_file_path = Path(__file__).resolve().parent
+        ui_file_path = this_file_path / 'main_window.ui'
+        program_icon_path = this_file_path / 'resources/icon.ico'
+        logo_path = this_file_path / 'resources/transparent_logo.png'
+
         # Load the UI Page.
-        uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
+        uic.loadUi(ui_file_path, self)
         # Set the window title.
-        self.setWindowTitle('VCAMS GUI v%s' % vcams_version)
+        self.setWindowTitle(f'VCAMS GUI v{vcams_version}')
         # Set the window icon.
-        self.setWindowIcon(QIcon(':/icon.ico'))
+        self.setWindowIcon(QIcon(program_icon_path.as_posix()))
         # Make the window size fixed.
         self.setFixedSize(self.size())
 
         # Set and configure the logo on the welcome page.
         logo_size = int(1.1 * self.welcome_page.frameGeometry().width())
-        logo_pixmap = QPixmap(':/transparent_logo.png').scaledToWidth(logo_size, mode=Qt.SmoothTransformation)
+        logo_pixmap = QPixmap(logo_path.as_posix()).scaledToWidth(logo_size, mode=Qt.SmoothTransformation)
         self.logo_label.setPixmap(logo_pixmap)
         self.logo_label.setAlignment(Qt.AlignCenter)
         self.logo_label.setTextInteractionFlags(Qt.NoTextInteraction)
@@ -229,7 +235,6 @@ class MainWindow(QMainWindow):
         # Modeling: Random Element Dispersion
         self.random_phase_fraction_field.setValidator(QDoubleValidator(0.01, 0.99, 4))
         self.random_phase_matcode_field.setValidator(QIntValidator(0, 999999999, self))
-
 
         # Modeling: TPMS
         self.formula_font_size = 20
@@ -540,14 +545,14 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, 'Model Creation Failed!', str(err))
         else:
             QMessageBox.information(self, 'Done!',
-                                    ('Model Created Successfully!\n'
-                                     'You can find all files at:\n%s' % self.working_dir))
+                                    (f'Model Created Successfully!\n'
+                                     f'You can find all files at:\n{self.working_dir}'))
 
     def open_working_dir(self):
         import webbrowser
         dir_path = Path(self.working_dir)
         if dir_path.exists() and dir_path.is_dir():
-            webbrowser.open(dir_path)
+            webbrowser.open(dir_path.as_posix())
         else:
             QMessageBox.critical(self, 'Error!',
                                  'The results folder does not exist.\nHave you run the model?')
