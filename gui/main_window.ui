@@ -34,7 +34,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="welcome_page">
        <property name="geometry">
@@ -548,10 +548,69 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
           <widget class="QWidget" name="modeling_nothing"/>
+          <widget class="QWidget" name="modeling_random">
+           <layout class="QVBoxLayout" name="verticalLayout_15">
+            <item>
+             <layout class="QFormLayout" name="formLayout_10">
+              <item row="0" column="0">
+               <widget class="QLabel" name="random_phase_fraction_label">
+                <property name="text">
+                 <string>Second Phase Fraction</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="random_phase_fraction_field">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="random_phase_matcode_label">
+                <property name="text">
+                 <string>Second Phase Material Code</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="random_phase_matcode_field">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QLabel" name="random_footnote">
+              <property name="text">
+               <string>Notes:
+ - In this modeling mode, only one additional phase can be added for random dispersion.
+ - The amount of second phase is a fraction between 0.01 and 0.99. This is NOT a percentage.
+ - The first phase is selected in the Basic Model Information tab.
+ - The second phase's material code should be an integer.</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
           <widget class="QWidget" name="modeling_tpms">
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>

@@ -55,7 +55,7 @@ class TpmsSchwarzP(BaseTpms):
     with the following equation:
 
     .. math::
-       \\Phi = cos(\\frac{2\pi}{l}x) + cos(\\frac{2\pi}{l}y) + cos(\\frac{2\pi}{l}z) - c = 0
+       \\Phi = cos(\\frac{2\\pi}{l}x) + cos(\\frac{2\\pi}{l}y) + cos(\\frac{2\\pi}{l}z) - c = 0
     """
     @staticmethod
     def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float | Callable) -> float | ndarray:  # noqa: E741
@@ -92,10 +92,10 @@ class TpmsSchwarzD(BaseTpms):
     with the following equation:
 
     .. math::
-       \\Phi = \\enspace &sin(\\frac{2\pi}{l}x) \\ sin(\\frac{2\pi}{l}y) \\ sin(\\frac{2\pi}{l}z)\\\\
-                     +\\ &sin(\\frac{2\pi}{l}x) \\ cos(\\frac{2\pi}{l}y) \\ cos(\\frac{2\pi}{l}z)\\\\
-                     +\\ &cos(\\frac{2\pi}{l}x) \\ sin(\\frac{2\pi}{l}y) \\ cos(\\frac{2\pi}{l}z)\\\\
-                     +\\ &cos(\\frac{2\pi}{l}x) \\ cos(\\frac{2\pi}{l}y) \\ sin(\\frac{2\pi}{l}z) - c = 0
+       \\Phi = \\enspace &sin(\\frac{2\\pi}{l}x) \\ sin(\\frac{2\\pi}{l}y) \\ sin(\\frac{2\\pi}{l}z)\\\\
+                     +\\ &sin(\\frac{2\\pi}{l}x) \\ cos(\\frac{2\\pi}{l}y) \\ cos(\\frac{2\\pi}{l}z)\\\\
+                     +\\ &cos(\\frac{2\\pi}{l}x) \\ sin(\\frac{2\\pi}{l}y) \\ cos(\\frac{2\\pi}{l}z)\\\\
+                     +\\ &cos(\\frac{2\\pi}{l}x) \\ cos(\\frac{2\\pi}{l}y) \\ sin(\\frac{2\\pi}{l}z) - c = 0
     """
     @staticmethod
     def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float | Callable) -> float | ndarray:  # noqa: E741
@@ -138,9 +138,9 @@ class TpmsSchwarzG(BaseTpms):
     with the following equation:
 
     .. math::
-       \\Phi = \\enspace &sin(\\frac{2\pi}{l}x) \\ cos(\\frac{2\pi}{l}y)\\\\
-                     +\\ &sin(\\frac{2\pi}{l}y) \\ cos(\\frac{2\pi}{l}z)\\\\
-                     +\\ &sin(\\frac{2\pi}{l}z) \\ cos(\\frac{2\pi}{l}x) - c = 0
+       \\Phi = \\enspace &sin(\\frac{2\\pi}{l}x) \\ cos(\\frac{2\\pi}{l}y)\\\\
+                     +\\ &sin(\\frac{2\\pi}{l}y) \\ cos(\\frac{2\\pi}{l}z)\\\\
+                     +\\ &sin(\\frac{2\\pi}{l}z) \\ cos(\\frac{2\\pi}{l}x) - c = 0
     """
     @staticmethod
     def func(x: ndarray, y: ndarray, z: ndarray, l: float, c: float | Callable) -> float | ndarray:  # noqa: E741

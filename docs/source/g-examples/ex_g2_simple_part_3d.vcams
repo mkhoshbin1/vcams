@@ -10,7 +10,7 @@ voxel_size_z = 0.02
 num_mats = 0
 base_material = 1
 part_description = Example G-2: A simple 50*75*100 3D part filled with elements.
-working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\Ex G-2 Simple 3D Part
+working_dir = 
 log_debug = True
 
 [Modeling]

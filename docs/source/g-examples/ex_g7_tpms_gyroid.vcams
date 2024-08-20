@@ -10,11 +10,11 @@ voxel_size_z = 0.02
 num_mats = 0
 base_material = 0
 part_description = A 50*50*50 porous part based on the Gyroid TPMS.
-working_dir = C:\Users\MKhos\Desktop\VCAMS Working Directory\Ex G-7 TPMS Gyroid
+working_dir = 
 log_debug = True
 
 [Modeling]
-modeling_mode = 2
+modeling_mode = 3
 tpms_type = 2
 tpms_length = 0.5
 tpms_constant = 0

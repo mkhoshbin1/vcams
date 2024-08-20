@@ -16,6 +16,7 @@ from .helper import is_name_valid, read_configuration, process_working_dir
 from .logger_conf import setup_main_logger
 from .mask.function import mask_from_function
 from .mask.image import mask_from_image, mask_from_image_sequence
+from .mask.random import random_binary_mask
 from .mask.shape import Circle, Sphere
 from .mask.tpms import tpms_dict
 from .output import write_abaqus_inp
@@ -156,8 +157,11 @@ class VoxelPart:
 
         # Create and configure the logger.
         if not main_logger_exists:
-            setup_main_logger(part_name=name, working_dir=working_dir,
-                              display_log=display_log, overwrite_logs=overwrite_logs, log_debug=log_debug)
+            self._log_file_path = setup_main_logger(part_name=name, working_dir=working_dir,
+                                                    display_log=display_log, overwrite_logs=overwrite_logs,
+                                                    log_debug=log_debug)
+        else:
+            self._log_file_path = None
 
         # Log creation of the object.
         logger.info('\n** Created using VCAMS v%s.'
@@ -473,8 +477,9 @@ def voxelpart_from_image(image_dim: str, image_path: str,
     is not one of the inputs and is determined from the image.
     """
 
-    setup_main_logger(part_name=name, working_dir=working_dir,
-                      display_log=display_log, overwrite_logs=overwrite_logs, log_debug=log_debug)
+    part_log_file_path = setup_main_logger(part_name=name, working_dir=working_dir,
+                                           display_log=display_log, overwrite_logs=overwrite_logs,
+                                           log_debug=log_debug)
     logger.info('Attempting to create a VoxelPart instance from image(s).')
 
     if image_dim.upper() not in ['2D', '3D']:
@@ -493,6 +498,7 @@ def voxelpart_from_image(image_dim: str, image_path: str,
                      dtype=dtype, name=name, description=description, working_dir=working_dir,
                      overwrite_logs=overwrite_logs, log_debug=log_debug, display_log=display_log,
                      main_logger_exists=True)
+    part._log_file_path = part_log_file_path
     part.apply_mask(mask=image_mask, value=foreground_material)
     return part
 
@@ -519,33 +525,36 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
         pass
     if modeling_mode == '1':  # No Further Manipulation.
         pass
-    elif modeling_mode == '2':  # TPMS
+    elif modeling_mode == '2':  # Random Element Dispersion
+        boolean_mask = random_binary_mask(part=part, true_fraction=part_manipulation_dict['random_phase_fraction'])
+        part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['random_phase_matcode'])
+    elif modeling_mode == '3':  # TPMS
         boolean_mask = mask_from_function(mask_shape=part.size,
                                           func=tpms_dict[part_manipulation_dict['tpms_type']],
                                           part=part,
                                           l=part_manipulation_dict['tpms_length'],
                                           c=part_manipulation_dict['tpms_constant'])
         part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['tpms_fill_value'])
-    elif modeling_mode == '3':  # Image Processing (Single 2D Image)
+    elif modeling_mode == '4':  # Image Processing (Single 2D Image)
         part = voxelpart_from_image(image_dim='2D',
                                     image_path=part_manipulation_dict['single_image_path'],
                                     scale=part_manipulation_dict['single_image_scale'],
                                     denoise=part_manipulation_dict['single_image_denoise'],
                                     background_material=1, foreground_material=2,  # Material codes are hardcoded.
                                     **part_creation_dict)
-    elif modeling_mode == '4':  # Stack of 2D images for a 3D part.
+    elif modeling_mode == '5':  # Stack of 2D images for a 3D part.
         part = voxelpart_from_image(image_dim='3D',
                                     image_path=part_manipulation_dict['multi_image_path'],
                                     scale=part_manipulation_dict['multi_image_scale'],
                                     denoise=part_manipulation_dict['multi_image_denoise'],
                                     background_material=0, foreground_material=1,  # Material codes are hardcoded.
                                     **part_creation_dict)
-    elif modeling_mode == '5':  # Planar Composite (Circular Inclusions)
+    elif modeling_mode == '6':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:
             circle_obj = Circle(id=0, xc=float(row[0]), yc=float(row[1]), r=float(row[2]))
             part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.size, voxel_size=part.voxel_size),
                             value=int(row[3]))
-    elif modeling_mode == '6':  # Spatial Composite (Spherical Inclusions)
+    elif modeling_mode == '7':  # Spatial Composite (Spherical Inclusions)
         for row in part_manipulation_dict['sphere_list']:
             circle_obj = Sphere(id=0, xc=float(row[0]), yc=float(row[1]), zc=float(row[2]), r=float(row[3]))
             part.apply_mask(mask=circle_obj.calculate_mask(part_shape=part.size, voxel_size=part.voxel_size),

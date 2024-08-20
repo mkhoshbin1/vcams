@@ -1,11 +1,11 @@
-numpy
-scipy
-tabulate
-scikit-image
-matplotlib
-PyQt5
-pyinstaller
-pyinstaller_versionfile
-Sphinx
-sphinx-autodoc-typehints
+numpy~=2.1.0
+scipy ~= 1.14.0
+tabulate2 ~= 1.9.0
+scikit-image~=0.24.0
+matplotlib~=3.9.2
+PyQt5~=5.15.10
+pyinstaller-versionfile~=2.1.1
+sphinx
 sphinx-rtd-theme
+sphinx-autodoc-typehints
+PyInstaller

@@ -1,6 +1,7 @@
 # noqa: E402
 
 from gui_helper import splash_update_text, splash_close
+import main_gui_resources
 
 splash_update_text("Loading standard Python libraries...")
 import logging
@@ -14,7 +15,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 splash_update_text("Loading PyQt5...")
-# noinspection PyUnresolvedReferences
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QRegularExpression, QUrl
 from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator, QDoubleValidator, \
@@ -29,12 +29,22 @@ from vcams.helper import return_default_working_dir
 from vcams.mask.tpms import tpms_dict
 from vcams.voxelpart import from_config_file
 
+splash_update_text("Loading GUI modules...")
 from custom_table import MatCodeDelegate, RadiusFloatDelegate, PositionFloatDelegate
 from settings_io import export_settings, import_settings
-import main_gui_resources
 
 logger = logging.getLogger(vcams_name)
 
+# This is a list of different modeling modes.
+# To add/change:
+#   - Make sure the value of page_id corresponds to the pages of modeling_stacked_widget in main_window.ui.
+#   - Decide on the names of the fields and add it to list_widgets_fields.xlsx.
+#   - Update settings_io.export_settings().
+#   - Update settings_io.import_settings().
+#   - Update vcams.helper.read_configuration().
+#   - Update vcams.voxelpart.from_config_file().
+#   - Add validators for the names of the fields.
+#   - Add the relevant example scripts, .vcams files, and docs.
 ModelingMode = namedtuple('ModelingMode', ('name', 'dim', 'page_id', 'description'))
 modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form will be used to model a structure after you select '
@@ -44,34 +54,32 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This option does noting.\n'
                                    'The model will completely consist of the elements '
                                    'with the base material specified in the previous tab.'),
+                      ModelingMode('Random Element Dispersion',
+                                   0, 2,
+                                   'This form is used to model a structure where certain amount '
+                                   'of a second phase is randomly dispersed in the structure:'),
                       ModelingMode('Triply Periodic Minimal Surface (TPMS)',
-                                   3, 2,
+                                   3, 3,
                                    'This form is used to model a triply periodic minimal '
                                    'surface (TPMS) in the 3D space:'),
                       ModelingMode('Image Processing (Single 2D Image)',
-                                   2, 3,
+                                   2, 4,
                                    'This form is used to create a 2D model based on a single '
                                    'binary or grayscale image:'),
                       ModelingMode('Image Processing (Image Stack for 3D Part)',
-                                   3, 4,
+                                   3, 5,
                                    'This form is used to create a 3D model based on a stack of '
                                    'binary or grayscale images:'),
                       ModelingMode('Planar Particle Reinforced Composite (Circular Inclusions)',
-                                   2, 5,
+                                   2, 6,
                                    'This form is used to model a planar particle reinforced '
                                    'composite with circular inclusions:'),
                       ModelingMode('Spatial Particle Reinforced Composite (Spherical Inclusions)',
-                                   3, 6,
+                                   3, 7,
                                    'This form is used to model a spatial particle reinforced '
                                    'composite with spherical inclusions:'),
                       )
-# Note: To add/change any ModelingMode:
-#   - Make sure the value of page_id corresponds to the pages of modeling_stacked_widget in main_window.ui.
-#   - Update settings_io.export_settings().
-#   - Update settings_io.import_settings().
-#   - Update vcams.helper.read_configuration().
-#   - Update vcams.voxelpart.from_config_file().
-#   - Add the relevant example scripts, .vcams files, and docs.
+#
 
 
 def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it shorter.
@@ -82,7 +90,7 @@ def mathtex_to_qpixmap(math_tex, font_size):  # TODO: see if you can make it sho
     fig.set_canvas(FigureCanvasAgg(fig))
     renderer = fig.canvas.get_renderer()
     # Add the plot.
-    ax = fig.add_axes([0, 0, 1, 1])
+    ax = fig.add_axes((0, 0, 1, 1))
     ax.axis('off')
     ax.patch.set_facecolor('none')
     t = ax.text(0, 0, math_tex, ha='left', va='bottom', fontsize=font_size)
@@ -122,18 +130,26 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
+        # Set the paths.
+        this_file_path = Path(__file__).resolve().parent
+        ui_file_path = this_file_path / 'main_window.ui'
+        # These are addresses from the main_gui_resources.py file
+        # which is imported above as a Python module.
+        program_icon_path = ':/icon.ico'
+        logo_path = ':/transparent_logo.png'
+
         # Load the UI Page.
-        uic.loadUi(Path.joinpath(Path(__file__).resolve().parent, 'main_window.ui'), self)
+        uic.loadUi(ui_file_path, self)
         # Set the window title.
-        self.setWindowTitle('VCAMS GUI v%s' % vcams_version)
+        self.setWindowTitle(f'VCAMS GUI v{vcams_version}')
         # Set the window icon.
-        self.setWindowIcon(QIcon(':/icon.ico'))
+        self.setWindowIcon(QIcon(program_icon_path))
         # Make the window size fixed.
         self.setFixedSize(self.size())
 
         # Set and configure the logo on the welcome page.
         logo_size = int(1.1 * self.welcome_page.frameGeometry().width())
-        logo_pixmap = QPixmap(':/transparent_logo.png').scaledToWidth(logo_size, mode=Qt.SmoothTransformation)
+        logo_pixmap = QPixmap(logo_path).scaledToWidth(logo_size, mode=Qt.SmoothTransformation)
         self.logo_label.setPixmap(logo_pixmap)
         self.logo_label.setAlignment(Qt.AlignCenter)
         self.logo_label.setTextInteractionFlags(Qt.NoTextInteraction)
@@ -218,6 +234,10 @@ class MainWindow(QMainWindow):
         # Code and signals for tab: Modeling.
         # Modeling tabs "Please select a modeling mode..."
         # and "No Further Manipulation" require no additional code.
+
+        # Modeling: Random Element Dispersion
+        self.random_phase_fraction_field.setValidator(QDoubleValidator(0.01, 0.99, 4))
+        self.random_phase_matcode_field.setValidator(QIntValidator(0, 999999999, self))
 
         # Modeling: TPMS
         self.formula_font_size = 20
@@ -410,7 +430,6 @@ class MainWindow(QMainWindow):
         if file_name:
             self.single_image_path_field.setText(file_name)
 
-
     # def closeEvent(self, event):
     #     #TODO: add save prompt.
     #     reply = QMessageBox.question(self, 'Close Program?',
@@ -529,14 +548,14 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, 'Model Creation Failed!', str(err))
         else:
             QMessageBox.information(self, 'Done!',
-                                    ('Model Created Successfully!\n'
-                                     'You can find all files at:\n%s' % self.working_dir))
+                                    (f'Model Created Successfully!\n'
+                                     f'You can find all files at:\n{self.working_dir}'))
 
     def open_working_dir(self):
         import webbrowser
         dir_path = Path(self.working_dir)
         if dir_path.exists() and dir_path.is_dir():
-            webbrowser.open(self.dir_path)
+            webbrowser.open(dir_path.as_posix())
         else:
             QMessageBox.critical(self, 'Error!',
                                  'The results folder does not exist.\nHave you run the model?')

@@ -19,7 +19,8 @@ from typing import Union, TextIO
 import numpy as np
 from numpy import savetxt, unravel_index, ravel_multi_index, array, unique, uint32, float64, \
     union1d, any, zeros, append, intersect1d, insert, vstack, ndarray
-from tabulate import tabulate
+# noinspection PyPackageRequirements
+from tabulate import tabulate  # The main module in the tabulate2 package is named tabulate.
 
 from . import __version__, __website__
 from . import helper

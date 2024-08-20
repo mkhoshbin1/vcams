@@ -1,0 +1,26 @@
+[Basic]
+part_name = Ex G-3 Random 2D Part
+dim = 2D
+num_voxels_x = 100
+num_voxels_y = 100
+voxel_size_x = 0.02
+voxel_size_y = 0.02
+num_mats = 0
+base_material = 1
+part_description = Example G-3: A two-phase 100*100 part with a random distribution of elements.
+working_dir = 
+log_debug = True
+
+[Modeling]
+modeling_mode = 2
+random_phase_fraction = 0.42
+random_phase_matcode = 2
+
+[BC]
+bc_type = 0
+
+[Output]
+file_name = ex_g3_random_mask_2d
+elem_code = CPE4R
+output_mats_type = 1
+

@@ -16,6 +16,7 @@ and :doc:`C-4 </examples/example-c4>` for sample scripts.
 
 
 from logging import getLogger
+
 from numpy import ndarray, zeros, prod, floor
 from numpy.random import shuffle
 

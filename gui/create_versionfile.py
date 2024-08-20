@@ -1,5 +1,6 @@
 import os
 import sys
+
 import pyinstaller_versionfile
 
 sys.path.append(os.path.split(os.getcwd())[0])
