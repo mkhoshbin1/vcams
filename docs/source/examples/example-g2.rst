@@ -1,4 +1,4 @@
-Example G-2: Simple Filled 2D Part
+Example G-2: Simple Filled 3D Part
 ==================================
 In this example, the graphical user interface (GUI) is used to create a filled 3D part.
 This example mirrors :doc:`Example A-2 <example-a2>`.
