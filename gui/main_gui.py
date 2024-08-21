@@ -1,7 +1,7 @@
 # noqa: E402
 
 from gui_helper import splash_update_text, splash_close
-import main_gui_resources
+import main_gui_resources  # Do NOT remove. It is used for .qrc files.
 
 splash_update_text("Loading standard Python libraries...")
 import logging

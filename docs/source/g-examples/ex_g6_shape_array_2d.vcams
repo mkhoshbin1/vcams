@@ -7,7 +7,7 @@ voxel_size_x = 0.02
 voxel_size_y = 0.02
 num_mats = 0
 base_material = 1
-part_description = A 2D square 50*50 part created using an array of circular shapes.
+part_description = A 2D square 50*50 part in which an array of circular shapes are dispersed.
 working_dir = 
 log_debug = True
 

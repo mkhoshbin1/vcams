@@ -1,12 +1,10 @@
-Example G-6: Planar Composite (Circular Inclusions) II
+Example G-6: Planar Composite with Circular Inclusions
 ======================================================
 In this example, the graphical user interface (GUI) is used to create
-a filled 2D part in which circular shapes of a different material are present.
-The final structure can be a 2D model of a composite.
-This example is similar to :doc:`Example G-5 <example-g5>`,
-except that the shapes are of different materials.
+a filled 2D part in which circular shapes of different materials are present.
+The final structure is a 2D model of a composite.
 
-The structure is two dimensional with a shape of 50×100 voxels and
+The structure is two dimensional with a shape of 50×50 voxels and
 has a base material of 1 and a voxel size of 0.02 units in all directions.
 The parameter *log_debug* is set to *True* for demonstration purposes.
 
@@ -21,25 +19,25 @@ The *Non-Empty* elements are requested to be exported.
 
 The following figures show the various tabs of the GUI in this example:
 
-.. figure:: /g-examples/ex_g6_shape_array_2d_2_1.png
+.. figure:: /g-examples/ex_g6_shape_array_2d_1.png
    :align: center
    :width: 75%
 
    The GUI's "Basic Model Information" tab for Example G-6.
 
-.. figure:: /g-examples/ex_g6_shape_array_2d_2_2.png
+.. figure:: /g-examples/ex_g6_shape_array_2d_2.png
    :align: center
    :width: 75%
 
    The GUI's "Model Manipulations" tab for Example G-6.
 
-.. figure:: /g-examples/ex_g6_shape_array_2d_2_3.png
+.. figure:: /g-examples/ex_g6_shape_array_2d_3.png
    :align: center
    :width: 75%
 
    The GUI's "Boundary Conditions" tab for Example G-6.
 
-.. figure:: /g-examples/ex_g6_shape_array_2d_2_4.png
+.. figure:: /g-examples/ex_g6_shape_array_2d_4.png
    :align: center
    :width: 75%
 
@@ -57,14 +55,14 @@ to a *.log* file in the output folder.
 
 Finally, a configuration file based on the examples will be written to the output folder
 and can be used to import the model in the future.
-:download:`It will look like this. </g-examples/ex_g6_shape_array_2d_2.vcams>`
+:download:`It will look like this. </g-examples/ex_g6_shape_array_2d.vcams>`
 
-The final model looks like :numref:`ex_g6_shape_array_2d_2_0`.
+The final model looks like :numref:`ex_g6_shape_array_2d_0`.
 Note that the stepping visible in the part is due to the low resolution of the model.
 A bigger model will result in a better shape.
 
-.. figure:: /g-examples/ex_g6_shape_array_2d_2_0.png
-   :name: ex_g6_shape_array_2d_2_0
+.. figure:: /g-examples/ex_g6_shape_array_2d_0.png
+   :name: ex_g6_shape_array_2d_0
    :align: center
    :alt: Final model of Example G-6. Different materials are shown in different colors
          and the empty space is shown in white.
