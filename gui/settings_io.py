@@ -156,6 +156,8 @@ def export_settings(main_obj, file_path_str):
                                      'Image path (single) has not been specified in the Model Manipulations section.')
             config['Modeling']['single_image_scale'] = return_field_value(main_obj.single_image_scale_field)
             config['Modeling']['single_image_denoise'] = str(main_obj.single_image_denoise_checkbox.isChecked())
+            config['Basic']['num_voxels_x'] = '1'
+            config['Basic']['num_voxels_y'] = '1'
         elif config['Modeling']['modeling_mode'] == '5':  # Stack of 2D images for a 3D part.
             if return_field_value(main_obj.multi_image_path_field):
                 config['Modeling']['multi_image_path'] = return_field_value(main_obj.multi_image_path_field)
@@ -164,6 +166,9 @@ def export_settings(main_obj, file_path_str):
                                      'Image path string has not been specified in the Model Manipulations section.')
             config['Modeling']['multi_image_scale'] = return_field_value(main_obj.multi_image_scale_field)
             config['Modeling']['multi_image_denoise'] = str(main_obj.multi_image_denoise_checkbox.isChecked())
+            config['Basic']['num_voxels_x'] = '1'
+            config['Basic']['num_voxels_y'] = '1'
+            config['Basic']['num_voxels_z'] = '1'
         elif config['Modeling']['modeling_mode'] == '6':  # Planar Composite (Circular Inclusions)
             config['Modeling']['modeling_circle_table'] = \
                 main_obj.modeling_circle_table.return_csv_string(for_excel=False)

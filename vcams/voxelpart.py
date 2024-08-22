@@ -431,7 +431,8 @@ def voxelpart_from_image(image_dim: str, image_path: str,
                          voxel_size: tuple[float, float, float] | tuple[float, float] = (1.0, 1.0, 1.0),
                          dtype: str = 'uint8', name: str = 'unnamed',
                          description: str = '', working_dir: str | Path = None,
-                         overwrite_logs: bool = True, log_debug: bool = False, display_log: bool = True):
+                         overwrite_logs: bool = True, log_debug: bool = False, display_log: bool = True,
+                         **kwargs):
     """Create a :class:`VoxelPart` instance from a 2D or 3D image.
 
     This function creates a Boolean mask using either
@@ -517,10 +518,10 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
     """
     (part_creation_dict, part_manipulation_dict, bc_dict, output_dict) = read_configuration(file_path)
 
-    part = VoxelPart(**part_creation_dict)
     logger.info('The model is being created from a configuration file loaded from %s' % file_path)
-
     modeling_mode = part_manipulation_dict['modeling_mode']
+    if modeling_mode not in ('4', '5'):
+        part = VoxelPart(**part_creation_dict)
     if modeling_mode == '0':  # No action selected. This is technically invalid, but consider it to be '1'.
         pass
     if modeling_mode == '1':  # No Further Manipulation.
@@ -536,18 +537,21 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
                                           c=part_manipulation_dict['tpms_constant'])
         part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['tpms_fill_value'])
     elif modeling_mode == '4':  # Image Processing (Single 2D Image)
+        print(part_creation_dict)
         part = voxelpart_from_image(image_dim='2D',
                                     image_path=part_manipulation_dict['single_image_path'],
                                     scale=part_manipulation_dict['single_image_scale'],
                                     denoise=part_manipulation_dict['single_image_denoise'],
-                                    background_material=1, foreground_material=2,  # Material codes are hardcoded.
+                                    background_material=part_creation_dict['base_material'],
+                                    foreground_material=2,  # This is hardcoded.
                                     **part_creation_dict)
     elif modeling_mode == '5':  # Stack of 2D images for a 3D part.
         part = voxelpart_from_image(image_dim='3D',
                                     image_path=part_manipulation_dict['multi_image_path'],
                                     scale=part_manipulation_dict['multi_image_scale'],
                                     denoise=part_manipulation_dict['multi_image_denoise'],
-                                    background_material=0, foreground_material=1,  # Material codes are hardcoded.
+                                    background_material=part_creation_dict['base_material'],
+                                    foreground_material=2,  # This is hardcoded.
                                     **part_creation_dict)
     elif modeling_mode == '6':  # Planar Composite (Circular Inclusions)
         for row in part_manipulation_dict['circle_list']:

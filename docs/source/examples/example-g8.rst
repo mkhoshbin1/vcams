@@ -1,9 +1,13 @@
-Example G-7: The Gyroid TPMS
-============================
-In this example, the graphical user interface (GUI) is used to create
-a 3D part based on the Gyroid
-`TPMS <https://en.wikipedia.org/wiki/Triply_periodic_minimal_surface>`__.
-This example mirrors :doc:`Example C-7 <example-c7>`.
+Example G-8: 2D Part from Image
+===============================
+In this example, a 2D part is created based on an image.
+This modeling method imports the image, applies a scale,
+and automatically thresholds it using the default Otsu's method.
+There is also a noise removal option.
+Number of voxels and the base material are set automatically.
+This example mirrors :doc:`Example C-5 <example-c5>`.
+
+
 
 The structure is two dimensional with a shape of 50×50×50 voxels and
 has a base material of 0 (empty space) and a voxel size of 0.02 units in all directions.

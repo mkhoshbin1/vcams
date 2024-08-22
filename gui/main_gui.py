@@ -79,6 +79,8 @@ modeling_mode_list = (ModelingMode('Please select a modeling mode...', 0, 0,
                                    'This form is used to model a spatial particle reinforced '
                                    'composite with spherical inclusions:'),
                       )
+
+
 #
 
 
@@ -330,6 +332,8 @@ class MainWindow(QMainWindow):
         else:
             raise RuntimeError('Invalid value in for self.dim_combo.currentText(). '
                                'This is a GUI error. Please contact the author.')
+        self.modeling_mode_changed()
+        self.calculate_part_size()
 
     def modeling_mode_changed(self):
         modeling_mode = self.modeling_mode_combo.currentData()
@@ -346,6 +350,21 @@ class MainWindow(QMainWindow):
                                             'modeling space defined in the previous section.')
             self.modeling_stacked_widget.currentWidget().setEnabled(False)
             self.modeling_description_label.setEnabled(False)
+        if modeling_mode.name.lower().startswith('image processing'):
+            self.num_voxels_x_field.setText('1')
+            self.num_voxels_y_field.setText('1')
+            self.num_voxels_z_field.setText('1')
+            self.num_voxels_x_field.setEnabled(False)
+            self.num_voxels_y_field.setEnabled(False)
+            self.num_voxels_z_field.setEnabled(False)
+        else:
+            self.num_voxels_x_field.setText('')
+            self.num_voxels_y_field.setText('')
+            self.num_voxels_z_field.setText('')
+            self.num_voxels_x_field.setEnabled(True)
+            self.num_voxels_y_field.setEnabled(True)
+            self.num_voxels_z_field.setEnabled(True)
+        self.calculate_part_size()
 
     def calculate_part_size(self):
         # For part_size fields.
@@ -366,7 +385,13 @@ class MainWindow(QMainWindow):
         else:
             self.part_size_z_field.setText('N/A')
         # For model_size_field.
-        if self.dim_combo.currentText() == '2D':
+        if self.modeling_mode_combo.currentData().name.lower().startswith('image processing'):
+            self.part_size_x_field.setText('N/A')
+            self.part_size_y_field.setText('N/A')
+            self.part_size_z_field.setText('N/A')
+            self.model_size_field.setText('Not calculated when processing images.')
+            return
+        elif self.dim_combo.currentText() == '2D':
             if self.num_voxels_x_field.hasAcceptableInput() and self.num_voxels_y_field.hasAcceptableInput():
                 num_elems = (int(self.num_voxels_x_field.text()) * int(self.num_voxels_y_field.text()))
             else:

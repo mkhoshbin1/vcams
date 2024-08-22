@@ -548,7 +548,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>5</number>
           </property>
           <widget class="QWidget" name="modeling_empty"/>
           <widget class="QWidget" name="modeling_nothing"/>
@@ -782,7 +782,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
               <property name="text">
                <string>Notes:
  - In this modeling mode, number of voxels is determined from the image and the input values are ignored.
- - In this modeling mode, the base material is set to 0 and the foreground material is set to 1.</string>
+ - The base material is set in the previous tab and the foreground material is always 2.</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -849,7 +849,7 @@ Documentation and source code can be found in the help menu.&lt;/p&gt;&lt;/font&
               <property name="text">
                <string>Notes:
  - In this modeling mode, number of voxels is determined from the image and the input values are ignored.
- - In this modeling mode, the base material is set to 0 and the foreground material is set to 1.
+ - The base material is set in the previous tab and the foreground material is always 2.
  - You can use the ? symbol as a placeholder for a single character in the image path string. Also, the path sting is not validated so make sure it is correct.</string>
               </property>
               <property name="alignment">

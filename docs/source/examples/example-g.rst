@@ -21,3 +21,4 @@ do these examples as practice.
    example-g5
    example-g6
    example-g7
+   example-g8

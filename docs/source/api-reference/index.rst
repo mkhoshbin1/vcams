@@ -8,7 +8,7 @@ You should always consults the :ref:`examples` section and the source code for u
 
 .. toctree::
    :caption: Contents:
-   :maxdepth: 4
+   :maxdepth: 1
 
    voxelpart-module
    bc-module
