@@ -537,7 +537,6 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
                                           c=part_manipulation_dict['tpms_constant'])
         part.apply_mask(mask=boolean_mask, value=part_manipulation_dict['tpms_fill_value'])
     elif modeling_mode == '4':  # Image Processing (Single 2D Image)
-        print(part_creation_dict)
         part = voxelpart_from_image(image_dim='2D',
                                     image_path=part_manipulation_dict['single_image_path'],
                                     scale=part_manipulation_dict['single_image_scale'],

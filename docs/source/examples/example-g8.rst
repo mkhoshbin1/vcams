@@ -7,44 +7,53 @@ There is also a noise removal option.
 Number of voxels and the base material are set automatically.
 This example mirrors :doc:`Example C-5 <example-c5>`.
 
+This procedure is especially useful for grayscale images obtained from microscopy.
+See :ref:`predefined-image` for more information and some important tips.
+In order to avoid copyright issues, a simple image of a dual-phase steel
+is taken from `Wikipedia <https://en.wikipedia.org/wiki/File:Dual_Phase_Steel.jpg>`__
+(licensed under CC BY-SA 4.0) and is used for this example.
 
+Here, we first select the *Image Processing (Single 2D Image)* from the *Model Manipulations* tab
+and then move to the *Basic Model Information* tab.
+This disables the number of voxels which is determined by the input image.
 
-The structure is two dimensional with a shape of 50×50×50 voxels and
-has a base material of 0 (empty space) and a voxel size of 0.02 units in all directions.
-The parameter *log_debug* is set to *True* for demonstration purposes.
+We want to model a two dimensional structure a voxel size of 0.02 units in all directions
+and a base material of 1. The image processing code will automatically set the other elements
+to 2. We set the parameter *log_debug* to *True* for demonstration purposes.
 
-Afterwards, the parameters for the Gyroid TPMS are entered in the *Model Manipulations* tab.
-The necessary parameters are *Unit Cell Length*, the *Formula Constant*,
-and the material to be assigned to the structure which will be set to 1.
+Afterwards, the parameters for image processing are entered in the *Model Manipulations* tab.
+The first parameter is *Image Path* which can be typed, pasted or selected.
+Afterwards, we set the *Scale* and we can also request noise removal.
+The pixels selected by the image are automatically set to 2.
 
-The part is then exported to an Abaqus™ input file in *3D* mode with *C3D8R* elements.
+The part is then exported to an Abaqus™ input file in *2D* mode with *CPE4R* elements.
 The *Non-Empty* elements are requested to be exported.
 
 The following figures show the various tabs of the GUI in this example:
 
-.. figure:: /g-examples/ex_g7_tpms_gyroid_1.png
+.. figure:: /g-examples/ex_g8_image_2d_1.png
    :align: center
    :width: 75%
 
-   The GUI's "Basic Model Information" tab for Example G-7.
+   The GUI's "Basic Model Information" tab for Example G-8.
 
-.. figure:: /g-examples/ex_g7_tpms_gyroid_2.png
+.. figure:: /g-examples/ex_g8_image_2d_2.png
    :align: center
    :width: 75%
 
-   The GUI's "Model Manipulations" tab for Example G-7.
+   The GUI's "Model Manipulations" tab for Example G-8.
 
-.. figure:: /g-examples/ex_g7_tpms_gyroid_3.png
+.. figure:: /g-examples/ex_g8_image_2d_3.png
    :align: center
    :width: 75%
 
-   The GUI's "Boundary Conditions" tab for Example G-7.
+   The GUI's "Boundary Conditions" tab for Example G-8.
 
-.. figure:: /g-examples/ex_g7_tpms_gyroid_4.png
+.. figure:: /g-examples/ex_g8_image_2d_4.png
    :align: center
    :width: 75%
 
-   The GUI's "Output" tab for Example G-7.
+   The GUI's "Output" tab for Example G-8.
 
 After filling the form, the model can be created by pressing the *"Create Model"* button.
 The screen automatically switches to the *Run* tab and will show the program log.
@@ -58,15 +67,4 @@ to a *.log* file in the output folder.
 
 Finally, a configuration file based on the examples will be written to the output folder
 and can be used to import the model in the future.
-:download:`It will look like this. </g-examples/ex_g7_tpms_gyroid.vcams>`
-
-The final model looks like :numref:`ex_g7_tpms_gyroid_0`.
-Note that the stepping visible in the part is due to the low resolution of the model.
-A bigger model will result in a better shape.
-
-.. figure:: /g-examples/ex_g7_tpms_gyroid_0.png
-   :name: ex_g7_tpms_gyroid_0
-   :align: center
-   :alt: Final model of Example G-7.
-
-   Final model of Example G-7.
+:download:`It will look like this. </g-examples/ex_g8_image_2d.vcams>`
