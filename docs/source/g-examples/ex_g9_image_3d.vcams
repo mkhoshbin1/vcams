@@ -1,0 +1,29 @@
+[Basic]
+part_name = Ex G-9 Part from Image 3D
+dim = 3D
+num_voxels_x = 1
+num_voxels_y = 1
+voxel_size_x = 0.01012
+voxel_size_y = 0.01012
+num_voxels_z = 1
+voxel_size_z = 0.01012
+num_mats = 0
+base_material = 0
+part_description = Example G-9: A 3D part created based on an image series.
+working_dir = 
+log_debug = True
+
+[Modeling]
+modeling_mode = 5
+multi_image_path = D:\MicroCT of mouse tibiae-oim4\28Oim__rec0???.bmp
+multi_image_scale = 0.5
+multi_image_denoise = True
+
+[BC]
+bc_type = 0
+
+[Output]
+file_name = ex_g9_image_3d
+elem_code = C3D8R
+output_mats_type = 1
+
