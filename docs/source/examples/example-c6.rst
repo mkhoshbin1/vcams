@@ -26,7 +26,7 @@ The *load_pattern* parameter is set to a path which describes all of the
 images in the sequence. They will be automatically be loaded in alphabetical order::
 
     image_mask = mask_from_image_sequence(load_pattern=r'D:\MicroCT of mouse tibiae-oim4\28Oim__rec0???.bmp',
-                                          scale=1.0, denoise=True)
+                                          scale=0.5, denoise=True)
 
 Then, a 3D part with the same shape as the mask is created
 with a base material of 0 (empty space) and a voxel size of 0.01012 units in all directions.
