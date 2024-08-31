@@ -9,8 +9,7 @@ __status__ = 'Production'
 __website__ = 'https://github.com/mkhoshbin1/vcams'
 __repo__ = 'https://github.com/mkhoshbin1/vcams'
 __docs__ = 'https://github.com/mkhoshbin1/vcams'  # FIXME
-__description__ = 'A Program and Python Library for Voxel-Based Computer-Aided' \
-                  ' Modeling of Complex Structures '
+__description__ = 'A Program and Python Library for Voxel-Based Computer-Aided Modeling of Complex Structures '
 __author_website__ = 'www.mkhoshbin.com'
 __contact__ = __email__
 __deprecated__ = False

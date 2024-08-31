@@ -11,11 +11,12 @@ build-backend = "setuptools.build_meta"  # Mandatory.
 [project]
 dynamic = ["version"]
 name = "vcams"
-#TODO: consider description dynamic from vcams.__description__.
+# I would like description to be dynamic, but it is currently not possible.
+# See https://github.com/pypa/setuptools/issues/3848.
 description = "A Program and Python Library for Voxel-Based Computer-Aided Modeling of Complex Structures"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {file = "LICENSE"}  # TODO: maybe just a license file?
+license = {file = "LICENSE"}
 authors = [{name = "Mohammadreza Khoshbin", email = "m.khoshbin@live.com" }]
 maintainers = [{name = "Mohammadreza Khoshbin", email = "m.khoshbin@live.com" }]
 
@@ -24,7 +25,6 @@ keywords = ["abaqus", "cae", "fea", "fem",
     "finite-element-method", "finite-element-mesh",
     "mesh-processing", "voxel", "gui",
     "mechanical-engineering", "scientific-research"]
-
 
 # Valid classifiers: https://pypi.org/classifiers/
 classifiers = [
@@ -61,21 +61,13 @@ dev = ["pyinstaller-versionfile>=2.1.1", "PyInstaller", "build",
     "sphinx", "sphinx-rtd-theme", "sphinx-autodoc-typehints"]
 
 # Relevant URLs.
-# List URLs that are  to your project
-#
-# This field corresponds to the "Project-URL" and "Home-Page" metadata fields:
-# https://packaging.python.org/specifications/core-metadata/#project-url-multiple-use
-# https://packaging.python.org/specifications/core-metadata/#home-page-optional
-#
-# Examples listed include a pattern for specifying where the package tracks
-# issues, where the source is hosted, where to say thanks to the package
-# maintainers, and where to support the project financially. The key is
-# what's used to render the link text on PyPI.
-# TODO: use the links in vcams.__init__.
 [project.urls]
-"Homepage" = "https://vcams.mkhoshbin.com/"  #  TODO: try assigning to Homepage variable
-"Source" = "https://github.com/mkhoshbin1/vcams"
-"Bug Reports" = "https://github.com/mkhoshbin1/vcams/issues"  #  TODO: try assigning to Issues variable
+Homepage = "https://vcams.mkhoshbin.com/"
+#Documentation = "https://readthedocs.org"  # TODO
+source = "https://github.com/mkhoshbin1/vcams"
+#"Source Code" = "https://github.com/mkhoshbin1/vcams"  # TODO
+Issues = "https://github.com/mkhoshbin1/vcams/issues"
+"Author's Website" = "https://www.mkhoshbin.com/"
 
 # Config for the `setuptools` build backend.
 [tool.setuptools]

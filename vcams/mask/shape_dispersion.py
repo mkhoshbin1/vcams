@@ -1095,11 +1095,17 @@ class ShapeDispersionArray(ShapeArray):
         """
         self.dispersion_logger.debug('Dispersing shapes in the ShapeDispersionArray.\n')
         logger.debug('Dispersing shapes in the ShapeDispersionArray.')
-        # Find the suitable number of shapes.
-        num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance, min_num_shapes, max_num_shapes,
-                                                    solver_mode)
+        # Try for max_generations times to find the suitable number of shapes.
+        for i in range(max_generations):
+            try:
+                num_shapes = self._find_suitable_num_shapes(target_vf, vf_tolerance,
+                                                            min_num_shapes, max_num_shapes, solver_mode)
+                break
+            except SuitableNumShapesNotFoundError:
+                continue
         # Set num_shapes in all shape requests and regenerate subclasses of BaseNormalDistributionDispersion.
         for sr in self.shape_requests:
+            # noinspection PyUnboundLocalVariable
             sr[1] = num_shapes
 
         self.dispersion_logger.debug(f"Trying to disperse shapes in part '{self.part_name}'.\n"
