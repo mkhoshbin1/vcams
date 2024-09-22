@@ -12,7 +12,7 @@ from time import perf_counter
 from typing import Callable
 
 import numpy as np
-from numpy import ndarray, squeeze
+from numpy import any, ceil, logical_or, max, ndarray, squeeze, array, zeros_like
 
 logger = getLogger(__name__)
 
@@ -94,6 +94,12 @@ def mask_from_function(func: Callable | object, vectorized: bool = True,
     if vectorized:
         x, y, z = np.ogrid[0:mask_shape[0], 0:mask_shape[1], 0:mask_shape[2]]
         mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+
+        ###
+        wrapping_mask = find_wrapping_mask(mask, func, mask_shape, voxel_size, **kwargs)
+        mask = logical_or(mask, wrapping_mask)
+
+        ###
     else:
         mask = np.zeros(mask_shape, dtype=bool)
         for i in np.arange(mask_shape[0]):
@@ -173,3 +179,139 @@ def is_voxel_inside(x: float | ndarray, y: float | ndarray, z: float | ndarray,
     # If more than half of the 27 PoIs are inside,
     # the voxel is considered inside the surface defined by the function.
     return np.count_nonzero(func(x_array, y_array, z_array, **kwargs) < 0, axis=0) >= 14
+
+
+def find_wrapping_mask(original_mask, func, mask_shape, voxel_size, **kwargs) -> ndarray:
+    #Make this into a function called find torroidal_wrapping. use a while loop for each step.
+    wrapping_mask = zeros_like(original_mask)
+    end_x, end_y, end_z = np.shape(original_mask)  # The end variable will be used like the end keyword in Matlab.
+    end_x, end_y, end_z = end_x-1, end_y-1, end_z-1  # To satisfy zero-based indexing.
+    num_step_list = ceil(array((0.05, 0.10, 0.15, 0.20, 0.25, 0.40, 0.50)) * max(mask_shape),
+                         casting='unsafe', dtype=int)
+    wrapping_failed_msg = ('Could not find a wrapping mask for the %s. '
+                           'This is highly improbable and the package author would like to check the model.')
+
+    # Edges or Faces:
+    # Note that all =0 and all =end are the same, except for the fancy indexing parts.
+    # Check the edge or face where x=0.
+    if any(original_mask[0, :, :]):
+        wrapping_failed = True
+        for num_step in num_step_list:
+            x, y, z = np.ogrid[-num_step:0, 0:mask_shape[1], 0:mask_shape[2]]
+            new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+            if not any(new_mask[0, :, :]):
+                wrapping_mask[-num_step:, :, :] = (
+                    logical_or(wrapping_mask[-num_step:, :, :], new_mask))
+                wrapping_failed = False
+                break
+        if wrapping_failed:
+            raise RuntimeError(wrapping_failed_msg % 'edge or face where x=0')
+    # Check edge or face where y=0.
+    if any(original_mask[:, 0, :]):
+        wrapping_failed = True
+        for num_step in num_step_list:
+            x, y, z = np.ogrid[0:mask_shape[0], -num_step:0, 0:mask_shape[2]]
+            new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+            if not any(new_mask[:, 0, :]):
+                wrapping_mask[:, -num_step:, :] = (
+                    logical_or(wrapping_mask[:, -num_step:, :], new_mask))
+                wrapping_failed = False
+                break
+        if wrapping_failed:
+            raise RuntimeError(wrapping_failed_msg % 'edge or face where y=0')
+    # Check the face where z=0.  # TODO: check.
+    if any(original_mask[:, :, 0]) and original_mask.shape[2] > 1:  # Only for 3D arrays.
+        wrapping_failed = True
+        for num_step in num_step_list:
+            x, y, z = np.ogrid[0:mask_shape[0], 0:mask_shape[1], -num_step:0]
+            new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+            if not any(new_mask[:, :, 0]):
+                wrapping_mask[:, :, -num_step:] = (
+                    logical_or(wrapping_mask[:, :, -num_step:], new_mask))
+                wrapping_failed = False
+                break
+        if wrapping_failed:
+            raise RuntimeError(wrapping_failed_msg % 'edge or face where z=0')
+    # Check edge or face where y=end.
+    if any(original_mask[:, end_y, :]):
+        wrapping_failed = True
+        for num_step in num_step_list:
+            x, y, z = np.ogrid[0:mask_shape[0], end_y:end_y + num_step, 0:mask_shape[2]]
+            new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+            if not any(new_mask[:, np.shape(new_mask)[1]-1, :]):
+                wrapping_mask[:, 0:num_step, :] = (logical_or(wrapping_mask[:, 0:num_step, :], new_mask))
+                wrapping_failed = False
+                break
+        if wrapping_failed:
+            raise RuntimeError(wrapping_failed_msg % 'edge or face where y=end')
+    # # Check the face where z=end.  # TODO: check.
+    # if any(original_mask[:, :, end_z]) and original_mask.shape[2] > 1:  # Only for 3D arrays.
+    #     wrapping_failed = True
+    #     for num_step in num_step_list:
+    #         x, y, z = np.ogrid[0:mask_shape[0], 0:mask_shape[1], end_z:end_z + num_step]
+    #         new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+    #         if not any(new_mask[:, :, np.shape(new_mask)[2]-1]):
+    #             wrapping_mask[:, :, 0:num_step] = (logical_or(wrapping_mask[:, :, 0:num_step], new_mask))
+    #             wrapping_failed = False
+    #             break
+    #     if wrapping_failed:
+    #         raise RuntimeError(wrapping_failed_msg % 'face where z=end')
+    # #
+
+    # Vertices:
+    # Note that each vertex is a combination of the indexing of two edge/face logics.
+    # Check the vertex where x=0 and y=0.
+    if any(original_mask[0, :, :]) or any(original_mask[:, 0, :]):
+        wrapping_failed = True
+        for num_step in num_step_list:  # Compare num_step with the x=0 code.
+            x, y, z = np.ogrid[-num_step:0, -num_step:0, 0:mask_shape[2]]
+            new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+            if not (any(new_mask[0, :, :]) or any(new_mask[:, 0, :])):
+                wrapping_mask[-num_step:, -num_step:, :] = (
+                    logical_or(wrapping_mask[-num_step:, -num_step:, :], new_mask))
+                wrapping_failed = False
+                break
+        if wrapping_failed:
+            raise RuntimeError(wrapping_failed_msg % 'vertex where x=0 and y=0.')
+    # Check the vertex where x=0 and y=end.
+    if any(original_mask[0, :, :]) or any(original_mask[:, end_y, :]):
+        wrapping_failed = True
+        for num_step in num_step_list:  # Compare num_step with the x=0 code.
+            x, y, z = np.ogrid[-num_step:0, end_y:end_y + num_step, 0:mask_shape[2]]
+            new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+            if not (any(new_mask[0, :, :]) or any(new_mask[:, np.shape(new_mask)[1] - 1, :])):
+                wrapping_mask[-num_step:, 0:num_step, :] = (
+                    logical_or(wrapping_mask[-num_step:, 0:num_step, :], new_mask))
+                wrapping_failed = False
+                break
+        if wrapping_failed:
+            raise RuntimeError(wrapping_failed_msg % 'vertex where x=0 and y=0.')
+    # Check the vertex where x=end and y=0.
+    if any(original_mask[end_x, :, :]) or any(original_mask[:, 0, :]):
+        wrapping_failed = True
+        for num_step in num_step_list:  # Compare num_step with the x=0 code.
+            x, y, z = np.ogrid[end_x:end_x + num_step, -num_step:0, 0:mask_shape[2]]
+            new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+            if not (any(new_mask[np.shape(new_mask)[0]-1, :, :]) or any(new_mask[:, 0, :])):
+                wrapping_mask[0:num_step, -num_step:, :] = (
+                    logical_or(wrapping_mask[0:num_step, -num_step:, :], new_mask))
+                wrapping_failed = False
+                break
+        if wrapping_failed:
+            raise RuntimeError(wrapping_failed_msg % 'vertex where x=end and y=0.')
+    # Check the vertex where x=end and y=end.
+    if any(original_mask[end_x, :, :]) or any(original_mask[:, end_y, :]):
+        wrapping_failed = True
+        for num_step in num_step_list:
+            x, y, z = np.ogrid[end_x:end_x + num_step, end_y:end_y + num_step, 0:mask_shape[2]]
+            new_mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+            if not (any(new_mask[np.shape(new_mask)[0]-1, :, :]) or any(new_mask[:, np.shape(new_mask)[1] - 1, :])):
+                wrapping_mask[0:num_step, 0:num_step, :] = (
+                    logical_or(wrapping_mask[0:num_step, 0:num_step, :], new_mask))
+                wrapping_failed = False
+                break
+        if wrapping_failed:
+            raise RuntimeError(wrapping_failed_msg % 'vertex where x=end and y=end.')
+    # TODO: add for z. Do the regular ones work in 3D?
+
+    return wrapping_mask
