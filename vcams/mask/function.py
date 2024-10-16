@@ -17,7 +17,7 @@ from numpy import any, ceil, logical_or, max, ndarray, squeeze, array, zeros_lik
 logger = getLogger(__name__)
 
 
-def mask_from_function(func: Callable | object, vectorized: bool = True,
+def mask_from_function(func: Callable | object, wrap_mask: bool = False,
                        do_log: bool = True,
                        part=None,
                        mask_shape: tuple[int, int, int] = None,
@@ -45,11 +45,8 @@ def mask_from_function(func: Callable | object, vectorized: bool = True,
               - The equation for a circle. In this case,
                 the function receives the z variable, but does not use it.
 
-        vectorized: If set to True, this function is run in a vectorized manner
-                    which is very fast but uses more memory (Strongly recommended).
-                    Otherwise, this function calls the others in a simple
-                    for-loop which is slower but needs less memory.
-                    In any case, the functions called are always vectorized.
+        wrap_mask: If set to True, the function is wrapped around the boundaries of the working space.
+                   This is useful for periodic structures, but is computationally expensive.
         do_log: If set to True, name of the function and elapsed time is
                 written to the log at the end of the operation.
         mask_shape: A tuple containing three integers which determine
@@ -91,21 +88,20 @@ def mask_from_function(func: Callable | object, vectorized: bool = True,
         func = func.func
 
     start_time = perf_counter()
-    if vectorized:
-        x, y, z = np.ogrid[0:mask_shape[0], 0:mask_shape[1], 0:mask_shape[2]]
-        mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
-
-        ###
+    x, y, z = np.ogrid[0:mask_shape[0], 0:mask_shape[1], 0:mask_shape[2]]
+    mask = is_voxel_inside(x, y, z, voxel_size, func, **kwargs)
+    if wrap_mask:
+        # noinspection PyTypeChecker
         wrapping_mask = _find_wrapping_mask(mask, func, mask_shape, voxel_size, **kwargs)
         mask = logical_or(mask, wrapping_mask)
-
-        ###
-    else:
-        mask = np.zeros(mask_shape, dtype=bool)
-        for i in np.arange(mask_shape[0]):
-            for j in np.arange(mask_shape[1]):
-                for k in np.arange(mask_shape[2]):
-                    mask[i, j, k] = is_voxel_inside(i, j, k, voxel_size, func, **kwargs)
+    # This is the regular for loop that can replace the above vectorized statements.
+    # It used to be an option, but seeing that it will not work
+    # for a wrapping mask it has been removed.
+    # mask = np.zeros(mask_shape, dtype=bool)
+    # for i in np.arange(mask_shape[0]):
+    #     for j in np.arange(mask_shape[1]):
+    #         for k in np.arange(mask_shape[2]):
+    #             mask[i, j, k] = is_voxel_inside(i, j, k, voxel_size, func, **kwargs)
 
     if do_log:
         logger.info("Created a mask from the function named '%s' in %.2f seconds.",
