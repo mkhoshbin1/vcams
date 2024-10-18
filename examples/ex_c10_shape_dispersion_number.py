@@ -19,8 +19,7 @@ min_valid_r = 4 * part.voxel_size[0]
 
 # Create a ShapeArray based on the VoxelPart object.
 shape_disp_array_obj = ShapeDispersionArray(dim='2D', part=part,
-                                            num_bound_pixels=num_bound_pixels,
-                                            short_msg=True)
+                                            num_bound_pixels=0, wrap_mask=True, short_msg=True)
 
 # Request the circles.
 num_circle = 10
@@ -39,7 +38,7 @@ ellipse_aspect_ratio = TruncatedNormalDistributionDispersion(num_values=num_elli
                                                              target_mean=0.75, target_std=0.75, bound_a=0.1)
 ellipse_xc = RandomDispersion(0, part.real_size[0])
 ellipse_yc = RandomDispersion(0, part.real_size[1])
-ellipse_alpha = RandomDispersion(low=0, high=360)
+ellipse_alpha = RandomDispersion(low=0, high=180)
 shape_disp_array_obj.add_shape_request(num_shapes=num_ellipse, cls=EllipseFromAspectRatio,
                                        xc=ellipse_xc, yc=ellipse_yc, alpha=ellipse_alpha,
                                        a=ellipse_a, aspect_ratio=ellipse_aspect_ratio,
