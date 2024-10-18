@@ -128,7 +128,7 @@ class BaseShape(ABC):
     def calculate_mask(self, part=None,
                        part_shape: tuple[int, int, int] = None,
                        voxel_size: tuple[float, float, float] = None,
-                       boundary_on: bool = False) -> ndarray:
+                       wrap_mask: bool = False, boundary_on: bool = False) -> ndarray:
         """Calculate the boolean mask based on this shape.
         This is a wrapper for :func:`vcams.mask.function.mask_from_function`.
 
@@ -142,6 +142,9 @@ class BaseShape(ABC):
             voxel_size: A tuple containing three floats which determine the size of a voxel
                         in the x, y, and z directions.
                         Defaults to *None* and ignored if *part* is passed.
+            wrap_mask: If set to True, the shape's function is wrapped around
+                       the boundaries of the working space.
+                       This is useful for periodic structures, but is computationally expensive.
             boundary_on: A boolean specifying whether shape boundary
                          must be considered when evaluating the function.
 
@@ -157,8 +160,9 @@ class BaseShape(ABC):
         self.voxel_size = voxel_size
 
         # Shape mask is calculated here but is not stored to save memory.
-        shape_mask = mask_from_function(part=None, mask_shape=part_shape, voxel_size=voxel_size,
-                                        func=self.func, boundary_on=boundary_on, do_log=False)
+        shape_mask = mask_from_function(part=None, wrap_mask=wrap_mask, mask_shape=part_shape,
+                                        voxel_size=voxel_size, func=self.func, boundary_on=boundary_on,
+                                        do_log=False)
         self._num_true_voxels = count_nonzero(shape_mask)
         # Calculate shape properties related to voxel_size and part shape.
         if self.dim == '2D':
@@ -179,7 +183,7 @@ class ShapeArray:
     def __init__(self, dim: str, part=None,
                  part_shape: tuple[int, int] | tuple[int, int, int] = None,
                  voxel_size: tuple[float, float] | tuple[float, float, float] = None,
-                 is_mask_calculation_lazy: bool = True):
+                 is_mask_calculation_lazy: bool = True, wrap_mask: bool = False):
         """Constructor for the *ShapeArray* class.
 
         Args:
@@ -197,6 +201,8 @@ class ShapeArray:
             is_mask_calculation_lazy: If True, the instance's private *_mask* property is updated
                                       only when necessary which greatly improves performance.
                                       Otherwise, it is updated everytime a shape is added to the array.
+            wrap_mask: If set to True, the shapes' function is wrapped around
+                       the boundaries of the working space, enabling periodic structures.
         """
         if dim.upper() not in ['2D', '3D']:
             raise ValueError("dim can only be one of '2D' or '3D'.")
@@ -251,6 +257,8 @@ class ShapeArray:
         self.part_volume = prod(self.part_shape * self.voxel_size)
 
         self.is_mask_calculation_lazy = is_mask_calculation_lazy
+        """See :meth:`.__init__`."""
+        self.wrap_mask = wrap_mask
         """See :meth:`.__init__`."""
         self._deferred_masks = []
         # Private attribute for masks that are have not been calculated
@@ -342,7 +350,8 @@ class ShapeArray:
         for i in id_list:
             self._mask = logical_or(self._mask,
                                     self.shapes[i].calculate_mask(
-                                        part_shape=self.part_shape, voxel_size=self.voxel_size))
+                                        part_shape=self.part_shape, voxel_size=self.voxel_size,
+                                        wrap_mask=self.wrap_mask))
             try:
                 self._deferred_masks.remove(i)
             except ValueError:
@@ -374,6 +383,7 @@ class ShapeArray:
         In case of a mistake in the *ShapeArray*, start from scratch."""
         self._backup_dict = dict()  # Remove previous backup.
         self._backup_dict['id_iter'] = deepcopy(self.id_iter)
+        self._backup_dict['wrap_mask'] = self.wrap_mask
         self._backup_dict['base_mask'] = ndarray.copy(self.base_mask)
         self._backup_dict['shapes'] = deepcopy(self.shapes)
         if len(self.shapes) == 0:  # Set mask and full_mask the same as self.__init__().
@@ -407,6 +417,7 @@ class ShapeArray:
                                "Has _backup_state() been called before? This may also happen after "
                                "a successful run of ShapeDispersionArray.disperse_shapes().")
         self.id_iter = deepcopy(backup_dict['id_iter'])
+        self.wrap_mask = backup_dict['wrap_mask']
         self.base_mask = ndarray.copy(backup_dict['base_mask'])
         if backup_dict['mask'] is None:
             self._mask = None
@@ -454,7 +465,8 @@ class ShapeArray:
             # Calculate the new shape's mask and
             # add only if the shape does not intersect existing shapes or the background.
             new_shape_mask = new_shape_obj.calculate_mask(
-                part_shape=self.part_shape, voxel_size=self.voxel_size, boundary_on=True)
+                part_shape=self.part_shape, voxel_size=self.voxel_size,
+                wrap_mask=self.wrap_mask, boundary_on=True)
             if any(logical_and(self.full_mask, new_shape_mask)):
                 # If they intersect, return False for an unsuccessful operation.
                 # The shape will be discarded.

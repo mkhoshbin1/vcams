@@ -534,7 +534,7 @@ class ShapeDispersionArray(ShapeArray):
     def __init__(self, dim: str, part=None,
                  part_shape: tuple[int, int, int] = None,
                  voxel_size: tuple[float, float, float] = None,
-                 num_bound_pixels: int = 0,
+                 wrap_mask: bool = True, num_bound_pixels: int = 0,
                  short_msg: bool = True):
         """Constructor for the *ShapeDispersionArray* class.
 
@@ -550,17 +550,28 @@ class ShapeDispersionArray(ShapeArray):
             voxel_size: A tuple containing two or three floats which determine the size of a voxel
                         in the x, y, and z directions.
                         Defaults to *None* and ignored if *part* is passed.
+            wrap_mask: If set to True, the shapes' function is wrapped around
+                       the boundaries of the working space, enabling periodic structures.
+                       If *wrap_mask* is True, *num_bound_pixels* must be zero.
+                       Defaults to True.
             num_bound_pixels: An int specifying the number of pixels to add to the boundary of the base mask.
                               The boundary will become a region that the dispersed shapes cannot touch.
+                              If *num_bound_pixels* is non-zero, *wrap_mask* must be False.
                               Defaults to 0.
             short_msg: A boolean specifying whether the placement message should be printed
                        as a single updating line or in many lines with extensive details.
                        Passed to :meth:`._log_placement` Defaults to *True*.
         """
 
+        # Validate the relationship between wrap_mask and num_bound_pixels.
+        # The rest is validated when calling super().__init__().
+        if wrap_mask and num_bound_pixels != 0:
+            raise ValueError('wrap_mask is True and num_bound_pixels is non-zero. This combination in invalid.')
+
         # Call the parent class's constructor.
         # Note that is_mask_calculation_lazy is set to True.
-        super().__init__(dim, part, part_shape, voxel_size, is_mask_calculation_lazy=True)
+        super().__init__(dim, part, part_shape, voxel_size,
+                         is_mask_calculation_lazy=True, wrap_mask=wrap_mask)
 
         self.short_msg = short_msg
         """See :meth:`.__init__`."""
