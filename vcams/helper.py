@@ -222,10 +222,34 @@ def read_configuration(file_path: str) -> tuple[dict, dict, dict, dict]:
     elif modeling_mode == '4':  # Image Processing (Single 2D Image)
         part_manipulation_dict['single_image_path'] = modeling_section['single_image_path']
         part_manipulation_dict['single_image_scale'] = float(modeling_section['single_image_scale'])
+        # There is two of the following for single and multiple image modeling mode. Make sure they're identical.
+        image_thresh_key = 'single_image_thresh_mode'
+        image_thresh_mode = modeling_section[image_thresh_key]
+        if image_thresh_mode == '0':
+            part_manipulation_dict[image_thresh_key] = 'none'
+        elif image_thresh_mode == '1':
+            part_manipulation_dict[image_thresh_key] = 'manual'
+        elif image_thresh_mode == '2':
+            part_manipulation_dict[image_thresh_key] = 'otsu'
+        else:
+            raise ValueError("Invalid value for field '%s'." % image_thresh_key)
+        part_manipulation_dict['single_image_thresh_value'] = float(modeling_section['single_image_thresh_value'])
         part_manipulation_dict['single_image_denoise'] = config.getboolean('Modeling', 'single_image_denoise')
     elif modeling_mode == '5':  # Stack of 2D images for a 3D part.
         part_manipulation_dict['multi_image_path'] = modeling_section['multi_image_path']
         part_manipulation_dict['multi_image_scale'] = float(modeling_section['multi_image_scale'])
+        # There is two of the following for single and multiple image modeling mode. Make sure they're identical.
+        image_thresh_key = 'multi_image_thresh_mode'
+        image_thresh_mode = modeling_section[image_thresh_key]
+        if image_thresh_mode == '0':
+            part_manipulation_dict[image_thresh_key] = 'none'
+        elif image_thresh_mode == '1':
+            part_manipulation_dict[image_thresh_key] = 'manual'
+        elif image_thresh_mode == '2':
+            part_manipulation_dict[image_thresh_key] = 'otsu'
+        else:
+            raise ValueError("Invalid value for field '%s'." % image_thresh_key)
+        part_manipulation_dict['multi_image_thresh_value'] = float(modeling_section['multi_image_thresh_value'])
         part_manipulation_dict['multi_image_denoise'] = config.getboolean('Modeling', 'multi_image_denoise')
     elif modeling_mode == '6':  # Planar Composite (Circular Inclusions)
         part_manipulation_dict['circle_list'] = csv_string_to_list(modeling_section['modeling_circle_table'])
