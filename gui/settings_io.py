@@ -155,6 +155,9 @@ def export_settings(main_obj, file_path_str):
                 QMessageBox.critical(main_obj, 'Invalid Data!',
                                      'Image path (single) has not been specified in the Model Manipulations section.')
             config['Modeling']['single_image_scale'] = return_field_value(main_obj.single_image_scale_field)
+            config['Modeling']['single_image_thresh_mode'] = str(main_obj.single_image_thresh_mode_combo.currentIndex())
+            config['Modeling']['single_image_thresh_value'] = \
+                return_field_value(main_obj.single_image_thresh_value_field)
             config['Modeling']['single_image_denoise'] = str(main_obj.single_image_denoise_checkbox.isChecked())
             config['Basic']['num_voxels_x'] = '1'
             config['Basic']['num_voxels_y'] = '1'
@@ -165,6 +168,8 @@ def export_settings(main_obj, file_path_str):
                 QMessageBox.critical(main_obj, 'Invalid Data!',
                                      'Image path string has not been specified in the Model Manipulations section.')
             config['Modeling']['multi_image_scale'] = return_field_value(main_obj.multi_image_scale_field)
+            config['Modeling']['multi_image_thresh_mode'] = str(main_obj.multi_image_thresh_mode_combo.currentIndex())
+            config['Modeling']['multi_image_thresh_value'] = return_field_value(main_obj.multi_image_thresh_value_field)
             config['Modeling']['multi_image_denoise'] = str(main_obj.multi_image_denoise_checkbox.isChecked())
             config['Basic']['num_voxels_x'] = '1'
             config['Basic']['num_voxels_y'] = '1'
@@ -257,10 +262,16 @@ def import_settings(main_obj, file_path_str):
         elif modeling_mode == '4':  # Image Processing (Single 2D Image)
             set_field_value(main_obj.single_image_path_field, 'single_image_path', modeling)
             set_field_value(main_obj.single_image_scale_field, 'single_image_scale', modeling)
+            set_field_value(main_obj.single_image_thresh_mode_combo, 'single_image_thresh_mode',
+                            modeling, combo_index_mode=True)
+            set_field_value(main_obj.single_image_thresh_value_field, 'single_image_thresh_value', modeling)
             main_obj.single_image_denoise_checkbox.setChecked(config.getboolean('Modeling', 'single_image_denoise'))
         elif modeling_mode == '5':  # Image Processing (Image Stack for 3D Part)
             set_field_value(main_obj.multi_image_path_field, 'multi_image_path', modeling)
             set_field_value(main_obj.multi_image_scale_field, 'multi_image_scale', modeling)
+            set_field_value(main_obj.multi_image_thresh_mode_combo, 'multi_image_thresh_mode',
+                            modeling, combo_index_mode=True)
+            set_field_value(main_obj.multi_image_thresh_value_field, 'multi_image_thresh_value', modeling)
             main_obj.multi_image_denoise_checkbox.setChecked(config.getboolean('Modeling', 'multi_image_denoise'))
         elif modeling_mode == '6':  # Planar Composite (Circular Inclusions)
             set_field_value(main_obj.modeling_circle_table, 'modeling_circle_table', modeling)
