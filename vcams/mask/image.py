@@ -21,6 +21,7 @@ from skimage.transform import rescale
 
 logger = getLogger(__name__)
 
+# A list of available thresholding modes used in the GUI.
 image_thresh_mode_list = ('none', 'manual', 'otsu')
 
 
