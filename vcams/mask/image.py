@@ -21,6 +21,9 @@ from skimage.transform import rescale
 
 logger = getLogger(__name__)
 
+# A list of available thresholding modes used in the GUI.
+image_thresh_mode_list = ('none', 'manual', 'otsu')
+
 
 def mask_from_image(image_path: str, scale: float = 1.0,
                     denoise: bool = True, show_image: bool = False,

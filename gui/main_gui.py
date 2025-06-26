@@ -2,6 +2,7 @@
 
 from gui_helper import splash_update_text, splash_close
 import main_gui_resources  # Do NOT remove. It is used for .qrc files.
+from vcams.mask.image import image_thresh_mode_list
 
 splash_update_text("Loading standard Python libraries...")
 import logging
@@ -264,12 +265,26 @@ class MainWindow(QMainWindow):
         self.single_image_path_select_button.clicked.connect(self.select_single_image_path)
         self.single_image_scale_field.setValidator(QDoubleValidator(0.01, 100, 2))
         self.single_image_scale_field.setText('1.0')
+        self.single_image_scale_field.setValidator(QDoubleValidator(0.01, 100, 2))
+        self.single_image_scale_field.setText('1.0')
+        for image_thresh_mode in image_thresh_mode_list:
+            self.single_image_thresh_mode_combo.addItem(image_thresh_mode.capitalize())
+        self.single_image_thresh_mode_combo.currentTextChanged.connect(self.single_image_thresh_mode_changed)
+        self.single_image_thresh_mode_changed()
+        self.single_image_thresh_value_field.setValidator(QDoubleValidator(0.01, 100, 6))
+        self.single_image_thresh_value_field.setText('0.5')
         # self.single_image_denoise_checkbox doesn't need anything.
 
         # Modeling: Image Processing (Image Stack for 3D Part)
         self.multi_image_path_field.setText('')
         self.multi_image_scale_field.setValidator(QDoubleValidator(0.01, 100, 2))
         self.multi_image_scale_field.setText('1.0')
+        for image_thresh_mode in image_thresh_mode_list:
+            self.multi_image_thresh_mode_combo.addItem(image_thresh_mode.capitalize())
+        self.multi_image_thresh_mode_combo.currentTextChanged.connect(self.multi_image_thresh_mode_changed)
+        self.multi_image_thresh_mode_changed()
+        self.multi_image_thresh_value_field.setValidator(QDoubleValidator(0.01, 100, 2))
+        self.multi_image_thresh_value_field.setText('0.5')
         # self.multi_image_denoise_checkbox doesn't need anything.
 
         # Modeling: Planar Composite (Circular Inclusions)
@@ -319,6 +334,18 @@ class MainWindow(QMainWindow):
         tpms_type = self.select_tpms_combo.currentData()
         self.tpms_formula_real_label.setPixmap(
             mathtex_to_qpixmap(tpms_type.formula, self.formula_font_size))
+
+    def single_image_thresh_mode_changed(self):  # This and multi_ are the same. Sync any changes.
+        if self.single_image_thresh_mode_combo.currentText().lower() == 'manual':
+            self.single_image_thresh_value_field.setEnabled(True)
+        else:
+            self.single_image_thresh_value_field.setEnabled(False)
+
+    def multi_image_thresh_mode_changed(self):  # This and single_ are the same. Sync any changes.
+        if self.multi_image_thresh_mode_combo.currentText().lower() == 'manual':
+            self.multi_image_thresh_value_field.setEnabled(True)
+        else:
+            self.multi_image_thresh_value_field.setEnabled(False)
 
     def dim_changed(self):
         self.modeling_mode_changed()

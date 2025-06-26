@@ -540,6 +540,8 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
         part = voxelpart_from_image(image_dim='2D',
                                     image_path=part_manipulation_dict['single_image_path'],
                                     scale=part_manipulation_dict['single_image_scale'],
+                                    thresh_mode=part_manipulation_dict['single_image_thresh_mode'],
+                                    thresh_value=part_manipulation_dict['single_image_thresh_value'],
                                     denoise=part_manipulation_dict['single_image_denoise'],
                                     background_material=part_creation_dict['base_material'],
                                     foreground_material=2,  # This is hardcoded.
@@ -548,6 +550,8 @@ def from_config_file(file_path: Union[str, Path]) -> VoxelPart:
         part = voxelpart_from_image(image_dim='3D',
                                     image_path=part_manipulation_dict['multi_image_path'],
                                     scale=part_manipulation_dict['multi_image_scale'],
+                                    thresh_mode=part_manipulation_dict['multi_image_thresh_mode'],
+                                    thresh_value=part_manipulation_dict['multi_image_thresh_value'],
                                     denoise=part_manipulation_dict['multi_image_denoise'],
                                     background_material=part_creation_dict['base_material'],
                                     foreground_material=2,  # This is hardcoded.

@@ -17,6 +17,8 @@ log_debug = True
 modeling_mode = 4
 multi_image_path = D:\MicroCT of mouse tibiae-oim4\28Oim__rec0???.bmp
 multi_image_scale = 0.5
+multi_image_thresh_mode = Otsu
+multi_image_thresh_value = 0.5
 multi_image_denoise = True
 
 [BC]
