@@ -24,7 +24,7 @@ from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QTableWidgetSelection
     QFileDialog, QButtonGroup, QMainWindow, QApplication, QStyleFactory
 
 splash_update_text("Loading the VCAMS library...")
-from vcams import __name__ as vcams_name, __version__ as vcams_version
+from vcams import __name__ as vcams_name, gui_window_title
 from vcams import __repo__ as repo_url, __docs__ as docs_url, gui_footer_notice, about_vcams
 from vcams.helper import return_default_working_dir
 from vcams.mask.tpms import tpms_dict
@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
         # Load the UI Page.
         uic.loadUi(ui_file_path, self)
         # Set the window title.
-        self.setWindowTitle(f'VCAMS GUI v{vcams_version}')
+        self.setWindowTitle(gui_window_title)
         # Set the window icon.
         self.setWindowIcon(QIcon(program_icon_path))
         # Make the window size fixed.

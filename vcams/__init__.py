@@ -31,7 +31,7 @@ about_vcams = ('<h1>VCAMS v%s</h1>'
                '<p align="center">%s</p>' % (__version__, __copyright__))
 gui_name = 'VCAMS GUI'
 gui_file_name = gui_name + ' v' + __version__
-
+gui_window_title = gui_name + ' v' + __version__
 # Import the modules. Although general guidelines are against polluting the namespace,
 # it's done to improve usability for less experienced users.
 from . import bc  # noqa: E402
