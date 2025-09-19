@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: VCAMS
+name: Publish Release to PyPI
 
 on: workflow_dispatch
 #on:
@@ -30,8 +30,8 @@ jobs:
       - name: Build release distributions
         run: |
           # NOTE: put your own distribution build steps here.
-          python -m pip install vcams
-          #python -m vcams
+          python -m pip install build
+          #python -m build
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
