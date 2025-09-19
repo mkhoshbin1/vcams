@@ -8,9 +8,10 @@
 
 name: VCAMS
 
-on:
-  release:
-    types: [published]
+on: workflow_dispatch
+#on:
+#  release:
+#    types: [published]
 
 permissions:
   contents: read
