@@ -11,7 +11,8 @@ Installing the GUI Version
 The GUI is shipped as a single portable executable (.exe file)
 which contains the library and all of the dependencies.
 
-To use the GUI version of VCAMS, you only need to download the last release from GitHub (TODO).
+To use the GUI version of VCAMS, you only need to download the last release
+from the `GitHub repository <https://github.com/mkhoshbin1/vcams>`__.
 The program is portable and does not need any installation.
 You can just open the executable file and use the program.
 
@@ -24,8 +25,9 @@ but can be easily built from the source code on most platforms.
 Installing the VCAMS Library
 ----------------------------
 For more advanced use cases, you need to obtain and use the main library.
-This can be done either from the Python Package Index (TODO),
-or by using the code from the GitHub repository (TODO).
+This can be done either from the `Python Package Index <https://pypi.org/p/vcams/>`__,
+or by using the code
+from the `GitHub repository <https://github.com/mkhoshbin1/vcams>`__.
 
 Installing from PyPI
 ++++++++++++++++++++
@@ -54,13 +56,13 @@ you can open a Powershell terminal in the the desired folder and then enter the 
 Now you can see the name of the virtual environment on the left side of the terminal.
 This means that this version of Python is separate from the base version installed on your machine,
 and everything will be confined to that folder which will prevent a lot of future complications.
-Remember to activate the virtual environment everytime you want to use the library.
+However, you must remember to activate the virtual environment everytime you want to use the library.
 
-No you can install the program using the following command (TODO):
+No you can install the program using the following command:
 
 .. code-block:: powershell
 
-  pip install vcams
+  py -m pip install vcams
 
 Now the vcams library and all of its dependencies are installed in your virtual environment
 and you can import vcams into your scripts. See the :ref:`examples` section for sample scripts.
