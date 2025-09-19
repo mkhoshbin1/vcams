@@ -1,5 +1,5 @@
 __author__ = 'Mohammadreza Khoshbin'
-__copyright__ = 'Copyright © 2013-2024, Mohammadreza Khoshbin.'
+__copyright__ = 'Copyright © 2013-2025, Mohammadreza Khoshbin.'
 __credits__ = ['Mohammadreza Khoshbin']
 __license__ = 'AGPLv3'
 __version__ = '3.1.0'
