@@ -1,10 +1,6 @@
 
 ![Banner logo for the VCAMS Package](https://github.com/mkhoshbin1/vcams/blob/main/images/logo%20and%20icon/logo/logo_tagline.png?raw=true)
 
-# VCAMS
-A Program and Python Library for Voxel-Based Computer-Aided Modeling of Complex Structures
-
-
 ## Introduction
 VCAMS (Voxel-Based Computer-Aided Modeling of Complex Structures)
 is a free and open source software for creating complex FEA models using voxels.
