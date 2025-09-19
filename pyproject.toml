@@ -63,10 +63,10 @@ dev = ["pyinstaller-versionfile>=2.1.1", "PyInstaller", "build",
 # Relevant URLs.
 [project.urls]
 Homepage = "https://vcams.mkhoshbin.com/"
-#Documentation = "https://readthedocs.org"  # TODO
+Documentation = "https://vcams.readthedocs.io"
 source = "https://github.com/mkhoshbin1/vcams"
-#"Source Code" = "https://github.com/mkhoshbin1/vcams"  # TODO
 Issues = "https://github.com/mkhoshbin1/vcams/issues"
+"Source Code" = "https://github.com/mkhoshbin1/vcams"
 "Author's Website" = "https://www.mkhoshbin.com/"
 
 # Config for the `setuptools` build backend.
