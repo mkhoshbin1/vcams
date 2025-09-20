@@ -17,8 +17,6 @@ description = "A Program and Python Library for Voxel-Based Computer-Aided Model
 readme = "README.md"
 requires-python = ">=3.12"
 license = {file = "LICENSE"}
-authors = [{name = "Mohammadreza Khoshbin", email = "m.khoshbin@live.com" }]
-maintainers = [{name = "Mohammadreza Khoshbin", email = "m.khoshbin@live.com" }]
 
 keywords = ["abaqus", "cae", "fea", "fem",
     "finite-elements", "finite-element-analysis",
@@ -64,7 +62,6 @@ dev = ["pyinstaller-versionfile>=2.1.1", "PyInstaller", "build",
 [project.urls]
 Homepage = "https://vcams.mkhoshbin.com/"
 Documentation = "https://vcams.readthedocs.io"
-source = "https://github.com/mkhoshbin1/vcams"
 Issues = "https://github.com/mkhoshbin1/vcams/issues"
 "Source Code" = "https://github.com/mkhoshbin1/vcams"
 "Author's Website" = "https://www.mkhoshbin.com/"
