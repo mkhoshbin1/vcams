@@ -2,11 +2,11 @@
 ![Banner logo for the VCAMS Package](https://github.com/mkhoshbin1/vcams/blob/main/images/logo%20and%20icon/logo/logo_tagline.png?raw=true)
 
 
-[![PyPI](https://img.shields.io/pypi/v/vcams)]
-[![Docs](https://readthedocs.org/projects/vcams/badge/?version=latest)]
-[![License](https://img.shields.io/github/license/mkhoshbin1/vcams)]
+[![PyPI](https://img.shields.io/pypi/v/vcams)](https://pypi.org/p/vcams/)
+[![Docs](https://app.readthedocs.org/projects/vcams/badge/?version=latest)](https://vcams.readthedocs.io/en/latest/?badge=latest)
+[![License](https://img.shields.io/github/license/mkhoshbin1/vcams)](https://github.com/mkhoshbin1/vcams/blob/main/LICENSE)
 
-[![DOI](https://zenodo.org/badge/391829437.svg)](https://doi.org/10.5281/zenodo.17163176)
+[![Repo's DOI](https://zenodo.org/badge/391829437.svg)](https://doi.org/10.5281/zenodo.17163176)
 [![My Website](https://img.shields.io/badge/Author's_Website-blue.svg)](https://www.mkhoshbin.com)
 
 ## Introduction
