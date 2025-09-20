@@ -23,12 +23,12 @@ Its main features are:
 The software revolves around a main class named *VoxelPart* which defines a structure consisting of
 a number of rectangular or cuboid elements.
 This *VoxelPart* object can then be manipulated using a variety of methods to achieve a complex structure.
-Afterwards, the user can define custom element and node sets and  boundary conditions for the object.
+Afterward, the user can define custom element and node sets and  boundary conditions for the object.
 And finally, the object is exported to an Abaqus™ input file.
 
 ## The VCAMS Library
-The main part of the software is its powerful library which is :ref:`very easy to install <installation_library>`
-and has a complete reference guide.
+The main part of the software is its powerful library which is
+[very easy to install](https://pypi.org/p/vcams/) and has a complete reference guide.
 It also comes with a large number of example problems.
 
 ## The Graphical User Interface
@@ -36,3 +36,7 @@ The graphical user interface (GUI) offers part of the library's functionality
 in a simple and convenient manner.
 It also allows the model parameters to be exported to a configuration file,
 and imported later for modification or re-creation of the models.
+
+## Software Documentation
+You can find in-depth articles about modeling concepts, installation and usage,
+and example problems in [the online documentation](https://vcams.readthedocs.io).
