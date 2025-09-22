@@ -24,15 +24,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Install dependencies and build executable
+        shell: powershell
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -c "import tabulate2"
-
-      - name: Build executable with custom spec
-        shell: powershell
-        run: |
+          
           # CD to the gui folder.
           cd .\gui
           
