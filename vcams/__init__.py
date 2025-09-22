@@ -1,14 +1,14 @@
 __author__ = 'Mohammadreza Khoshbin'
-__copyright__ = 'Copyright © 2013-2025, Mohammadreza Khoshbin.'
+__copyright__ = 'Copyright © 2025, Mohammadreza Khoshbin.'
 __credits__ = ['Mohammadreza Khoshbin']
 __license__ = 'AGPLv3'
-__version__ = '3.1.0'
+__version__ = '3.1.1'
 __maintainer__ = 'Mohammadreza Khoshbin'
 __email__ = 'm.khoshbin@live.com'
 __status__ = 'Production'
 __website__ = 'https://github.com/mkhoshbin1/vcams'
 __repo__ = 'https://github.com/mkhoshbin1/vcams'
-__docs__ = 'https://github.com/mkhoshbin1/vcams'  # FIXME
+__docs__ = 'https://vcams.readthedocs.io/'
 __description__ = 'A Program and Python Library for Voxel-Based Computer-Aided Modeling of Complex Structures '
 __author_website__ = 'www.mkhoshbin.com'
 __contact__ = __email__

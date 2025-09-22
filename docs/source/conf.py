@@ -14,12 +14,12 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join('..','..')))
 # from vcams import __version__ as vcams_version   # TODO
-vcams_version = '1.0.0'
+vcams_version = '3.1.1'
 
 # -- Project information -----------------------------------------------------
 
 project = 'VCAMS'
-copyright = '2022, Mohammadreza Khoshbin'
+copyright = '2025, Mohammadreza Khoshbin'
 author = 'Mohammadreza Khoshbin'
 
 # The full version, including alpha/beta/rc tags
@@ -88,3 +88,12 @@ html_favicon = '_static/favicon.ico'
 html_static_path = ['_static']
 html_css_files = ['css/custom.css',]
 #html_js_files = ['js/custom.js',]
+
+# Add a GitHub button.
+html_context = {
+    "display_github": True,
+    'github_user': 'mkhoshbin1',
+    'github_repo': 'vcams',
+    'github_version': 'main',
+    'conf_py_path': '/docs/source/',
+}
