@@ -1,0 +1,68 @@
+# This workflow TODO
+
+
+name: Build and Release GUI Executable
+
+on:
+  workflow_dispatch:
+  #release:
+  #  types: [created]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Build executable with custom spec
+        shell: powershell
+        run: |
+          # CD to the gui folder.
+          cd .\gui
+          
+          # Compile the Qt resources file to a Python module
+          pyrcc5 .\resources\main_gui_resources.qrc -o main_gui_resources.py
+
+          # Get the application name from the create_versionfile.py script
+          $exe_name = python create_versionfile.py
+
+          # Create the PyInstaller spec file
+          pyi-makespec --onefile --noupx --windowed `
+              --add-data 'main_window.ui;.' `
+              --add-data 'resources\main_gui_resources.qrc;.\resources\' `
+              --hidden-import=pyi_splash `
+              --icon='.\resources\icon.ico' `
+              --splash='.\resources\splash.png' `
+              --version='versionfile.txt' `
+              --paths .. `
+              --name "$exe_name" `
+              main_gui.py
+
+          # Modify the generated spec file to change the text position for the splash screen
+          (Get-Content "$exe_name.spec") -Replace 'text_pos=None', 'text_pos=(25, 440)' |
+          Set-Content "$exe_name.spec"
+
+          # Build the executable using the modified spec file
+          pyinstaller --clean --noconfirm "$exe_name.spec"
+
+      - name: Upload executable to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
