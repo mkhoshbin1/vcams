@@ -14,7 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join('..','..')))
 # from vcams import __version__ as vcams_version   # TODO
-vcams_version = '3.1.1'
+vcams_version = '3.1.2'
 
 # -- Project information -----------------------------------------------------
 
