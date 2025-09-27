@@ -20,6 +20,12 @@ vcams_version = '3.1.1'
 
 project = 'VCAMS'
 copyright = '2025, Mohammadreza Khoshbin'
+# copyright = ('2025, Mohammadreza Khoshbin. \n'
+#              'The VCAMS software is licensed under the GNU Affero General Public License (AGPLv3) '
+#              'and this software documentation is licensed under a '
+#              'Creative Commons Attribution 4.0 International (CC BY 4.0) License. '
+#              'All rights reserved'
+#              )
 author = 'Mohammadreza Khoshbin'
 
 # The full version, including alpha/beta/rc tags
@@ -96,4 +102,6 @@ html_context = {
     'github_repo': 'vcams',
     'github_version': 'main',
     'conf_py_path': '/docs/source/',
+    'license': 'CC BY 4.0',
+    'license_url': 'https://creativecommons.org/licenses/by/4.0/',
 }

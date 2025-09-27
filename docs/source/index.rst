@@ -57,3 +57,9 @@ and some :ref:`example problems <examples>` are also provided.
    modeling-concepts/index.rst
    api-reference/index.rst
    examples/index.rst
+
+
+.. toctree::
+   :hidden:
+
+   LICENSE
